@@ -14,11 +14,11 @@
     <properties>
         <!-- Versions. -->
         <!-- Note: These versions were last checked & upgraded on 15/04/2010. -->
-        <amee-base.version>1.0.1-SNAPSHOT</amee-base.version>
-        <amee-persist.version>1.0.1-SNAPSHOT</amee-persist.version>
-        <amee-messaging.version>1.0.0-SNAPSHOT</amee-messaging.version>
-        <amee-platform-science.version>1.0.8-SNAPSHOT</amee-platform-science.version>
-        <amee-platform-domain.version>1.0.0-SNAPSHOT</amee-platform-domain.version>
+        <amee-base.version>1.0.1</amee-base.version>
+        <amee-persist.version>1.0.2</amee-persist.version>
+        <amee-messaging.version>1.0.1</amee-messaging.version>
+        <amee-platform-science.version>1.0.8</amee-platform-science.version>
+        <amee-platform-domain.version>1.0.0</amee-platform-domain.version>
         <!-- External Versions. -->
         <!--<commons-codec.version>1.3</commons-codec.version>-->
         <!--<commons-lang.version>2.5</commons-lang.version>-->
