@@ -1,0 +1,4 @@
+*.iws
+target
+release.properties
+pom.xml.releaseBackup

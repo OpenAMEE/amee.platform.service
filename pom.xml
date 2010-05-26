@@ -1,0 +1,121 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Identity. -->
+    <name>amee-platform-service</name>
+    <groupId>com.amee.platform</groupId>
+    <artifactId>amee-platform-service</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <!-- Properties. -->
+    <properties>
+        <!-- Versions. -->
+        <!-- Note: These versions were last checked & upgraded on 15/04/2010. -->
+        <amee-base.version>1.0.1-SNAPSHOT</amee-base.version>
+        <amee-persist.version>1.0.1-SNAPSHOT</amee-persist.version>
+        <amee-messaging.version>1.0.0-SNAPSHOT</amee-messaging.version>
+        <amee-platform-science.version>1.0.8-SNAPSHOT</amee-platform-science.version>
+        <amee-platform-domain.version>1.0.0-SNAPSHOT</amee-platform-domain.version>
+        <!-- External Versions. -->
+        <!--<commons-codec.version>1.3</commons-codec.version>-->
+        <!--<commons-lang.version>2.5</commons-lang.version>-->
+        <!--<ehcache.version>1.6.2</ehcache.version>-->
+        <!--<hibernate-core.version>3.5.1-Final</hibernate-core.version>-->
+        <!--<joda-time.version>1.6</joda-time.version>-->
+        <junit.version>4.7</junit.version>
+        <!--<jscience.version>4.3.1</jscience.version>-->
+        <lucene-core.version>3.0.1</lucene-core.version>
+        <!--<org-json.version>2.0</org-json.version>-->
+        <!--<org-mockito.version>1.8.1</org-mockito.version>-->
+        <spring.version>3.0.2.RELEASE</spring.version>
+        <!--<xerces.version>2.9.1</xerces.version>-->
+        <!-- Other. -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <!-- Build Plugins. -->
+    <build>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <source>1.6</source>
+                        <target>1.6</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+    </build>
+
+    <!-- Dependencies. -->
+    <dependencies>
+
+        <!-- Internal Dependencies. -->
+        <dependency>
+            <groupId>com.amee</groupId>
+            <artifactId>amee-messaging</artifactId>
+            <version>${amee-messaging.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amee.platform</groupId>
+            <artifactId>amee-platform-domain</artifactId>
+            <version>${amee-platform-domain.version}</version>
+        </dependency>
+
+        <!-- Compile Dependencies. -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-orm</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>${lucene-core.version}</version>
+        </dependency>
+
+        <!-- Test Dependencies. -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!-- Distribution Management. -->
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <name>Releases Repository</name>
+            <url>https://nexus.amee.com/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>Snapshots Repository</name>
+            <url>https://nexus.amee.com/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <!-- Version Control. -->
+    <scm>
+        <connection>scm:git:ssh://git@github.com/AMEE/amee.platform.service.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/AMEE/amee.platform.service.git</developerConnection>
+        <url>scm:git:ssh://git@github.com/AMEE/amee.platform.service.git</url>
+    </scm>
+
+</project>
