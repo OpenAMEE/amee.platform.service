@@ -19,7 +19,6 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
-import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +34,6 @@ import java.util.List;
  * Instances of this class should only be used by one thread. Care should be taken to respect the
  * sequence of method calls as described in the method documentation.
  */
-@Service
 public class LuceneService implements Serializable {
 
     private final Log log = LogFactory.getLog(getClass());

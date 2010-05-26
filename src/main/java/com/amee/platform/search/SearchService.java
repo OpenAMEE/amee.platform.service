@@ -28,7 +28,6 @@ import org.apache.lucene.util.Version;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -38,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Service
 public class SearchService implements ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
