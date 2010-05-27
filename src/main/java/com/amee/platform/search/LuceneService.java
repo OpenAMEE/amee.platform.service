@@ -2,6 +2,7 @@ package com.amee.platform.search;
 
 import com.amee.base.resource.ValidationResult;
 import com.amee.base.validation.ValidationException;
+import com.amee.domain.ObjectType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.Analyzer;
@@ -12,9 +13,12 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -123,9 +127,13 @@ public class LuceneService implements Serializable {
     }
 
     public void deleteDocuments(Term... terms) {
+        BooleanQuery q = new BooleanQuery();
+        for (Term t : terms) {
+            q.add(new TermQuery(t), BooleanClause.Occur.MUST);
+        }
         synchronized (getIndexWriter()) {
             try {
-                getIndexWriter().deleteDocuments(terms);
+                getIndexWriter().deleteDocuments(q);
                 closeIndexWriter();
             } catch (IOException e) {
                 throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
@@ -216,7 +224,7 @@ public class LuceneService implements Serializable {
      */
     private void createDirectory() {
         try {
-            String path = System.getProperty("amee.lucenePath", "/var/www/apps/amee/lucene");
+            String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-back/lucene");
             setDirectory(FSDirectory.open(new File(path)));
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
