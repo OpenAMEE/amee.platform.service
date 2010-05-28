@@ -5,6 +5,7 @@ import com.amee.domain.AMEEEntityReference;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.IMetadataService;
 import com.amee.domain.Metadata;
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemValueDefinition;
 import org.apache.commons.logging.Log;
@@ -72,6 +73,17 @@ public class MetadataService implements IMetadataService, ApplicationListener {
             METADATAS.get().put(entity, metadataMap);
             return metadataMap;
         }
+    }
+
+    public void loadMetadatasForDataCategories(Collection<DataCategory> dataCategories) {
+        AMEEEntityReference entity;
+        Set<IAMEEEntityReference> entities = new HashSet<IAMEEEntityReference>();
+        for (DataCategory dataCategory : dataCategories) {
+            entity = new AMEEEntityReference(dataCategory);
+            entity.setEntity(null);
+            entities.add(entity);
+        }
+        loadMetadatas(entities);
     }
 
     public void loadMetadatasForDataItems(Collection<DataItem> dataItems) {

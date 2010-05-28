@@ -298,6 +298,9 @@ public class SearchService implements ApplicationListener {
                     entityIds.get(ObjectType.DC));
             addDataCategories(entities, dataCategoriesMap);
             localeService.loadLocaleNamesForDataCategories(dataCategoriesMap.values());
+            if (filter.isLoadMetadatas()) {
+                metadataService.loadMetadatasForDataCategories(dataCategoriesMap.values());
+            }
         }
         // Load DataItems.
         if (entityIds.containsKey(ObjectType.DI)) {
@@ -307,6 +310,9 @@ public class SearchService implements ApplicationListener {
                     filter.isLoadDataItemValues());
             addDataItems(entities, dataItemsMap);
             localeService.loadLocaleNamesForDataItems(dataItemsMap.values(), filter.isLoadDataItemValues());
+            if (filter.isLoadMetadatas()) {
+                metadataService.loadMetadatasForDataItems(dataItemsMap.values());
+            }
         }
         // Create result list in relevance order.
         List<AMEEEntity> results = new ArrayList<AMEEEntity>();
@@ -338,17 +344,24 @@ public class SearchService implements ApplicationListener {
     // DataCategory Search.
 
     public List<DataCategory> getDataCategories(DataCategoryFilter filter) {
+        List<DataCategory> dataCategories;
         // Filter based on an allowed query parameter.
         if (!filter.getQueries().isEmpty()) {
             BooleanQuery query = new BooleanQuery();
             for (Query q : filter.getQueries().values()) {
                 query.add(q, BooleanClause.Occur.MUST);
             }
-            return getDataCategories(query);
+            dataCategories = getDataCategories(query);
         } else {
             // Just get a simple list of Data Categories.
-            return dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"));
+            dataCategories = dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"));
         }
+        // Pre-loading of LocaleNames & DataCategories.
+        if (filter.isLoadMetadatas()) {
+            metadataService.loadMetadatasForDataCategories(dataCategories);
+        }
+        localeService.loadLocaleNamesForDataCategories(dataCategories);
+        return dataCategories;
     }
 
     public List<DataCategory> getDataCategories(String key, String value) {
@@ -383,6 +396,13 @@ public class SearchService implements ApplicationListener {
         for (Document document : luceneService.doSearch(query)) {
             dataItemIds.add(new Long(document.getField("entityId").stringValue()));
         }
-        return dataService.getDataItems(environmentService.getEnvironmentByName("AMEE"), dataItemIds);
+        // Get the DataItems.
+        List<DataItem> dataItems = dataService.getDataItems(environmentService.getEnvironmentByName("AMEE"), dataItemIds, filter.isLoadDataItemValues());
+        // Pre-loading of LocaleNames & DataCategories.
+        if (filter.isLoadMetadatas()) {
+            metadataService.loadMetadatasForDataItems(dataItems);
+        }
+        localeService.loadLocaleNamesForDataItems(dataItems, filter.isLoadDataItemValues());
+        return dataItems;
     }
 }

@@ -2,7 +2,6 @@ package com.amee.platform.search;
 
 import com.amee.base.resource.ValidationResult;
 import com.amee.base.validation.ValidationException;
-import com.amee.domain.ObjectType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.Analyzer;
