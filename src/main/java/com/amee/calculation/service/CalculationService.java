@@ -30,9 +30,7 @@ import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.domain.sheet.Choices;
-import com.amee.platform.science.AlgorithmRunner;
-import com.amee.platform.science.CO2Amount;
-import com.amee.platform.science.InternalValue;
+import com.amee.platform.science.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -65,63 +63,55 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     private BeanFactory beanFactory;
 
     /**
-     * Calculate and always set the CO2 amount for a ProfileItem.
+     * Calculate and always set the GHG amounts for a ProfileItem.
      *
-     * @param profileItem - the ProfileItem for which to calculate CO2 amount
+     * @param profileItem - the ProfileItem for which to calculate GHG amounts
      */
     public void calculate(ProfileItem profileItem) {
 
-        CO2Amount amount = CO2Amount.ZERO;
-
         // End marker ProfileItems can only have zero amounts.
-        if (!profileItem.isEnd()) {
-            // Calculate amount for ProfileItem if an Algorithm is available.
-            // Some ProfileItems are from ItemDefinitions which do not have Algorithms and
-            // hence do not support calculations.
-            if (profileItem.supportsCalculation()) {
-                Algorithm algorithm = profileItem.getItemDefinition().getAlgorithm(Algorithm.DEFAULT);
-                if (algorithm != null) {
-                    Map<String, Object> values = getValues(profileItem);
-                    amount = calculate(algorithm, values);
-                }
+        // Calculate amounts for ProfileItem if an Algorithm is available.
+        // Some ProfileItems are from ItemDefinitions which do not have Algorithms and
+        // hence do not support calculations.
+        if (!profileItem.isEnd() && profileItem.supportsCalculation()) {
+            Algorithm algorithm = profileItem.getItemDefinition().getAlgorithm(Algorithm.DEFAULT);
+            if (algorithm != null) {
+                Map<String, Object> values = getValues(profileItem);
+                profileItem.setAmounts(calculate(algorithm, values));
             }
         }
-
-        // Always set the ProfileItem amount.
-        profileItem.setAmount(amount);
     }
 
     /**
-     * Calculate and return the CO2 amount for a DataItem and a set of user specified values.
+     * Calculate and return the GHG amounts for a DataItem and a set of user specified values.
      * <p/>
      * Note: I am unsure if this is in active use (SM)
      *
      * @param dataItem         - the DataItem for the calculation
      * @param userValueChoices - user supplied value choices
      * @param version          - the APIVersion. This is used to determine the correct ItemValueDefinitions to load into the calculation
-     * @return the calculated CO2 amount
+     * @return the calculated GHG amounts
      */
-    public CO2Amount calculate(DataItem dataItem, Choices userValueChoices, APIVersion version) {
-        CO2Amount amount = CO2Amount.ZERO;
+    public ReturnValues calculate(DataItem dataItem, Choices userValueChoices, APIVersion version) {
         Algorithm algorithm = dataItem.getItemDefinition().getAlgorithm(Algorithm.DEFAULT);
         if (algorithm != null) {
             Map<String, Object> values = getValues(dataItem, userValueChoices, version);
-            amount = calculate(algorithm, values);
+            return calculate(algorithm, values);
         }
-        return amount;
+        return new ReturnValues();
     }
 
     /**
-     * Calculate and return the CO2 amount for given the provided algorithm and input values.
+     * Calculate and return the GHG amounts for given the provided algorithm and input values.
      * <p/>
-     * Intended to be used publically in test harnesses when passing the modified algorithm content and input values
+     * Intended to be used publicly in test harnesses when passing the modified algorithm content and input values
      * for execution is desirable.
      *
      * @param algorithm the algorithm to use
-     * @param values    input values for the algorithm
+     * @param values input values for the algorithm
      * @return the algorithm result
      */
-    public CO2Amount calculate(Algorithm algorithm, Map<String, Object> values) {
+    public ReturnValues calculate(Algorithm algorithm, Map<String, Object> values) {
 
         if (log.isDebugEnabled()) {
             log.debug("calculate()");
@@ -130,11 +120,11 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
             log.debug("calculate() - starting calculation");
         }
 
-        CO2Amount amount;
+        ReturnValues returnValues;
         final long startTime = System.nanoTime();
 
         try {
-            amount = new CO2Amount(algorithmRunner.evaluate(algorithm, values));
+            returnValues = algorithmRunner.evaluate(algorithm, values);
         } catch (ScriptException e) {
 
             // Bubble up parameter missing or format exceptions from the
@@ -168,22 +158,26 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
                             algorithm.getName() +
                             "): " + e.getMessage());
 
-            // ...and return zero by default.
-            amount = CO2Amount.ZERO;
+            // ...and return an empty result by default.
+            returnValues = new ReturnValues();
         } finally {
             ameeStatistics.addToThreadCalculationDuration(System.nanoTime() - startTime);
         }
 
         if (log.isDebugEnabled()) {
             log.debug("calculate() - finished calculation");
-            log.debug("calculate() - CO2 Amount: " + amount);
+            log.debug("calculate() - Amounts: " + returnValues);
         }
 
-        return amount;
+        return returnValues;
     }
 
-    // Collect all relevant algorithm input values for a ProfileItem calculation.
-
+    /**
+     * Collect all relevant algorithm input values for a ProfileItem calculation.
+     *
+     * @param profileItem
+     * @return
+     */
     private Map<String, Object> getValues(ProfileItem profileItem) {
 
         Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
