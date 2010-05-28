@@ -10,7 +10,10 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public class LocaleServiceDAO {
@@ -29,6 +32,20 @@ public class LocaleServiceDAO {
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.setCacheable(true);
         criteria.setCacheRegion(CACHE_REGION);
+        return criteria.list();
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    public List<LocaleName> getLocaleNames(Collection<IAMEEEntityReference> entities) {
+        Set<Long> entityIds = new HashSet<Long>();
+        entityIds.add(0L);
+        for (IAMEEEntityReference entity : entities) {
+            entityIds.add(entity.getEntityId());
+        }
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(LocaleName.class);
+        criteria.add(Restrictions.in("entity.entityId", entityIds));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
     }
 

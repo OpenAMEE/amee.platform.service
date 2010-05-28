@@ -21,7 +21,6 @@ package com.amee.service.data;
 
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
-import com.amee.domain.AMEEEntity;
 import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
@@ -138,8 +137,6 @@ public class DataService extends BaseService implements ApplicationListener {
         }
     }
 
-    // TODO: Populating activeCategories seems redundant. Doesn't dao.getDataCategories only return actives?
-
     public List<DataCategory> getDataCategories(Environment environment) {
         List<DataCategory> activeCategories = new ArrayList<DataCategory>();
         for (DataCategory dataCategory : dao.getDataCategories(environment)) {
@@ -150,8 +147,8 @@ public class DataService extends BaseService implements ApplicationListener {
         return activeCategories;
     }
 
-    public Map<Long, AMEEEntity> getDataCategoryMap(Environment environment, Set<Long> dataCategoryIds) {
-        Map<Long, AMEEEntity> dataCategoryMap = new HashMap<Long, AMEEEntity>();
+    public Map<Long, DataCategory> getDataCategoryMap(Environment environment, Set<Long> dataCategoryIds) {
+        Map<Long, DataCategory> dataCategoryMap = new HashMap<Long, DataCategory>();
         for (DataCategory dataCategory : dao.getDataCategories(environment, dataCategoryIds)) {
             dataCategoryMap.put(dataCategory.getEntityId(), dataCategory);
         }
@@ -238,27 +235,45 @@ public class DataService extends BaseService implements ApplicationListener {
         }
     }
 
-    public Map<Long, AMEEEntity> getDataItemMap(Environment environment, Set<Long> dataItemIds) {
-        Map<Long, AMEEEntity> dataItemMap = new HashMap<Long, AMEEEntity>();
-        for (DataItem dataItem : dao.getDataItems(environment, dataItemIds)) {
+    public Map<Long, DataItem> getDataItemMap(Environment environment, Set<Long> dataItemIds) {
+        return getDataItemMap(environment, dataItemIds, false);
+    }
+
+    public Map<Long, DataItem> getDataItemMap(Environment environment, Set<Long> dataItemIds, boolean values) {
+        Map<Long, DataItem> dataItemMap = new HashMap<Long, DataItem>();
+        for (DataItem dataItem : dao.getDataItems(environment, dataItemIds, values)) {
             dataItemMap.put(dataItem.getEntityId(), dataItem);
         }
         return dataItemMap;
     }
 
     public List<DataItem> getDataItems(Environment environment, Set<Long> dataItemIds) {
-        return dao.getDataItems(environment, dataItemIds);
+        return getDataItems(environment, dataItemIds, false);
+    }
+
+    public List<DataItem> getDataItems(Environment environment, Set<Long> dataItemIds, boolean values) {
+        return dao.getDataItems(environment, dataItemIds, values);
     }
 
     public List<DataItem> getDataItems(DataCategory dataCategory) {
-        return checkDataItems(dao.getDataItems(dataCategory));
+        return getDataItems(dataCategory, true);
     }
 
-    private List<DataItem> checkDataItems(List<DataItem> dataItems) {
+    public List<DataItem> getDataItems(DataCategory dataCategory, boolean checkDataItems) {
+        return activeDataItems(dao.getDataItems(dataCategory), checkDataItems);
+    }
+
+    private List<DataItem> activeDataItems(List<DataItem> dataItems) {
+        return activeDataItems(dataItems, true);
+    }
+
+    private List<DataItem> activeDataItems(List<DataItem> dataItems, boolean checkDataItems) {
         List<DataItem> activeDataItems = new ArrayList<DataItem>();
         for (DataItem dataItem : dataItems) {
             if (!dataItem.isTrash()) {
-                checkDataItem(dataItem);
+                if (checkDataItems) {
+                    checkDataItem(dataItem);
+                }
                 activeDataItems.add(dataItem);
             }
         }
@@ -277,9 +292,11 @@ public class DataService extends BaseService implements ApplicationListener {
      */
     @SuppressWarnings(value = "unchecked")
     public void checkDataItem(DataItem dataItem) {
+
         if (dataItem == null) {
             return;
         }
+
         Set<ItemValueDefinition> existingItemValueDefinitions = dataItem.getItemValueDefinitions();
         Set<ItemValueDefinition> missingItemValueDefinitions = new HashSet<ItemValueDefinition>();
 

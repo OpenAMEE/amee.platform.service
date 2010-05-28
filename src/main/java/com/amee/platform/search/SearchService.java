@@ -11,6 +11,8 @@ import com.amee.domain.path.PathItemGroup;
 import com.amee.service.data.DataService;
 import com.amee.service.environment.EnvironmentService;
 import com.amee.service.invalidation.InvalidationMessage;
+import com.amee.service.locale.LocaleService;
+import com.amee.service.metadata.MetadataService;
 import com.amee.service.path.PathItemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,6 +54,12 @@ public class SearchService implements ApplicationListener {
 
     @Autowired
     private DataService dataService;
+
+    @Autowired
+    private MetadataService metadataService;
+
+    @Autowired
+    private LocaleService localeService;
 
     @Autowired
     private PathItemService pathItemService;
@@ -127,19 +135,40 @@ public class SearchService implements ApplicationListener {
     protected void buildDataItems() {
         log.info("buildDataItems()");
         transactionController.begin(false);
-        List<Document> documents;
-        for (DataCategory dataCategory :
-                dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
+        Set<String> dataCategoryUids = new HashSet<String>();
+        for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
             if (dataCategory.getItemDefinition() != null) {
-                log.info("buildDataItems() " + dataCategory.getName());
-                documents = new ArrayList<Document>();
-                for (DataItem dataItem : dataService.getDataItems(dataCategory)) {
-                    documents.add(getDocument(dataItem));
-                }
-                luceneService.addDocuments(documents);
+                dataCategoryUids.add(dataCategory.getUid());
             }
         }
         transactionController.end();
+        buildDataItems(dataCategoryUids);
+    }
+
+    /**
+     * Add all DataItems to the index.
+     *
+     * @param dataCategoryUids UIDs of DataCategories to add.
+     */
+    protected void buildDataItems(Set<String> dataCategoryUids) {
+        DataCategory dataCategory;
+        List<Document> documents;
+        for (String uid : dataCategoryUids) {
+            transactionController.begin(false);
+            dataCategory = dataService.getDataCategoryByUid(uid);
+            log.info("buildDataItems() " + dataCategory.getName());
+            documents = new ArrayList<Document>();
+            metadataService.loadMetadatasForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
+            localeService.loadLocaleNamesForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
+            List<DataItem> dataItems = dataService.getDataItems(dataCategory, false);
+            metadataService.loadMetadatasForDataItems(dataItems);
+            localeService.loadLocaleNamesForDataItems(dataItems);
+            for (DataItem dataItem : dataItems) {
+                documents.add(getDocument(dataItem));
+            }
+            luceneService.addDocuments(documents);
+            transactionController.end();
+        }
     }
 
     /**
@@ -208,10 +237,8 @@ public class SearchService implements ApplicationListener {
         doc.add(new Field("categoryWikiName", dataItem.getDataCategory().getWikiName(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("itemDefinitionUid", dataItem.getItemDefinition().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         doc.add(new Field("itemDefinitionName", dataItem.getItemDefinition().getName(), Field.Store.NO, Field.Index.ANALYZED));
-        for (Object key : dataItem.getItemValuesMap().keySet()) {
-            String path = (String) key;
-            ItemValue itemValue = dataItem.getItemValuesMap().get(path);
-            doc.add(new Field(path, itemValue.getValue(), Field.Store.NO, Field.Index.ANALYZED));
+        for (ItemValue itemValue : dataItem.getItemValues()) {
+            doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue(), Field.Store.NO, Field.Index.ANALYZED));
         }
         doc.add(new Field("label", dataItem.getLabel(), Field.Store.NO, Field.Index.ANALYZED));
         return doc;
@@ -266,19 +293,20 @@ public class SearchService implements ApplicationListener {
         Map<ObjectType, Map<Long, AMEEEntity>> entities = new HashMap<ObjectType, Map<Long, AMEEEntity>>();
         // Load DataCategories.
         if (entityIds.containsKey(ObjectType.DC)) {
-            entities.put(
-                    ObjectType.DC,
-                    dataService.getDataCategoryMap(
-                            environmentService.getEnvironmentByName("AMEE"),
-                            entityIds.get(ObjectType.DC)));
+            Map<Long, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(
+                    environmentService.getEnvironmentByName("AMEE"),
+                    entityIds.get(ObjectType.DC));
+            addDataCategories(entities, dataCategoriesMap);
+            localeService.loadLocaleNamesForDataCategories(dataCategoriesMap.values());
         }
         // Load DataItems.
         if (entityIds.containsKey(ObjectType.DI)) {
-            entities.put(
-                    ObjectType.DI,
-                    dataService.getDataItemMap(
-                            environmentService.getEnvironmentByName("AMEE"),
-                            entityIds.get(ObjectType.DI)));
+            Map<Long, DataItem> dataItemsMap = dataService.getDataItemMap(
+                    environmentService.getEnvironmentByName("AMEE"),
+                    entityIds.get(ObjectType.DI),
+                    filter.isLoadDataItemValues());
+            addDataItems(entities, dataItemsMap);
+            localeService.loadLocaleNamesForDataItems(dataItemsMap.values(), filter.isLoadDataItemValues());
         }
         // Create result list in relevance order.
         List<AMEEEntity> results = new ArrayList<AMEEEntity>();
@@ -288,6 +316,23 @@ public class SearchService implements ApplicationListener {
             results.add(entities.get(entityType).get(entityId));
         }
         return results;
+    }
+
+    protected void addDataCategories(Map<ObjectType, Map<Long, AMEEEntity>> entities, Map<Long, DataCategory> dataCategoriesMap) {
+        Map<Long, AMEEEntity> e = new HashMap<Long, AMEEEntity>();
+        for (Long id : dataCategoriesMap.keySet()) {
+            e.put(id, dataCategoriesMap.get(id));
+        }
+        entities.put(ObjectType.DC, e);
+    }
+
+
+    protected void addDataItems(Map<ObjectType, Map<Long, AMEEEntity>> entities, Map<Long, DataItem> dataItemsMap) {
+        Map<Long, AMEEEntity> e = new HashMap<Long, AMEEEntity>();
+        for (Long id : dataItemsMap.keySet()) {
+            e.put(id, dataItemsMap.get(id));
+        }
+        entities.put(ObjectType.DI, e);
     }
 
     // DataCategory Search.

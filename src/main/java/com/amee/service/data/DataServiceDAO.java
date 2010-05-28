@@ -252,17 +252,25 @@ public class DataServiceDAO implements Serializable {
                 .getResultList();
     }
 
-    @SuppressWarnings(value = "unchecked")
     protected List<DataItem> getDataItems(Environment environment, Set<Long> dataItemIds) {
+        return getDataItems(environment, dataItemIds, false);
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    protected List<DataItem> getDataItems(Environment environment, Set<Long> dataItemIds, boolean values) {
         // Don't fail with an empty Set.
         if (dataItemIds.isEmpty()) {
             dataItemIds.add(0L);
         }
-        return (List<DataItem>) entityManager.createQuery(
-                "FROM DataItem " +
-                        "WHERE environment.id = :environmentId " +
-                        "AND status != :trash " +
-                        "AND id IN (:dataItemIds)")
+        StringBuilder hql = new StringBuilder();
+        hql.append("FROM DataItem di ");
+        if (values) {
+            hql.append("LEFT JOIN FETCH di.itemValues ");
+        }
+        hql.append("WHERE di.environment.id = :environmentId ");
+        hql.append("AND di.status != :trash ");
+        hql.append("AND di.id IN (:dataItemIds)");
+        return (List<DataItem>) entityManager.createQuery(hql.toString())
                 .setParameter("environmentId", environment.getId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setParameter("dataItemIds", dataItemIds)

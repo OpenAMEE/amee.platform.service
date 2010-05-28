@@ -12,6 +12,10 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Repository
 public class MetadataServiceDAO implements Serializable {
@@ -36,6 +40,30 @@ public class MetadataServiceDAO implements Serializable {
         } catch (HibernateException e) {
             return null;
         }
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    public List<Metadata> getMetadatas(IAMEEEntityReference entity) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(Metadata.class);
+        criteria.add(Restrictions.eq("entityReference.entityUid", entity.getEntityUid()));
+        criteria.add(Restrictions.eq("entityReference.entityType", entity.getObjectType().getName()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return criteria.list();
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    public List<Metadata> getMetadatas(Collection<IAMEEEntityReference> entities) {
+        Set<Long> entityIds = new HashSet<Long>();
+        entityIds.add(0L);
+        for (IAMEEEntityReference entity : entities) {
+            entityIds.add(entity.getEntityId());
+        }
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(Metadata.class);
+        criteria.add(Restrictions.in("entityReference.entityId", entityIds));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return criteria.list();
     }
 
     public void persist(Metadata metadata) {

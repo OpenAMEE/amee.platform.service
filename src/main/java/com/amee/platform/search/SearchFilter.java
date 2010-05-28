@@ -13,6 +13,7 @@ public class SearchFilter implements Serializable {
 
     private Map<String, Query> queries = new HashMap<String, Query>();
     private Set<ObjectType> types = new HashSet<ObjectType>();
+    private boolean loadDataItemValues = false;
 
     public SearchFilter() {
         super();
@@ -44,5 +45,13 @@ public class SearchFilter implements Serializable {
         if (types != null) {
             this.types = types;
         }
+    }
+
+    public boolean isLoadDataItemValues() {
+        return loadDataItemValues;
+    }
+
+    public void setLoadDataItemValues(boolean loadDataItemValues) {
+        this.loadDataItemValues = loadDataItemValues;
     }
 }
