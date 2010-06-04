@@ -103,4 +103,8 @@ public class DataCategoryFilter extends QueryFilter {
     public void setItemDefinitionName(Query itemDefinitionName) {
         getQueries().put("itemDefinitionName", itemDefinitionName);
     }
+
+    public void setTags(Query tags) {
+        getQueries().put("tags", tags);
+    }
 }

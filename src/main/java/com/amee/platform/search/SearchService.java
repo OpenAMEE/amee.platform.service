@@ -14,6 +14,7 @@ import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
 import com.amee.service.path.PathItemService;
+import com.amee.service.tag.TagService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.Analyzer;
@@ -62,6 +63,9 @@ public class SearchService implements ApplicationListener {
     private LocaleService localeService;
 
     @Autowired
+    private TagService tagService;
+
+    @Autowired
     private PathItemService pathItemService;
 
     @Autowired
@@ -90,28 +94,22 @@ public class SearchService implements ApplicationListener {
 
     // Index & Document management.
 
-    public void build() {
-        build(true, false);
-    }
-
-    public void build(boolean indexDataCategories, boolean indexDataItems) {
-        log.info("build() Building...");
+    public void init(boolean clearIndex, boolean indexDataCategories, boolean indexDataItems) {
+        // Clear the index?
+        if (clearIndex) {
+            luceneService.clearIndex();
+        }
         // Add DataCategories?
         if (indexDataCategories) {
-            // Ensure we have an empty Lucene index.
-            luceneService.clearIndex();
-            // Add DataCategories.
             buildDataCategories();
-            // Add DataItems?
-            if (indexDataItems) {
-                // Add DataItems.
-                buildDataItems();
-            }
-        } else {
-            // Always make sure index is unlocked.
-            luceneService.unlockIndex();
         }
-        log.info("build() Building... DONE");
+        // Add DataItems?
+        if (indexDataItems) {
+            // Add DataItems.
+            buildDataItems();
+        }
+        // Always make sure index is unlocked.
+        luceneService.unlockIndex();
     }
 
     /**
@@ -119,14 +117,17 @@ public class SearchService implements ApplicationListener {
      */
     protected void buildDataCategories() {
         log.info("buildDataCategories()");
-        transactionController.begin(false);
+        // Wipe all DataCategory Documents from Lucene index.
+        remove(ObjectType.DC);
+        // Iterate over all DataCategories and add Documents to Lucene index.
         List<Document> documents = new ArrayList<Document>();
-        for (DataCategory dataCategory :
-                dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
+        transactionController.begin(false);
+        for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
+            log.info("buildDataCategories() " + dataCategory.getName());
             documents.add(getDocument(dataCategory));
         }
-        luceneService.addDocuments(documents);
         transactionController.end();
+        luceneService.addDocuments(documents);
     }
 
     /**
@@ -198,6 +199,16 @@ public class SearchService implements ApplicationListener {
                 new Term("entityUid", uid));
     }
 
+    /**
+     * Removes documents from the index.
+     *
+     * @param entityType of document to remove
+     */
+    protected void remove(ObjectType entityType) {
+        log.debug("remove() " + entityType.getName());
+        luceneService.deleteDocuments(new Term("entityType", entityType.getName()));
+    }
+
     protected Document getDocument(DataCategory dataCategory) {
         PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(dataCategory.getEnvironment());
         PathItem pathItem = pathItemGroup.findByUId(dataCategory.getUid());
@@ -219,6 +230,7 @@ public class SearchService implements ApplicationListener {
             doc.add(new Field("itemDefinitionUid", dataCategory.getItemDefinition().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
             doc.add(new Field("itemDefinitionName", dataCategory.getItemDefinition().getName(), Field.Store.NO, Field.Index.ANALYZED));
         }
+        doc.add(new Field("tags", tagService.getTagsCSV(dataCategory), Field.Store.NO, Field.Index.ANALYZED));
         return doc;
     }
 
@@ -331,7 +343,6 @@ public class SearchService implements ApplicationListener {
         }
         entities.put(ObjectType.DC, e);
     }
-
 
     protected void addDataItems(Map<ObjectType, Map<Long, AMEEEntity>> entities, Map<Long, DataItem> dataItemsMap) {
         Map<Long, AMEEEntity> e = new HashMap<Long, AMEEEntity>();

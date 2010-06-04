@@ -17,6 +17,7 @@ public class SearchIndexBuilder implements Runnable {
 
     private Thread thread;
     private boolean stopping = false;
+    private boolean clearIndex = false;
     private boolean indexDataCategories = false;
     private boolean indexDataItems = false;
 
@@ -39,8 +40,13 @@ public class SearchIndexBuilder implements Runnable {
 
     public void run() {
         log.info("run() Starting...");
-        searchService.build(indexDataCategories, indexDataItems);
+        searchService.init(clearIndex, indexDataCategories, indexDataItems);
         log.info("run() ...done.");
+    }
+
+    @Value("#{ systemProperties['amee.clearIndex'] }")
+    public void setClearIndex(Boolean clearIndex) {
+        this.clearIndex = clearIndex;
     }
 
     @Value("#{ systemProperties['amee.indexDataCategories'] }")

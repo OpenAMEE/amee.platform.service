@@ -35,6 +35,7 @@ public class DataCategoryFilterValidationHelper extends ValidationHelper {
         dataBinder.registerCustomEditor(Query.class, "parentWikiName", new QueryParserEditor("parentWikiName"));
         dataBinder.registerCustomEditor(Query.class, "itemDefinitionUid", new QueryParserEditor("itemDefinitionUid", SearchService.KEYWORD_ANALYZER));
         dataBinder.registerCustomEditor(Query.class, "itemDefinitionName", new QueryParserEditor("itemDefinitionName"));
+        dataBinder.registerCustomEditor(Query.class, "tags", new QueryParserEditor("tags"));
     }
 
     @Override
@@ -68,6 +69,7 @@ public class DataCategoryFilterValidationHelper extends ValidationHelper {
             allowedFields.add("parentWikiName");
             allowedFields.add("itemDefinitionUid");
             allowedFields.add("itemDefinitionName");
+            allowedFields.add("tags");
         }
         return allowedFields.toArray(new String[]{});
     }
