@@ -223,7 +223,7 @@ public class LuceneService implements Serializable {
      */
     private void createDirectory() {
         try {
-            String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-back/lucene");
+            String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-back/lucene/index");
             setDirectory(FSDirectory.open(new File(path)));
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);

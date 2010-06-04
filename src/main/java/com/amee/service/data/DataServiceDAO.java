@@ -263,6 +263,7 @@ public class DataServiceDAO implements Serializable {
             dataItemIds.add(0L);
         }
         StringBuilder hql = new StringBuilder();
+        hql.append("SELECT DISTINCT di ");
         hql.append("FROM DataItem di ");
         if (values) {
             hql.append("LEFT JOIN FETCH di.itemValues ");
