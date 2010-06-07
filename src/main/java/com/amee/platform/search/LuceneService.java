@@ -22,6 +22,7 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +46,14 @@ public class LuceneService implements Serializable {
     private Directory directory;
     private IndexWriter indexWriter;
 
+    /** Is this instance the master index node? There can be only one! */
+    private boolean masterIndex = false;
+
+    @Value("#{ systemProperties['amee.masterIndex'] }")
+    public void setMasterIndex(Boolean masterIndex) {
+        this.masterIndex = masterIndex;
+    }
+    
     /**
      * Conduct a search in the Lucene index based on the supplied field name and query string.
      *
@@ -115,12 +124,16 @@ public class LuceneService implements Serializable {
     }
 
     public void updateDocument(Term term, Document document, Analyzer analyzer) {
-        synchronized (getIndexWriter()) {
-            try {
-                getIndexWriter().updateDocument(term, document, analyzer);
-                closeIndexWriter();
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+
+        // Updates should only be performed on the master node.
+        if (masterIndex) {
+            synchronized (getIndexWriter()) {
+                try {
+                    getIndexWriter().updateDocument(term, document, analyzer);
+                    closeIndexWriter();
+                } catch (IOException e) {
+                    throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+                }
             }
         }
     }
@@ -207,9 +220,9 @@ public class LuceneService implements Serializable {
     }
 
     /**
-     * Get the Analyzer. Will call createAnalyser if it does not yet exist.
+     * Get the Directory. Will call createDirectory if it does not yet exist.
      *
-     * @return the Analyzer
+     * @return the Directory
      */
     private synchronized Directory getDirectory() {
         if (directory == null) {
