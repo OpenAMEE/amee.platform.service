@@ -2,9 +2,11 @@ package com.amee.service.tag;
 
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.IAMEEEntityReference;
+import com.amee.domain.ObjectType;
 import com.amee.domain.tag.EntityTag;
 import com.amee.domain.tag.Tag;
 import org.hibernate.Criteria;
+import org.hibernate.FetchMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Restrictions;
@@ -15,7 +17,10 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public class TagServiceDAO implements Serializable {
@@ -73,6 +78,24 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.eq("entityReference.entityUid", entity.getEntityUid()));
         criteria.add(Restrictions.eq("entityReference.entityType", entity.getObjectType().getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setFetchMode("tag", FetchMode.JOIN);
+        criteria.setTimeout(1);
+        return criteria.list();
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    public List<EntityTag> getEntityTags(ObjectType objectType, Collection<IAMEEEntityReference> entities) {
+        Set<Long> entityIds = new HashSet<Long>();
+        entityIds.add(0L);
+        for (IAMEEEntityReference entity : entities) {
+            entityIds.add(entity.getEntityId());
+        }
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(EntityTag.class);
+        criteria.add(Restrictions.in("entityReference.entityId", entityIds));
+        criteria.add(Restrictions.eq("entityReference.entityType", objectType.getName()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setFetchMode("tag", FetchMode.JOIN);
         criteria.setTimeout(1);
         return criteria.list();
     }

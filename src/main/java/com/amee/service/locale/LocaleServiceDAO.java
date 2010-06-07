@@ -2,6 +2,7 @@ package com.amee.service.locale;
 
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.IAMEEEntityReference;
+import com.amee.domain.ObjectType;
 import com.amee.domain.data.LocaleName;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
@@ -35,8 +36,15 @@ public class LocaleServiceDAO {
         return criteria.list();
     }
 
+    /**
+     * Note: This can return LocaleNames associated with various types of entities.
+     *
+     * @param objectType
+     * @param entities
+     * @return
+     */
     @SuppressWarnings(value = "unchecked")
-    public List<LocaleName> getLocaleNames(Collection<IAMEEEntityReference> entities) {
+    public List<LocaleName> getLocaleNames(ObjectType objectType, Collection<IAMEEEntityReference> entities) {
         Set<Long> entityIds = new HashSet<Long>();
         entityIds.add(0L);
         for (IAMEEEntityReference entity : entities) {
@@ -45,6 +53,7 @@ public class LocaleServiceDAO {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(LocaleName.class);
         criteria.add(Restrictions.in("entity.entityId", entityIds));
+        criteria.add(Restrictions.eq("entity.entityType", objectType.getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
     }

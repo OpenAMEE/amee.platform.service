@@ -11,6 +11,7 @@ public abstract class QueryFilter implements Serializable {
     private Map<String, Query> queries = new HashMap<String, Query>();
     private boolean loadDataItemValues = false;
     private boolean loadMetadatas = false;
+    private boolean loadEntityTags = false;
 
     public QueryFilter() {
         super();
@@ -40,5 +41,13 @@ public abstract class QueryFilter implements Serializable {
 
     public void setLoadMetadatas(boolean loadMetadatas) {
         this.loadMetadatas = loadMetadatas;
+    }
+
+    public boolean isLoadEntityTags() {
+        return loadEntityTags;
+    }
+
+    public void setLoadEntityTags(boolean loadEntityTags) {
+        this.loadEntityTags = loadEntityTags;
     }
 }

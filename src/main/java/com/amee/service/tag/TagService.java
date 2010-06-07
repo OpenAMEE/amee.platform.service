@@ -1,6 +1,8 @@
 package com.amee.service.tag;
 
 import com.amee.domain.IAMEEEntityReference;
+import com.amee.domain.ObjectType;
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.tag.EntityTag;
 import com.amee.domain.tag.Tag;
 import org.apache.commons.lang.StringUtils;
@@ -8,7 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TagService {
@@ -16,28 +22,43 @@ public class TagService {
     @Autowired
     private TagServiceDAO dao;
 
-    // A thread bound Map of Tags keyed by IAMEEEntityReferences.
-    // private final ThreadLocal<Map<IAMEEEntityReference, List<Tag>>> TAGS =
-    //        new ThreadLocal<Map<IAMEEEntityReference, List<Tag>>>() {
-    //            protected Map<IAMEEEntityReference, List<Tag>> initialValue() {
-    //                return new WeakHashMap<IAMEEEntityReference, List<Tag>>();
-    //            }
-    //        };
+    // A thread bound Map of EntityTags keyed by entity identity.
+    private final ThreadLocal<Map<String, List<EntityTag>>> ENTITY_TAGS =
+            new ThreadLocal<Map<String, List<EntityTag>>>() {
+                protected Map<String, List<EntityTag>> initialValue() {
+                    return new HashMap<String, List<EntityTag>>();
+                }
+            };
 
-    public List<Tag> getTags() {
+    public List<Tag> getAllTags() {
         return dao.getTagsWithCount();
     }
 
     public List<Tag> getTags(IAMEEEntityReference entity) {
+        List<EntityTag> entityTags;
+        List<Tag> tags = new ArrayList<Tag>();
         if (entity != null) {
-            List<Tag> tags = new ArrayList<Tag>();
-            for (EntityTag entityTag : dao.getEntityTags(entity)) {
-                tags.add(entityTag.getTag());
+            if (ENTITY_TAGS.get().containsKey(entity.toString())) {
+                // Return existing Tag list, or at least an empty list.
+                entityTags = ENTITY_TAGS.get().get(entity.toString());
+                if (entityTags != null) {
+                    for (EntityTag entityTag : entityTags) {
+                        tags.add(entityTag.getTag());
+                    }
+                }
+            } else {
+                // Look up EntityTags.
+                entityTags = dao.getEntityTags(entity);
+                ENTITY_TAGS.get().put(entity.toString(), entityTags);
+                // Populate Tag list.
+                for (EntityTag entityTag : entityTags) {
+                    tags.add(entityTag.getTag());
+                }
             }
-            return tags;
         } else {
-            return getTags();
+            tags.addAll(getAllTags());
         }
+        return tags;
     }
 
     public String getTagsCSV(IAMEEEntityReference entity) {
@@ -57,7 +78,36 @@ public class TagService {
         return dao.getEntityTag(entity, tag);
     }
 
+    public void loadEntityTagsForDataCategories(Collection<DataCategory> dataCategories) {
+        loadEntityTags(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
+    }
+
+    public void loadEntityTags(ObjectType objectType, Collection<IAMEEEntityReference> entities) {
+        // A null entry for when there are no Tags for the entity.
+        // Ensure a null entry exists for all entities.
+        for (IAMEEEntityReference entity : entities) {
+            if (!ENTITY_TAGS.get().containsKey(entity.toString())) {
+                ENTITY_TAGS.get().put(entity.toString(), null);
+            }
+        }
+        // Store Tags against entities.
+        // If there are no Tags for an entity the entry will remain null.
+        for (EntityTag entityTag : dao.getEntityTags(objectType, entities)) {
+            List<EntityTag> entityTags = ENTITY_TAGS.get().get(entityTag.getEntityReference().toString());
+            if (entityTags == null) {
+                entityTags = new ArrayList<EntityTag>();
+            }
+            entityTags.add(entityTag);
+            ENTITY_TAGS.get().put(entityTag.getEntityReference().toString(), entityTags);
+        }
+    }
+
+    public void clearEntityTags() {
+        ENTITY_TAGS.get().clear();
+    }
+
     public void persist(Tag tag) {
+        clearEntityTags();
         dao.persist(tag);
     }
 
@@ -66,12 +116,12 @@ public class TagService {
     }
 
     public void persist(EntityTag entityTag) {
-        // TAGS.get().remove(entityTag.getEntityReference());
+        ENTITY_TAGS.get().remove(entityTag.getEntityReference().toString());
         dao.persist(entityTag);
     }
 
     public void remove(EntityTag entityTag) {
-        // TAGS.get().remove(entityTag.getEntityReference());
+        ENTITY_TAGS.get().remove(entityTag.getEntityReference().toString());
         dao.remove(entityTag);
     }
 }

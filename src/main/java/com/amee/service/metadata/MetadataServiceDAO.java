@@ -3,6 +3,7 @@ package com.amee.service.metadata;
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.Metadata;
+import com.amee.domain.ObjectType;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -53,7 +54,7 @@ public class MetadataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public List<Metadata> getMetadatas(Collection<IAMEEEntityReference> entities) {
+    public List<Metadata> getMetadatas(ObjectType objectType, Collection<IAMEEEntityReference> entities) {
         Set<Long> entityIds = new HashSet<Long>();
         entityIds.add(0L);
         for (IAMEEEntityReference entity : entities) {
@@ -62,6 +63,7 @@ public class MetadataServiceDAO implements Serializable {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(Metadata.class);
         criteria.add(Restrictions.in("entityReference.entityId", entityIds));
+        criteria.add(Restrictions.eq("entityReference.entityType", objectType.getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
     }

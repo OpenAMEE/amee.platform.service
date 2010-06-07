@@ -34,6 +34,7 @@ import com.amee.domain.sheet.Sheet;
 import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
+import com.amee.service.locale.LocaleService;
 import com.amee.service.path.PathItemService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -76,6 +77,9 @@ public class DataService extends BaseService implements ApplicationListener {
 
     @Autowired
     private DrillDownService drillDownService;
+
+    @Autowired
+    private LocaleService localeService;
 
     // Events
 
@@ -138,11 +142,18 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public List<DataCategory> getDataCategories(Environment environment) {
+        return getDataCategories(environment, false);
+    }
+
+    public List<DataCategory> getDataCategories(Environment environment, boolean locales) {
         List<DataCategory> activeCategories = new ArrayList<DataCategory>();
         for (DataCategory dataCategory : dao.getDataCategories(environment)) {
             if (dataCategory != null && !dataCategory.isTrash()) {
                 activeCategories.add(dataCategory);
             }
+        }
+        if (locales) {
+            localeService.loadLocaleNamesForDataCategories(activeCategories);
         }
         return activeCategories;
     }

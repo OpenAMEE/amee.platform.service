@@ -140,9 +140,7 @@ public class DataServiceDAO implements Serializable {
 
     @SuppressWarnings(value = "unchecked")
     protected void remove(DataCategory dataCategory) {
-
-        log.debug("remove: " + dataCategory.getName());
-
+        log.debug("remove: " + dataCategory.toString());
         // trash this DataCategory
         dataCategory.setStatus(AMEEStatus.TRASH);
     }
@@ -237,7 +235,8 @@ public class DataServiceDAO implements Serializable {
 
     @SuppressWarnings(value = "unchecked")
     protected List<DataItem> getDataItems(DataCategory dataCategory) {
-        return (List<DataItem>) entityManager.createQuery(
+        log.debug("getDataItems() Start: " + dataCategory.toString());
+        List<DataItem> dataItems = entityManager.createQuery(
                 "SELECT DISTINCT di " +
                         "FROM DataItem di " +
                         "LEFT JOIN FETCH di.itemValues " +
@@ -250,6 +249,8 @@ public class DataServiceDAO implements Serializable {
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
+        log.debug("getDataItems() Done: " + dataCategory.toString() + " (" + dataItems.size() + ")");
+        return dataItems;
     }
 
     protected List<DataItem> getDataItems(Environment environment, Set<Long> dataItemIds) {

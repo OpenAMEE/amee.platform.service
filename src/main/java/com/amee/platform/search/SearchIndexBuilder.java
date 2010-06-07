@@ -3,7 +3,6 @@ package com.amee.platform.search;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -17,9 +16,6 @@ public class SearchIndexBuilder implements Runnable {
 
     private Thread thread;
     private boolean stopping = false;
-    private boolean clearIndex = false;
-    private boolean indexDataCategories = false;
-    private boolean indexDataItems = false;
 
     @PostConstruct
     public synchronized void start() {
@@ -40,22 +36,7 @@ public class SearchIndexBuilder implements Runnable {
 
     public void run() {
         log.info("run() Starting...");
-        searchService.init(clearIndex, indexDataCategories, indexDataItems);
+        searchService.init();
         log.info("run() ...done.");
-    }
-
-    @Value("#{ systemProperties['amee.clearIndex'] }")
-    public void setClearIndex(Boolean clearIndex) {
-        this.clearIndex = clearIndex;
-    }
-
-    @Value("#{ systemProperties['amee.indexDataCategories'] }")
-    public void setIndexDataCategories(Boolean indexDataCategories) {
-        this.indexDataCategories = indexDataCategories;
-    }
-
-    @Value("#{ systemProperties['amee.indexDataItems'] }")
-    public void setIndexDataItems(Boolean indexDataItems) {
-        this.indexDataItems = indexDataItems;
     }
 }

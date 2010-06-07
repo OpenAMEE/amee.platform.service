@@ -53,7 +53,7 @@ public class EnvironmentPIGFactory implements CacheableFactory {
     public Object create() {
         log.debug("create()");
         PathItemGroup pathItemGroup = null;
-        List<DataCategory> dataCategories = dataService.getDataCategories(environment);
+        List<DataCategory> dataCategories = dataService.getDataCategories(environment, true);
         DataCategory rootDataCategory = findRootDataCategory(dataCategories);
         if (rootDataCategory != null) {
             pathItemGroup = new PathItemGroup(new PathItem(rootDataCategory));
@@ -94,7 +94,7 @@ public class EnvironmentPIGFactory implements CacheableFactory {
 
     private void addDataCategories(PathItemGroup pathItemGroup, List<DataCategory> dataCategories) {
 
-        log.debug("addDataCategories()");
+        log.debug("addDataCategories() Starting...");
 
         PathItem pathItem;
         Map<String, PathItem> pathItems = new HashMap<String, PathItem>();
@@ -108,7 +108,7 @@ public class EnvironmentPIGFactory implements CacheableFactory {
             if (dataCategory.getDataCategory() != null) {
                 pathItems.put(dataCategory.getUid(), new PathItem(dataCategory));
             } else {
-                log.warn("addDataCategories() - Parent not set for DC: " + dataCategory.getUid() + " (" + dataCategory.getPath() + ")");
+                log.warn("addDataCategories() Parent not set for DC: " + dataCategory.getUid() + " (" + dataCategory.getPath() + ")");
             }
         }
 
@@ -118,11 +118,10 @@ public class EnvironmentPIGFactory implements CacheableFactory {
             pathItem = pathItems.get(dataCategory.getUid());
             // Bind current PathItem to parent, if possible.
             if (pathItems.containsKey(dataCategory.getDataCategory().getUid())) {
-                log.debug("addDataCategories() - Adding DC: " + dataCategory.getUid() + " (" + dataCategory.getDataCategory().getPath() + "/" + dataCategory.getPath() + ")");
                 // Add child PI to parent PI.
                 pathItems.get(dataCategory.getDataCategory().getUid()).add(pathItem);
             } else {
-                log.warn("addDataCategories() - Parent PathItem not found for DC: " + dataCategory.getUid() + " (" + dataCategory.getPath() + ")");
+                log.warn("addDataCategories() Parent PathItem not found for DC: " + dataCategory.getUid() + " (" + dataCategory.getPath() + ")");
                 // Remove orphaned PIs.
                 removeAll(pathItems, pathItem);
             }
@@ -130,6 +129,8 @@ public class EnvironmentPIGFactory implements CacheableFactory {
 
         // Step Three - Add PathItems to PathItemGroup.
         pathItemGroup.addAll(pathItems.values());
+
+        log.debug("addDataCategories() ...done.");
     }
 
     private static void removeAll(Map<String, PathItem> pathItems, PathItem pathItem) {

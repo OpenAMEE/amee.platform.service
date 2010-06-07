@@ -29,6 +29,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.Version;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,6 +72,10 @@ public class SearchService implements ApplicationListener {
     @Autowired
     private LuceneService luceneService;
 
+    private boolean clearIndex = false;
+    private boolean indexDataCategories = false;
+    private boolean indexDataItems = false;
+
     // Events
 
     public void onApplicationEvent(ApplicationEvent event) {
@@ -94,7 +99,7 @@ public class SearchService implements ApplicationListener {
 
     // Index & Document management.
 
-    public void init(boolean clearIndex, boolean indexDataCategories, boolean indexDataItems) {
+    public void init() {
         // Clear the index?
         if (clearIndex) {
             luceneService.clearIndex();
@@ -123,7 +128,7 @@ public class SearchService implements ApplicationListener {
         List<Document> documents = new ArrayList<Document>();
         transactionController.begin(false);
         for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
-            log.info("buildDataCategories() " + dataCategory.getName());
+            log.info("buildDataCategories() " + dataCategory.toString());
             documents.add(getDocument(dataCategory));
         }
         transactionController.end();
@@ -134,7 +139,7 @@ public class SearchService implements ApplicationListener {
      * Add all DataItems to the index.
      */
     protected void buildDataItems() {
-        log.info("buildDataItems()");
+        log.info("buildDataItems() Starting...");
         transactionController.begin(false);
         Set<String> dataCategoryUids = new HashSet<String>();
         for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
@@ -144,6 +149,7 @@ public class SearchService implements ApplicationListener {
         }
         transactionController.end();
         buildDataItems(dataCategoryUids);
+        log.info("buildDataItems() ...done.");
     }
 
     /**
@@ -152,24 +158,39 @@ public class SearchService implements ApplicationListener {
      * @param dataCategoryUids UIDs of DataCategories to add.
      */
     protected void buildDataItems(Set<String> dataCategoryUids) {
-        DataCategory dataCategory;
-        List<Document> documents;
         for (String uid : dataCategoryUids) {
-            transactionController.begin(false);
-            dataCategory = dataService.getDataCategoryByUid(uid);
-            log.info("buildDataItems() " + dataCategory.getName());
-            documents = new ArrayList<Document>();
-            metadataService.loadMetadatasForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
-            localeService.loadLocaleNamesForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
-            List<DataItem> dataItems = dataService.getDataItems(dataCategory, false);
-            metadataService.loadMetadatasForDataItems(dataItems);
-            localeService.loadLocaleNamesForDataItems(dataItems);
-            for (DataItem dataItem : dataItems) {
-                documents.add(getDocument(dataItem));
-            }
-            luceneService.addDocuments(documents);
-            transactionController.end();
+            buildDataItems(uid);
         }
+    }
+
+    protected void buildDataItems(String dataCategoryUid) {
+        DataCategory dataCategory;
+        transactionController.begin(false);
+        dataCategory = dataService.getDataCategoryByUid(dataCategoryUid);
+        buildDataItems(dataCategory);
+        transactionController.end();
+    }
+
+    public void buildDataItems(DataCategory dataCategory) {
+        log.info("buildDataItems() Starting... (" + dataCategory.toString() + ")");
+        metadataService.loadMetadatasForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
+        localeService.loadLocaleNamesForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
+        List<DataItem> dataItems = dataService.getDataItems(dataCategory, false);
+        metadataService.loadMetadatasForDataItems(dataItems);
+        localeService.loadLocaleNamesForDataItems(dataItems);
+        // Clear existing DataItem Documents?
+        if (!clearIndex) {
+            removeDataItems(dataCategory);
+        }
+        // Create DataItem Documents and store to Lucene.
+        List<Document> documents = new ArrayList<Document>();
+        for (DataItem dataItem : dataItems) {
+            documents.add(getDocument(dataItem));
+        }
+        luceneService.addDocuments(documents);
+        metadataService.clearMetadatas();
+        localeService.clearLocaleNames();
+        log.info("buildDataItems() ...done (" + dataCategory.toString() + ").");
     }
 
     /**
@@ -207,6 +228,18 @@ public class SearchService implements ApplicationListener {
     protected void remove(ObjectType entityType) {
         log.debug("remove() " + entityType.getName());
         luceneService.deleteDocuments(new Term("entityType", entityType.getName()));
+    }
+
+    /**
+     * Removes all DataItem Documents from the index for a DataCategory.
+     *
+     * @param dataCategory to remove Data Items Documents for
+     */
+    protected void removeDataItems(DataCategory dataCategory) {
+        log.debug("removeDataItems() " + dataCategory.toString());
+        luceneService.deleteDocuments(
+                new Term("entityType", ObjectType.DI.getName()),
+                new Term("categoryUid", dataCategory.getUid()));
     }
 
     protected Document getDocument(DataCategory dataCategory) {
@@ -309,10 +342,14 @@ public class SearchService implements ApplicationListener {
                     environmentService.getEnvironmentByName("AMEE"),
                     entityIds.get(ObjectType.DC));
             addDataCategories(entities, dataCategoriesMap);
-            localeService.loadLocaleNamesForDataCategories(dataCategoriesMap.values());
+            // Pre-loading of EntityTags, LocaleNames & DataCategories.
+            if (filter.isLoadEntityTags()) {
+                tagService.loadEntityTagsForDataCategories(dataCategoriesMap.values());
+            }
             if (filter.isLoadMetadatas()) {
                 metadataService.loadMetadatasForDataCategories(dataCategoriesMap.values());
             }
+            localeService.loadLocaleNamesForDataCategories(dataCategoriesMap.values());
         }
         // Load DataItems.
         if (entityIds.containsKey(ObjectType.DI)) {
@@ -321,10 +358,11 @@ public class SearchService implements ApplicationListener {
                     entityIds.get(ObjectType.DI),
                     filter.isLoadDataItemValues());
             addDataItems(entities, dataItemsMap);
-            localeService.loadLocaleNamesForDataItems(dataItemsMap.values(), filter.isLoadDataItemValues());
+            // Pre-loading of LocaleNames & DataCategories.
             if (filter.isLoadMetadatas()) {
                 metadataService.loadMetadatasForDataItems(dataItemsMap.values());
             }
+            localeService.loadLocaleNamesForDataItems(dataItemsMap.values(), filter.isLoadDataItemValues());
         }
         // Create result list in relevance order.
         List<AMEEEntity> results = new ArrayList<AMEEEntity>();
@@ -367,7 +405,10 @@ public class SearchService implements ApplicationListener {
             // Just get a simple list of Data Categories.
             dataCategories = dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"));
         }
-        // Pre-loading of LocaleNames & DataCategories.
+        // Pre-loading of EntityTags, LocaleNames & DataCategories.
+        if (filter.isLoadEntityTags()) {
+            tagService.loadEntityTagsForDataCategories(dataCategories);
+        }
         if (filter.isLoadMetadatas()) {
             metadataService.loadMetadatasForDataCategories(dataCategories);
         }
@@ -415,5 +456,20 @@ public class SearchService implements ApplicationListener {
         }
         localeService.loadLocaleNamesForDataItems(dataItems, filter.isLoadDataItemValues());
         return dataItems;
+    }
+
+    @Value("#{ systemProperties['amee.clearIndex'] }")
+    public void setClearIndex(Boolean clearIndex) {
+        this.clearIndex = clearIndex;
+    }
+
+    @Value("#{ systemProperties['amee.indexDataCategories'] }")
+    public void setIndexDataCategories(Boolean indexDataCategories) {
+        this.indexDataCategories = indexDataCategories;
+    }
+
+    @Value("#{ systemProperties['amee.indexDataItems'] }")
+    public void setIndexDataItems(Boolean indexDataItems) {
+        this.indexDataItems = indexDataItems;
     }
 }
