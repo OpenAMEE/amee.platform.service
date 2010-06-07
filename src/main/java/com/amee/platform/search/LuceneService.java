@@ -2,6 +2,7 @@ package com.amee.platform.search;
 
 import com.amee.base.resource.ValidationResult;
 import com.amee.base.validation.ValidationException;
+import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.Analyzer;
@@ -25,11 +26,10 @@ import org.apache.lucene.util.Version;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * LuceneIndexWrapper wraps a Lucene file system index and provides a simplified abstraction of
@@ -42,6 +42,15 @@ public class LuceneService implements Serializable {
 
     private final Log log = LogFactory.getLog(getClass());
 
+    /** Path to the snapshooter script */
+    private String snapShooterPath = "";
+
+    /** Path to the dir containing lucene index */
+    private String indexDirPath = "";
+
+    /** Number of seconds to wait until taking a new snapshot */
+    private int snapTime = 0;
+
     private Analyzer analyzer;
     private Directory directory;
     private IndexWriter indexWriter;
@@ -52,6 +61,30 @@ public class LuceneService implements Serializable {
     @Value("#{ systemProperties['amee.masterIndex'] }")
     public void setMasterIndex(Boolean masterIndex) {
         this.masterIndex = masterIndex;
+    }
+
+    public String getIndexDirPath() {
+        return indexDirPath;
+    }
+
+    public void setIndexDirPath(String indexDirPath) {
+        this.indexDirPath = indexDirPath;
+    }
+
+    public String getSnapShooterPath() {
+        return snapShooterPath;
+    }
+
+    public void setSnapShooterPath(String snapShooterPath) {
+        this.snapShooterPath = snapShooterPath;
+    }
+
+    public int getSnapTime() {
+        return snapTime;
+    }
+
+    public void setSnapTime(int snapTime) {
+        this.snapTime = snapTime;
     }
     
     /**
@@ -320,6 +353,13 @@ public class LuceneService implements Serializable {
         if (indexWriter != null) {
             try {
                 indexWriter.optimize();
+                indexWriter.commit();
+
+                if (pastSnapTime()) {
+                    log.debug("Passed time threshold for snapshot.");
+                    takeSnapshot();
+                }
+                
                 indexWriter.close();
                 setIndexWriter(null);
             } catch (IOException e) {
@@ -335,5 +375,53 @@ public class LuceneService implements Serializable {
      */
     private void setIndexWriter(IndexWriter indexWriter) {
         this.indexWriter = indexWriter;
+    }
+
+    /**
+     * Takes a snapshot of the lucene index using the solr snapshooter shell script.
+     * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
+     */
+    public void takeSnapshot() {
+        String command = getSnapShooterPath() + " -d " + getIndexDirPath();
+        log.debug("takeSnapshot() - executing " + command);
+
+        try {
+            Runtime.getRuntime().exec(command);
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 
+     * @return true if the last snapshot was taken longer than snapTime seconds ago.
+     */
+    private boolean pastSnapTime() {
+        Date now = new Date();
+        return (now.getTime() - getLastSnapshotTime()) > (getSnapTime() * 1000);
+
+    }
+
+    /**
+     * Gets the last modified time of the latest snapshot.
+     *
+     * @return A long value representing the time the snapshot was taken,
+     *         measured in milliseconds since the epoch (00:00:00 GMT, January 1, 1970),
+     *         or 0L if no snapshot exists or if an I/O error occurs.
+     */
+    private long getLastSnapshotTime() {
+        File snapshotDir = new File(getIndexDirPath());
+        File[] snapshotFiles = snapshotDir.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.startsWith("snapshot");
+            }
+        });
+
+        if (snapshotFiles.length > 0) {
+            Arrays.sort(snapshotFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+            return snapshotFiles[0].lastModified();
+        } else {
+            return 0L;
+        }
     }
 }
