@@ -12,9 +12,12 @@ public abstract class QueryFilter implements Serializable {
     private boolean loadDataItemValues = false;
     private boolean loadMetadatas = false;
     private boolean loadEntityTags = false;
+    private int resultStart = 0;
+    private int resultLimit = 0;
 
     public QueryFilter() {
         super();
+        setResultLimit(getResultLimitDefault());
     }
 
     public Map<String, Query> getQueries() {
@@ -50,4 +53,33 @@ public abstract class QueryFilter implements Serializable {
     public void setLoadEntityTags(boolean loadEntityTags) {
         this.loadEntityTags = loadEntityTags;
     }
+
+    public int getResultStart() {
+        return resultStart;
+    }
+
+    public void setResultStart(int resultStart) {
+        if (resultStart < 0) {
+            throw new IllegalArgumentException("resultStart is less than zero");
+        }
+        this.resultStart = resultStart;
+    }
+
+    public int getResultLimit() {
+        return resultLimit;
+    }
+
+    public void setResultLimit(int resultLimit) {
+        if (resultLimit > getResultLimitMax()) {
+            throw new IllegalArgumentException("resultLimit is greater than resultLimitMax");
+        }
+        if (resultLimit < 0) {
+            throw new IllegalArgumentException("resultLimit is less than zero");
+        }
+        this.resultLimit = resultLimit;
+    }
+
+    public abstract int getResultLimitDefault();
+
+    public abstract int getResultLimitMax();
 }

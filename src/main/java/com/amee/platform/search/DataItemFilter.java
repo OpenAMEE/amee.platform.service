@@ -103,4 +103,12 @@ public class DataItemFilter extends QueryFilter {
     public void setItemDefinition(ItemDefinition itemDefinition) {
         this.itemDefinition = itemDefinition;
     }
+
+    public int getResultLimitDefault() {
+        return 50;
+    }
+
+    public int getResultLimitMax() {
+        return 100;
+    }
 }

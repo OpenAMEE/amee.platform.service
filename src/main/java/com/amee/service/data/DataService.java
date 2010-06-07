@@ -145,9 +145,17 @@ public class DataService extends BaseService implements ApplicationListener {
         return getDataCategories(environment, false);
     }
 
+    public List<DataCategory> getDataCategories(Environment environment, int resultStart, int resultLimit) {
+        return getDataCategories(environment, false, resultStart, resultLimit);
+    }
+
     public List<DataCategory> getDataCategories(Environment environment, boolean locales) {
+        return getDataCategories(environment, locales, 0, 0);
+    }
+
+    public List<DataCategory> getDataCategories(Environment environment, boolean locales, int resultStart, int resultLimit) {
         List<DataCategory> activeCategories = new ArrayList<DataCategory>();
-        for (DataCategory dataCategory : dao.getDataCategories(environment)) {
+        for (DataCategory dataCategory : dao.getDataCategories(environment, resultStart, resultLimit)) {
             if (dataCategory != null && !dataCategory.isTrash()) {
                 activeCategories.add(dataCategory);
             }

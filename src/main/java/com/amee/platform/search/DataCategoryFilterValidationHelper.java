@@ -70,6 +70,8 @@ public class DataCategoryFilterValidationHelper extends ValidationHelper {
             allowedFields.add("itemDefinitionUid");
             allowedFields.add("itemDefinitionName");
             allowedFields.add("tags");
+            allowedFields.add("resultStart");
+            allowedFields.add("resultLimit");
         }
         return allowedFields.toArray(new String[]{});
     }

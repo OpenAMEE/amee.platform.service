@@ -31,4 +31,12 @@ public class SearchFilter extends QueryFilter {
             this.types = types;
         }
     }
+    
+    public int getResultLimitDefault() {
+        return 25;
+    }
+
+    public int getResultLimitMax() {
+        return 50;
+    }
 }

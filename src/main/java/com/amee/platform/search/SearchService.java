@@ -321,7 +321,7 @@ public class SearchService implements ApplicationListener {
             query = filter.getQ();
         }
         // Do search and fetch Lucene documents.
-        List<Document> documents = luceneService.doSearch(query);
+        List<Document> documents = luceneService.doSearch(query, filter.getResultStart(), filter.getResultLimit());
         // Collate entityIds against entityTypes.
         Map<ObjectType, Set<Long>> entityIds = new HashMap<ObjectType, Set<Long>>();
         for (Document document : documents) {
@@ -400,10 +400,16 @@ public class SearchService implements ApplicationListener {
             for (Query q : filter.getQueries().values()) {
                 query.add(q, BooleanClause.Occur.MUST);
             }
-            dataCategories = getDataCategories(query);
+            dataCategories = getDataCategories(
+                    query,
+                    filter.getResultStart(),
+                    filter.getResultLimit());
         } else {
             // Just get a simple list of Data Categories.
-            dataCategories = dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"));
+            dataCategories = dataService.getDataCategories(
+                    environmentService.getEnvironmentByName("AMEE"),
+                    filter.getResultStart(),
+                    filter.getResultLimit());
         }
         // Pre-loading of EntityTags, LocaleNames & DataCategories.
         if (filter.isLoadEntityTags()) {
@@ -416,20 +422,29 @@ public class SearchService implements ApplicationListener {
         return dataCategories;
     }
 
-    public List<DataCategory> getDataCategories(String key, String value) {
+    /**
+     * TODO: I don't think this is needed.
+     *
+     * @param key
+     * @param value
+     * @return
+     */
+    private List<DataCategory> getDataCategories(String key, String value) {
         Set<Long> dataCategoryIds = new HashSet<Long>();
         for (Document document : luceneService.doSearch(key, value)) {
             dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
         }
-        return dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds);
+        return dataService.getDataCategories(
+                environmentService.getEnvironmentByName("AMEE"),
+                dataCategoryIds);
     }
 
-    public List<DataCategory> getDataCategories(Query query) {
+    public List<DataCategory> getDataCategories(Query query, int resultStart, int resultLimit) {
         BooleanQuery q = new BooleanQuery();
         q.add(new TermQuery(new Term("entityType", ObjectType.DC.getName())), BooleanClause.Occur.MUST);
         q.add(query, BooleanClause.Occur.MUST);
         Set<Long> dataCategoryIds = new HashSet<Long>();
-        for (Document document : luceneService.doSearch(q)) {
+        for (Document document : luceneService.doSearch(q, resultStart, resultLimit)) {
             dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
         }
         return dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds);
@@ -445,7 +460,7 @@ public class SearchService implements ApplicationListener {
         query.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.MUST);
         query.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);
         Set<Long> dataItemIds = new HashSet<Long>();
-        for (Document document : luceneService.doSearch(query)) {
+        for (Document document : luceneService.doSearch(query, filter.getResultStart(), filter.getResultLimit())) {
             dataItemIds.add(new Long(document.getField("entityId").stringValue()));
         }
         // Get the DataItems.

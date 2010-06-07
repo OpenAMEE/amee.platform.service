@@ -35,6 +35,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
@@ -104,15 +105,26 @@ public class DataServiceDAO implements Serializable {
 
     @SuppressWarnings(value = "unchecked")
     protected List<DataCategory> getDataCategories(Environment environment) {
-        return (List<DataCategory>) entityManager.createQuery(
+        return getDataCategories(environment, 0, 0);
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    protected List<DataCategory> getDataCategories(Environment environment, int resultStart, int resultLimit) {
+        Query query = entityManager.createQuery(
                 "FROM DataCategory " +
                         "WHERE environment.id = :environmentId " +
-                        "AND status != :trash")
-                .setParameter("environmentId", environment.getId())
-                .setParameter("trash", AMEEStatus.TRASH)
-                .setHint("org.hibernate.cacheable", true)
-                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-                .getResultList();
+                        "AND status != :trash");
+        query.setParameter("environmentId", environment.getId());
+        query.setParameter("trash", AMEEStatus.TRASH);
+        query.setHint("org.hibernate.cacheable", true);
+        query.setHint("org.hibernate.cacheRegion", CACHE_REGION);
+        if (resultStart > 0) {
+            query.setFirstResult(resultStart);
+        }
+        if (resultLimit > 0) {
+            query.setMaxResults(resultLimit);
+        }
+        return (List<DataCategory>) query.getResultList();
     }
 
     @SuppressWarnings(value = "unchecked")

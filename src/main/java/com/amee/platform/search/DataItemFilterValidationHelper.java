@@ -76,6 +76,8 @@ public class DataItemFilterValidationHelper extends ValidationHelper {
                     allowedFields.add("queries[" + ivd.getPath() + "]");
                 }
             }
+            allowedFields.add("resultStart");
+            allowedFields.add("resultLimit");
         }
         return allowedFields.toArray(new String[]{});
     }

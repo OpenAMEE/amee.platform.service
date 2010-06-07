@@ -107,4 +107,12 @@ public class DataCategoryFilter extends QueryFilter {
     public void setTags(Query tags) {
         getQueries().put("tags", tags);
     }
+
+    public int getResultLimitDefault() {
+        return 50;
+    }
+
+    public int getResultLimitMax() {
+        return 100;
+    }
 }

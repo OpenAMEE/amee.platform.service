@@ -46,14 +46,16 @@ public class LuceneService implements Serializable {
     private Directory directory;
     private IndexWriter indexWriter;
 
-    /** Is this instance the master index node? There can be only one! */
+    /**
+     * Is this instance the master index node? There can be only one!
+     */
     private boolean masterIndex = false;
 
     @Value("#{ systemProperties['amee.masterIndex'] }")
     public void setMasterIndex(Boolean masterIndex) {
         this.masterIndex = masterIndex;
     }
-    
+
     /**
      * Conduct a search in the Lucene index based on the supplied field name and query string.
      *
@@ -75,20 +77,31 @@ public class LuceneService implements Serializable {
         }
     }
 
+    public List<Document> doSearch(Query query) {
+        return doSearch(query, 0, 50);
+    }
+
     /**
      * Conduct a search in the Lucene index based on the supplied Query.
      *
-     * @param query to search with
+     * At most this will allow up to 1000 search hits, with a return window based
+     * on resultStart and resultLimit.
+     *
+     * @param query       to search with
+     * @param resultStart 0 based index of first result
+     * @param resultLimit results limit
      * @return a List of Lucene Documents
      */
-    public List<Document> doSearch(Query query) {
+    public List<Document> doSearch(Query query, int resultStart, int resultLimit) {
         log.debug("doSearch()");
         List<Document> documents = new ArrayList<Document>();
         try {
             IndexSearcher searcher = new IndexSearcher(getDirectory());
-            TopScoreDocCollector collector = TopScoreDocCollector.create(50, true);
+            TopScoreDocCollector collector = TopScoreDocCollector.create(
+                    (resultStart + resultLimit) < 1000 ? (resultStart + resultLimit) : 1000,
+                    true);
             searcher.search(query, collector);
-            ScoreDoc[] hits = collector.topDocs().scoreDocs;
+            ScoreDoc[] hits = collector.topDocs(resultStart, resultLimit).scoreDocs;
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
             }
