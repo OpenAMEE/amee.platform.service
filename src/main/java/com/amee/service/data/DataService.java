@@ -19,6 +19,7 @@
  */
 package com.amee.service.data;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
 import com.amee.domain.APIVersion;
@@ -145,17 +146,27 @@ public class DataService extends BaseService implements ApplicationListener {
         return getDataCategories(environment, false);
     }
 
-    public List<DataCategory> getDataCategories(Environment environment, int resultStart, int resultLimit) {
+    public ResultsWrapper<DataCategory> getDataCategories(Environment environment, int resultStart, int resultLimit) {
         return getDataCategories(environment, false, resultStart, resultLimit);
     }
 
     public List<DataCategory> getDataCategories(Environment environment, boolean locales) {
-        return getDataCategories(environment, locales, 0, 0);
+        return getDataCategories(environment, locales, 0, 0).getResults();
     }
 
-    public List<DataCategory> getDataCategories(Environment environment, boolean locales, int resultStart, int resultLimit) {
+    /**
+     * TODO: There is a potential for confusing pagination truncation when removing inactive entries.
+     *
+     * @param environment
+     * @param locales
+     * @param resultStart
+     * @param resultLimit
+     * @return
+     */
+    public ResultsWrapper<DataCategory> getDataCategories(Environment environment, boolean locales, int resultStart, int resultLimit) {
         List<DataCategory> activeCategories = new ArrayList<DataCategory>();
-        for (DataCategory dataCategory : dao.getDataCategories(environment, resultStart, resultLimit)) {
+        ResultsWrapper<DataCategory> resultsWrapper = dao.getDataCategories(environment, resultStart, resultLimit);
+        for (DataCategory dataCategory : resultsWrapper.getResults()) {
             if (dataCategory != null && !dataCategory.isTrash()) {
                 activeCategories.add(dataCategory);
             }
@@ -163,7 +174,7 @@ public class DataService extends BaseService implements ApplicationListener {
         if (locales) {
             localeService.loadLocaleNamesForDataCategories(activeCategories);
         }
-        return activeCategories;
+        return new ResultsWrapper<DataCategory>(activeCategories, resultsWrapper.isTruncated());
     }
 
     public Map<Long, DataCategory> getDataCategoryMap(Environment environment, Set<Long> dataCategoryIds) {

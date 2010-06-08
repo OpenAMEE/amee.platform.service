@@ -19,6 +19,7 @@
  */
 package com.amee.service.data;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
@@ -104,12 +105,13 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected List<DataCategory> getDataCategories(Environment environment) {
+    protected ResultsWrapper<DataCategory> getDataCategories(Environment environment) {
         return getDataCategories(environment, 0, 0);
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected List<DataCategory> getDataCategories(Environment environment, int resultStart, int resultLimit) {
+    protected ResultsWrapper<DataCategory> getDataCategories(Environment environment, int resultStart, int resultLimit) {
+        // Create Query, apply start and limit if relevant.
         Query query = entityManager.createQuery(
                 "FROM DataCategory " +
                         "WHERE environment.id = :environmentId " +
@@ -122,9 +124,21 @@ public class DataServiceDAO implements Serializable {
             query.setFirstResult(resultStart);
         }
         if (resultLimit > 0) {
-            query.setMaxResults(resultLimit);
+            query.setMaxResults(resultLimit + 1);
         }
-        return (List<DataCategory>) query.getResultList();
+        // Get the results.
+        List<DataCategory> dataCategories = (List<DataCategory>) query.getResultList();
+        // Did we limit the results?
+        if (resultLimit > 0) {
+            // Results were limited, work out correct results and truncation state.
+            return new ResultsWrapper<DataCategory>(
+                    dataCategories.size() > resultLimit ? dataCategories.subList(0, resultLimit) : dataCategories,
+                    dataCategories.size() > resultLimit);
+
+        } else {
+            // Results were not limited, no truncation.
+            return new ResultsWrapper(dataCategories, false);
+        }
     }
 
     @SuppressWarnings(value = "unchecked")

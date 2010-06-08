@@ -1,5 +1,6 @@
 package com.amee.platform.search;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.resource.ValidationResult;
 import com.amee.base.validation.ValidationException;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
@@ -29,7 +30,11 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 /**
  * LuceneIndexWrapper wraps a Lucene file system index and provides a simplified abstraction of
@@ -42,13 +47,21 @@ public class LuceneService implements Serializable {
 
     private final Log log = LogFactory.getLog(getClass());
 
-    /** Path to the snapshooter script */
+    public final static int MAX_NUM_HITS = 1000;
+
+    /**
+     * Path to the snapshooter script
+     */
     private String snapShooterPath = "";
 
-    /** Path to the dir containing lucene index */
+    /**
+     * Path to the dir containing lucene index
+     */
     private String indexDirPath = "";
 
-    /** Number of seconds to wait until taking a new snapshot */
+    /**
+     * Number of seconds to wait until taking a new snapshot
+     */
     private int snapTime = 0;
 
     private Analyzer analyzer;
@@ -88,7 +101,7 @@ public class LuceneService implements Serializable {
     public void setSnapTime(int snapTime) {
         this.snapTime = snapTime;
     }
-    
+
     /**
      * Conduct a search in the Lucene index based on the supplied field name and query string.
      *
@@ -96,7 +109,7 @@ public class LuceneService implements Serializable {
      * @param q     query to search with
      * @return a List of Lucene Documents
      */
-    public List<Document> doSearch(String field, String q) {
+    public ResultsWrapper<Document> doSearch(String field, String q) {
         log.debug("doSearch()");
         QueryParser parser = new QueryParser(Version.LUCENE_30, field, getAnalyzer());
         try {
@@ -110,14 +123,14 @@ public class LuceneService implements Serializable {
         }
     }
 
-    public List<Document> doSearch(Query query) {
+    public ResultsWrapper<Document> doSearch(Query query) {
         return doSearch(query, 0, 50);
     }
 
     /**
      * Conduct a search in the Lucene index based on the supplied Query.
-     *
-     * At most this will allow up to 1000 search hits, with a return window based
+     * <p/>
+     * At most this will allow up to MAX_RESULT_LIMIT search hits, with a return window based
      * on resultStart and resultLimit.
      *
      * @param query       to search with
@@ -125,24 +138,42 @@ public class LuceneService implements Serializable {
      * @param resultLimit results limit
      * @return a List of Lucene Documents
      */
-    public List<Document> doSearch(Query query, int resultStart, int resultLimit) {
+    public ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit) {
         log.debug("doSearch()");
-        List<Document> documents = new ArrayList<Document>();
         try {
+            // Cannot go above MAX_NUM_HITS.
+            int numHits = resultStart + resultLimit;
+            if (numHits > MAX_NUM_HITS) {
+                numHits = MAX_NUM_HITS;
+            }
+            // Searcher for our index.
             IndexSearcher searcher = new IndexSearcher(getDirectory());
-            TopScoreDocCollector collector = TopScoreDocCollector.create(
-                    (resultStart + resultLimit) < 1000 ? (resultStart + resultLimit) : 1000,
-                    true);
+            // Get Collector limited to numHits + 1, so we can detect truncations.  
+            TopScoreDocCollector collector = TopScoreDocCollector.create(numHits + 1, true);
             searcher.search(query, collector);
-            ScoreDoc[] hits = collector.topDocs(resultStart, resultLimit).scoreDocs;
+            // Get hits within our start and limit range.
+            ScoreDoc[] hits = collector.topDocs(resultStart, resultLimit + 1).scoreDocs;
+            // Assemble List of Documents.
+            List<Document> documents = new ArrayList<Document>();
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
             }
             searcher.close();
+            // Trim resultLimit if we're close to MAX_NUM_HITS.
+            if (resultStart >= MAX_NUM_HITS) {
+                // Never return results.
+                resultLimit = 0;
+            } else if ((resultStart + resultLimit) > MAX_NUM_HITS) {
+                // Only return those results from resultStart to MAX_NUM_HITS. 
+                resultLimit = MAX_NUM_HITS - resultStart;
+            }
+            // Create ResultsWrapper appropriate for our limit.
+            return new ResultsWrapper<Document>(
+                    documents.size() > resultLimit ? documents.subList(0, resultLimit) : documents,
+                    documents.size() > resultLimit);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
-        return documents;
     }
 
     public void addDocument(Document document) {
@@ -372,7 +403,7 @@ public class LuceneService implements Serializable {
                     log.debug("Passed time threshold for snapshot.");
                     takeSnapshot();
                 }
-                
+
                 indexWriter.close();
                 setIndexWriter(null);
             } catch (IOException e) {
@@ -406,7 +437,6 @@ public class LuceneService implements Serializable {
     }
 
     /**
-     * 
      * @return true if the last snapshot was taken longer than snapTime seconds ago.
      */
     private boolean pastSnapTime() {

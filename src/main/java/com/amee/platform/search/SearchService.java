@@ -1,5 +1,6 @@
 package com.amee.platform.search;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.domain.AMEEEntity;
 import com.amee.domain.ObjectType;
@@ -299,7 +300,7 @@ public class SearchService implements ApplicationListener {
 
     // Entity search.
 
-    public List<AMEEEntity> getEntities(SearchFilter filter) {
+    public ResultsWrapper<AMEEEntity> getEntities(SearchFilter filter) {
         Query query;
         Long entityId;
         ObjectType entityType;
@@ -321,10 +322,10 @@ public class SearchService implements ApplicationListener {
             query = filter.getQ();
         }
         // Do search and fetch Lucene documents.
-        List<Document> documents = luceneService.doSearch(query, filter.getResultStart(), filter.getResultLimit());
+        ResultsWrapper<Document> resultsWrapper = luceneService.doSearch(query, filter.getResultStart(), filter.getResultLimit());
         // Collate entityIds against entityTypes.
         Map<ObjectType, Set<Long>> entityIds = new HashMap<ObjectType, Set<Long>>();
-        for (Document document : documents) {
+        for (Document document : resultsWrapper.getResults()) {
             entityId = new Long(document.getField("entityId").stringValue());
             entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
             Set<Long> idSet = entityIds.get(entityType);
@@ -366,12 +367,12 @@ public class SearchService implements ApplicationListener {
         }
         // Create result list in relevance order.
         List<AMEEEntity> results = new ArrayList<AMEEEntity>();
-        for (Document document : documents) {
+        for (Document document : resultsWrapper.getResults()) {
             entityId = new Long(document.getField("entityId").stringValue());
             entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
             results.add(entities.get(entityType).get(entityId));
         }
-        return results;
+        return new ResultsWrapper<AMEEEntity>(results, resultsWrapper.isTruncated());
     }
 
     protected void addDataCategories(Map<ObjectType, Map<Long, AMEEEntity>> entities, Map<Long, DataCategory> dataCategoriesMap) {
@@ -392,34 +393,34 @@ public class SearchService implements ApplicationListener {
 
     // DataCategory Search.
 
-    public List<DataCategory> getDataCategories(DataCategoryFilter filter) {
-        List<DataCategory> dataCategories;
+    public ResultsWrapper<DataCategory> getDataCategories(DataCategoryFilter filter) {
+        ResultsWrapper<DataCategory> resultsWrapper;
         // Filter based on an allowed query parameter.
         if (!filter.getQueries().isEmpty()) {
             BooleanQuery query = new BooleanQuery();
             for (Query q : filter.getQueries().values()) {
                 query.add(q, BooleanClause.Occur.MUST);
             }
-            dataCategories = getDataCategories(
+            resultsWrapper = getDataCategories(
                     query,
                     filter.getResultStart(),
                     filter.getResultLimit());
         } else {
             // Just get a simple list of Data Categories.
-            dataCategories = dataService.getDataCategories(
+            resultsWrapper = dataService.getDataCategories(
                     environmentService.getEnvironmentByName("AMEE"),
                     filter.getResultStart(),
                     filter.getResultLimit());
         }
         // Pre-loading of EntityTags, LocaleNames & DataCategories.
         if (filter.isLoadEntityTags()) {
-            tagService.loadEntityTagsForDataCategories(dataCategories);
+            tagService.loadEntityTagsForDataCategories(resultsWrapper.getResults());
         }
         if (filter.isLoadMetadatas()) {
-            metadataService.loadMetadatasForDataCategories(dataCategories);
+            metadataService.loadMetadatasForDataCategories(resultsWrapper.getResults());
         }
-        localeService.loadLocaleNamesForDataCategories(dataCategories);
-        return dataCategories;
+        localeService.loadLocaleNamesForDataCategories(resultsWrapper.getResults());
+        return resultsWrapper;
     }
 
     /**
@@ -431,7 +432,7 @@ public class SearchService implements ApplicationListener {
      */
     private List<DataCategory> getDataCategories(String key, String value) {
         Set<Long> dataCategoryIds = new HashSet<Long>();
-        for (Document document : luceneService.doSearch(key, value)) {
+        for (Document document : luceneService.doSearch(key, value).getResults()) {
             dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
         }
         return dataService.getDataCategories(
@@ -439,38 +440,47 @@ public class SearchService implements ApplicationListener {
                 dataCategoryIds);
     }
 
-    public List<DataCategory> getDataCategories(Query query, int resultStart, int resultLimit) {
+    public ResultsWrapper<DataCategory> getDataCategories(Query query, int resultStart, int resultLimit) {
         BooleanQuery q = new BooleanQuery();
         q.add(new TermQuery(new Term("entityType", ObjectType.DC.getName())), BooleanClause.Occur.MUST);
         q.add(query, BooleanClause.Occur.MUST);
+        ResultsWrapper<Document> resultsWrapper =
+                luceneService.doSearch(q, resultStart, resultLimit);
         Set<Long> dataCategoryIds = new HashSet<Long>();
-        for (Document document : luceneService.doSearch(q, resultStart, resultLimit)) {
+        for (Document document : resultsWrapper.getResults()) {
             dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
         }
-        return dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds);
+        return new ResultsWrapper<DataCategory>(
+                dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds),
+                resultsWrapper.isTruncated());
     }
 
     // DataItem search.
 
-    public List<DataItem> getDataItems(DataCategory dataCategory, QueryFilter filter) {
+    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, QueryFilter filter) {
         BooleanQuery query = new BooleanQuery();
         for (Query q : filter.getQueries().values()) {
             query.add(q, BooleanClause.Occur.MUST);
         }
         query.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.MUST);
         query.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);
+        ResultsWrapper<Document> resultsWrapper =
+                luceneService.doSearch(query, filter.getResultStart(), filter.getResultLimit());
         Set<Long> dataItemIds = new HashSet<Long>();
-        for (Document document : luceneService.doSearch(query, filter.getResultStart(), filter.getResultLimit())) {
+        for (Document document : resultsWrapper.getResults()) {
             dataItemIds.add(new Long(document.getField("entityId").stringValue()));
         }
         // Get the DataItems.
-        List<DataItem> dataItems = dataService.getDataItems(environmentService.getEnvironmentByName("AMEE"), dataItemIds, filter.isLoadDataItemValues());
+        List<DataItem> dataItems = dataService.getDataItems(
+                environmentService.getEnvironmentByName("AMEE"),
+                dataItemIds,
+                filter.isLoadDataItemValues());
         // Pre-loading of LocaleNames & DataCategories.
         if (filter.isLoadMetadatas()) {
             metadataService.loadMetadatasForDataItems(dataItems);
         }
         localeService.loadLocaleNamesForDataItems(dataItems, filter.isLoadDataItemValues());
-        return dataItems;
+        return new ResultsWrapper<DataItem>(dataItems, resultsWrapper.isTruncated());
     }
 
     @Value("#{ systemProperties['amee.clearIndex'] }")
