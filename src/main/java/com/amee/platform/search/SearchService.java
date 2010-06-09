@@ -124,13 +124,21 @@ public class SearchService implements ApplicationListener {
     protected void buildDataCategories() {
         log.info("buildDataCategories()");
         // Wipe all DataCategory Documents from Lucene index.
-        remove(ObjectType.DC);
+        if (!clearIndex) {
+            remove(ObjectType.DC);
+        }
+        transactionController.begin(false);
+        // We need PathItems to exclude test DataCategories.
+        PathItem pathItem;
+        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
         // Iterate over all DataCategories and add Documents to Lucene index.
         List<Document> documents = new ArrayList<Document>();
-        transactionController.begin(false);
         for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
             log.info("buildDataCategories() " + dataCategory.toString());
-            documents.add(getDocument(dataCategory));
+            pathItem = pathItemGroup.findByUId(dataCategory.getUid());
+            if (pathItem == null || !pathItem.getFullPath().startsWith("/test")) {
+                documents.add(getDocumentForDataCategory(dataCategory, pathItem));
+            }
         }
         transactionController.end();
         luceneService.addDocuments(documents);
@@ -142,9 +150,16 @@ public class SearchService implements ApplicationListener {
     protected void buildDataItems() {
         log.info("buildDataItems() Starting...");
         transactionController.begin(false);
+        // We need PathItems to exclude test DataCategories.
+        PathItem pathItem;
+        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
+        // Iterate over all DataCategories and gather DataCategory UIDs. 
         Set<String> dataCategoryUids = new HashSet<String>();
         for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
-            if (dataCategory.getItemDefinition() != null) {
+            pathItem = pathItemGroup.findByUId(dataCategory.getUid());
+            if ((pathItem != null) &&
+                    !pathItem.getFullPath().startsWith("/test") &&
+                    (dataCategory.getItemDefinition() != null)) {
                 dataCategoryUids.add(dataCategory.getUid());
             }
         }
@@ -186,7 +201,7 @@ public class SearchService implements ApplicationListener {
         // Create DataItem Documents and store to Lucene.
         List<Document> documents = new ArrayList<Document>();
         for (DataItem dataItem : dataItems) {
-            documents.add(getDocument(dataItem));
+            documents.add(getDocumentForDataItem(dataItem));
         }
         luceneService.addDocuments(documents);
         metadataService.clearMetadatas();
@@ -203,7 +218,8 @@ public class SearchService implements ApplicationListener {
      */
     protected void update(DataCategory dataCategory) {
         log.debug("update() DataCategory: " + dataCategory.getUid());
-        Document document = getDocument(dataCategory);
+        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
+        Document document = getDocumentForDataCategory(dataCategory, pathItemGroup.findByUId(dataCategory.getUid()));
         luceneService.updateDocument(
                 new Term("entityUid", dataCategory.getUid()), document, luceneService.getAnalyzer());
     }
@@ -243,10 +259,8 @@ public class SearchService implements ApplicationListener {
                 new Term("categoryUid", dataCategory.getUid()));
     }
 
-    protected Document getDocument(DataCategory dataCategory) {
-        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(dataCategory.getEnvironment());
-        PathItem pathItem = pathItemGroup.findByUId(dataCategory.getUid());
-        Document doc = getDocument((AMEEEntity) dataCategory);
+    protected Document getDocumentForDataCategory(DataCategory dataCategory, PathItem pathItem) {
+        Document doc = getDocumentForAMEEEntity(dataCategory);
         doc.add(new Field("name", dataCategory.getName(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataCategory.getPath(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         if (pathItem != null) {
@@ -268,10 +282,10 @@ public class SearchService implements ApplicationListener {
         return doc;
     }
 
-    protected Document getDocument(DataItem dataItem) {
+    protected Document getDocumentForDataItem(DataItem dataItem) {
         PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(dataItem.getEnvironment());
         PathItem pathItem = pathItemGroup.findByUId(dataItem.getDataCategory().getUid());
-        Document doc = getDocument((AMEEEntity) dataItem);
+        Document doc = getDocumentForAMEEEntity(dataItem);
         doc.add(new Field("name", dataItem.getName(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataItem.getPath(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         if (pathItem != null) {
@@ -290,7 +304,7 @@ public class SearchService implements ApplicationListener {
         return doc;
     }
 
-    private Document getDocument(AMEEEntity entity) {
+    private Document getDocumentForAMEEEntity(AMEEEntity entity) {
         Document doc = new Document();
         doc.add(new Field("entityType", entity.getObjectType().getName(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("entityId", entity.getId().toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));

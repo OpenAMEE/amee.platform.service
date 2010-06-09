@@ -400,7 +400,7 @@ public class LuceneService implements Serializable {
                 indexWriter.commit();
 
                 if (pastSnapTime()) {
-                    log.debug("Passed time threshold for snapshot.");
+                    log.debug("closeIndexWriter() Passed time threshold for snapshot.");
                     takeSnapshot();
                 }
 
