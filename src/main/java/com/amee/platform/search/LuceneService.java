@@ -1,8 +1,6 @@
 package com.amee.platform.search;
 
 import com.amee.base.domain.ResultsWrapper;
-import com.amee.base.resource.ValidationResult;
-import com.amee.base.validation.ValidationException;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -12,8 +10,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
@@ -67,65 +63,12 @@ public class LuceneService implements Serializable {
     private Analyzer analyzer;
     private Directory directory;
     private IndexWriter indexWriter;
+    private IndexSearcher indexSearcher;
 
     /**
      * Is this instance the master index node? There can be only one!
      */
     private boolean masterIndex = false;
-
-    @Value("#{ systemProperties['amee.masterIndex'] }")
-    public void setMasterIndex(Boolean masterIndex) {
-        this.masterIndex = masterIndex;
-    }
-
-    public String getIndexDirPath() {
-        return indexDirPath;
-    }
-
-    public void setIndexDirPath(String indexDirPath) {
-        this.indexDirPath = indexDirPath;
-    }
-
-    public String getSnapShooterPath() {
-        return snapShooterPath;
-    }
-
-    public void setSnapShooterPath(String snapShooterPath) {
-        this.snapShooterPath = snapShooterPath;
-    }
-
-    public int getSnapTime() {
-        return snapTime;
-    }
-
-    public void setSnapTime(int snapTime) {
-        this.snapTime = snapTime;
-    }
-
-    /**
-     * Conduct a search in the Lucene index based on the supplied field name and query string.
-     *
-     * @param field name of field to search within
-     * @param q     query to search with
-     * @return a List of Lucene Documents
-     */
-    public ResultsWrapper<Document> doSearch(String field, String q) {
-        log.debug("doSearch()");
-        QueryParser parser = new QueryParser(Version.LUCENE_30, field, getAnalyzer());
-        try {
-            return doSearch(parser.parse(q));
-        } catch (ParseException e) {
-            ValidationResult validationResult = new ValidationResult();
-            validationResult.addValue("field", field);
-            validationResult.addValue("query", q);
-            validationResult.addError(field, "parse", q);
-            throw new ValidationException(validationResult);
-        }
-    }
-
-    public ResultsWrapper<Document> doSearch(Query query) {
-        return doSearch(query, 0, 50);
-    }
 
     /**
      * Conduct a search in the Lucene index based on the supplied Query.
@@ -146,19 +89,16 @@ public class LuceneService implements Serializable {
             if (numHits > MAX_NUM_HITS) {
                 numHits = MAX_NUM_HITS;
             }
-            // Searcher for our index.
-            IndexSearcher searcher = new IndexSearcher(getDirectory());
-            // Get Collector limited to numHits + 1, so we can detect truncations.  
+            // Get Collector limited to numHits + 1, so we can detect truncations.
             TopScoreDocCollector collector = TopScoreDocCollector.create(numHits + 1, true);
-            searcher.search(query, collector);
+            getIndexSearcher().search(query, collector);
             // Get hits within our start and limit range.
             ScoreDoc[] hits = collector.topDocs(resultStart, resultLimit + 1).scoreDocs;
             // Assemble List of Documents.
             List<Document> documents = new ArrayList<Document>();
             for (ScoreDoc hit : hits) {
-                documents.add(searcher.doc(hit.doc));
+                documents.add(getIndexSearcher().doc(hit.doc));
             }
-            searcher.close();
             // Trim resultLimit if we're close to MAX_NUM_HITS.
             if (resultStart >= MAX_NUM_HITS) {
                 // Never return results.
@@ -176,57 +116,60 @@ public class LuceneService implements Serializable {
         }
     }
 
-    public void addDocument(Document document) {
-        synchronized (getIndexWriter()) {
-            try {
+    public synchronized void addDocument(Document document) {
+        if (!masterIndex) return;
+        try {
+            getIndexWriter().addDocument(document);
+            closeIndexWriter();
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        }
+    }
+
+    public synchronized void addDocuments(Collection<Document> documents) {
+        if (!masterIndex) return;
+        try {
+            for (Document document : documents) {
                 getIndexWriter().addDocument(document);
-                closeIndexWriter();
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
             }
+            closeIndexWriter();
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
     }
 
-    public void addDocuments(Collection<Document> documents) {
-        synchronized (getIndexWriter()) {
-            try {
-                for (Document document : documents) {
-                    getIndexWriter().addDocument(document);
-                }
-                closeIndexWriter();
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-            }
-        }
-    }
-
-    public void updateDocument(Term term, Document document, Analyzer analyzer) {
-
-        // Updates should only be performed on the master node.
-        if (masterIndex) {
-            synchronized (getIndexWriter()) {
-                try {
-                    getIndexWriter().updateDocument(term, document, analyzer);
-                    closeIndexWriter();
-                } catch (IOException e) {
-                    throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-                }
-            }
-        }
-    }
-
-    public void deleteDocuments(Term... terms) {
+    /**
+     * This will remove the Document matching the supplied Terms and then add the supplied Document.
+     *
+     * @param document to add
+     * @param terms    Terms to form Query to remove existing Document.
+     */
+    public synchronized void updateDocument(Document document, Term... terms) {
+        if (!masterIndex) return;
         BooleanQuery q = new BooleanQuery();
         for (Term t : terms) {
             q.add(new TermQuery(t), BooleanClause.Occur.MUST);
         }
-        synchronized (getIndexWriter()) {
-            try {
-                getIndexWriter().deleteDocuments(q);
-                closeIndexWriter();
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-            }
+        try {
+            getIndexWriter().deleteDocuments(q);
+            getIndexWriter().addDocument(document);
+            closeIndexWriter();
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        }
+    }
+
+    public synchronized void deleteDocuments(Term... terms) {
+        if (!masterIndex) return;
+        BooleanQuery q = new BooleanQuery();
+        for (Term t : terms) {
+            q.add(new TermQuery(t), BooleanClause.Occur.MUST);
+        }
+        try {
+            getIndexWriter().deleteDocuments(q);
+            closeIndexWriter();
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
     }
 
@@ -234,10 +177,18 @@ public class LuceneService implements Serializable {
      * Clear the Lucene index.
      */
     public synchronized void clearIndex() {
-        // First ensure index is not locked (perhaps from a crash).
-        unlockIndex();
-        // Create a new index.
-        getIndexWriter(true);
+        try {
+            // First ensure index is not locked (perhaps from a crash).
+            unlockIndex();
+            // Create a new index.
+            IndexWriter indexWriter = getNewIndexWriter(true);
+            // Close the index.
+            indexWriter.optimize();
+            indexWriter.commit();
+            indexWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        }
         closeIndexWriter();
     }
 
@@ -258,42 +209,40 @@ public class LuceneService implements Serializable {
     }
 
     /**
-     * Ensure the Lucene directory is closed
+     * Ensure Lucene objects are closed.
      *
      * @throws Throwable the <code>Exception</code> raised by this method
      */
-    protected void finalize() throws Throwable {
+    protected synchronized void finalize() throws Throwable {
         super.finalize();
+        closeIndexSearcher();
         closeIndexWriter();
         closeDirectory();
     }
 
     /**
-     * Get the Analyzer. Will call createAnalyser if it does not yet exist.
+     * Get the Analyzer. Will call getNewAnalyzer if it does not yet exist.
      *
      * @return the Analyzer
      */
-    public synchronized Analyzer getAnalyzer() {
+    public Analyzer getAnalyzer() {
         if (analyzer == null) {
-            createAnalyser();
+            synchronized (this) {
+                if (analyzer == null) {
+                    analyzer = getNewAnalyzer();
+                }
+            }
         }
         return analyzer;
     }
 
     /**
      * Create a new Analyzer.
-     */
-    private void createAnalyser() {
-        setAnalyzer(new StandardAnalyzer(Version.LUCENE_30));
-    }
-
-    /**
-     * Set the Analyzer.
      *
-     * @param analyzer to set
+     * @return Analyzer
      */
-    private void setAnalyzer(Analyzer analyzer) {
-        this.analyzer = analyzer;
+    private Analyzer getNewAnalyzer() {
+        return new StandardAnalyzer(Version.LUCENE_30);
     }
 
     /**
@@ -323,7 +272,7 @@ public class LuceneService implements Serializable {
     /**
      * Closes the Lucene directory.
      */
-    private synchronized void closeDirectory() {
+    private void closeDirectory() {
         try {
             if (directory != null) {
                 directory.close();
@@ -342,29 +291,18 @@ public class LuceneService implements Serializable {
         this.directory = directory;
     }
 
-
     /**
-     * Gets the current IndexWriter or creates a new one.
-     *
-     * @return the IndexWriter
-     */
-    private IndexWriter getIndexWriter() {
-        return getIndexWriter(false);
-    }
-
-    /**
-     * Gets IndexWriter. Will call createIndexWriter if an IndexWriter is not yet created. Can
+     * Gets IndexWriter. Will call getNewIndexWriter if an IndexWriter is not yet created. Can
      * be called multiple times within a thread. The create parameter is only effective when the
      * IndexWriter has not previously been created.
      * <p/>
      * Later, closeIndexWriter must be called at least once.
      *
-     * @param create a new index if true
      * @return the IndexWriter
      */
-    private synchronized IndexWriter getIndexWriter(boolean create) {
+    private synchronized IndexWriter getIndexWriter() {
         if (indexWriter == null) {
-            createIndexWriter(create);
+            indexWriter = getNewIndexWriter(false);
         }
         return indexWriter;
     }
@@ -375,14 +313,15 @@ public class LuceneService implements Serializable {
      * Later, closeIndexWriter must be called at least once.
      *
      * @param create a new index if true
+     * @return IndexWriter
      */
-    private void createIndexWriter(boolean create) {
+    private IndexWriter getNewIndexWriter(boolean create) {
         try {
-            setIndexWriter(new IndexWriter(
+            return new IndexWriter(
                     getDirectory(),
                     getAnalyzer(),
                     create,
-                    new IndexWriter.MaxFieldLength(25000)));
+                    IndexWriter.MaxFieldLength.UNLIMITED);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
@@ -398,14 +337,38 @@ public class LuceneService implements Serializable {
             try {
                 indexWriter.optimize();
                 indexWriter.commit();
-
                 if (pastSnapTime()) {
                     log.debug("closeIndexWriter() Passed time threshold for snapshot.");
                     takeSnapshot();
                 }
-
                 indexWriter.close();
-                setIndexWriter(null);
+                indexWriter = null;
+            } catch (IOException e) {
+                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    private IndexSearcher getIndexSearcher() {
+        if (indexSearcher == null) {
+            synchronized (this) {
+                if (indexSearcher == null) {
+                    try {
+                        indexSearcher = new IndexSearcher(getDirectory());
+                    } catch (IOException e) {
+                        throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+                    }
+                }
+            }
+        }
+        return indexSearcher;
+    }
+
+    private synchronized void closeIndexSearcher() {
+        if (indexSearcher != null) {
+            try {
+                indexSearcher.close();
+                indexSearcher = null;
             } catch (IOException e) {
                 throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
             }
@@ -413,22 +376,12 @@ public class LuceneService implements Serializable {
     }
 
     /**
-     * Set the IndexWriter.
-     *
-     * @param indexWriter to set
-     */
-    private void setIndexWriter(IndexWriter indexWriter) {
-        this.indexWriter = indexWriter;
-    }
-
-    /**
      * Takes a snapshot of the lucene index using the solr snapshooter shell script.
      * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
      */
-    public void takeSnapshot() {
+    private void takeSnapshot() {
         String command = getSnapShooterPath() + " -d " + getIndexDirPath();
         log.debug("takeSnapshot() - executing " + command);
-
         try {
             Runtime.getRuntime().exec(command);
         } catch (IOException e) {
@@ -466,5 +419,34 @@ public class LuceneService implements Serializable {
         } else {
             return 0L;
         }
+    }
+
+    @Value("#{ systemProperties['amee.masterIndex'] }")
+    public void setMasterIndex(Boolean masterIndex) {
+        this.masterIndex = masterIndex;
+    }
+
+    public String getIndexDirPath() {
+        return indexDirPath;
+    }
+
+    public void setIndexDirPath(String indexDirPath) {
+        this.indexDirPath = indexDirPath;
+    }
+
+    public String getSnapShooterPath() {
+        return snapShooterPath;
+    }
+
+    public void setSnapShooterPath(String snapShooterPath) {
+        this.snapShooterPath = snapShooterPath;
+    }
+
+    public int getSnapTime() {
+        return snapTime;
+    }
+
+    public void setSnapTime(int snapTime) {
+        this.snapTime = snapTime;
     }
 }

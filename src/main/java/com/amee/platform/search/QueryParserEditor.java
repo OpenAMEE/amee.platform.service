@@ -1,8 +1,13 @@
 package com.amee.platform.search;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.NumericRangeQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.util.NumericUtils;
 import org.apache.lucene.util.Version;
 
 import java.beans.PropertyEditorSupport;
@@ -11,22 +16,31 @@ public class QueryParserEditor extends PropertyEditorSupport {
 
     private String field;
     private Analyzer analyzer;
+    private boolean doubleValue;
 
     public QueryParserEditor(String field) {
         setField(field);
         setAnalyzer(SearchService.STANDARD_ANALYZER);
+        setDoubleValue(false);
     }
 
     public QueryParserEditor(String field, Analyzer analyzer) {
         setField(field);
         setAnalyzer(analyzer);
+        setDoubleValue(false);
+    }
+
+    public QueryParserEditor(String field, Analyzer analyzer, boolean doubleValue) {
+        setField(field);
+        setAnalyzer(analyzer);
+        setDoubleValue(doubleValue);
     }
 
     @Override
     public void setAsText(String text) {
         if (text != null) {
             try {
-                QueryParser parser = new QueryParser(Version.LUCENE_30, getField(), getAnalyzer());
+                QueryParser parser = getQueryParser();
                 setValue(parser.parse(text));
             } catch (ParseException e) {
                 throw new IllegalArgumentException("Cannot parse query (" + e.getMessage() + ").", e);
@@ -34,6 +48,44 @@ public class QueryParserEditor extends PropertyEditorSupport {
         } else {
             setValue(null);
         }
+    }
+
+    private QueryParser getQueryParser() {
+        return new QueryParser(Version.LUCENE_30, getField(), getAnalyzer()) {
+
+            protected Query newTermQuery(Term term) {
+                if (isDoubleValue()) {
+                    try {
+                        return new TermQuery(new Term(getField(),
+                                NumericUtils.doubleToPrefixCoded(Double.parseDouble(term.text()))));
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Cannot parse query (" + e.getMessage() + ").", e);
+                    }
+                } else {
+                    return super.newTermQuery(term);
+                }
+            }
+
+            protected Query newRangeQuery(String field, String part1, String part2, boolean inclusive) {
+                if (isDoubleValue()) {
+                    try {
+                        final NumericRangeQuery query =
+                                NumericRangeQuery.newDoubleRange(
+                                        getField(),
+                                        Double.parseDouble(part1),
+                                        Double.parseDouble(part2),
+                                        inclusive,
+                                        inclusive);
+                        query.setRewriteMethod(super.getMultiTermRewriteMethod());
+                        return query;
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Cannot parse query (" + e.getMessage() + ").", e);
+                    }
+                } else {
+                    return super.newRangeQuery(field, part1, part2, inclusive);
+                }
+            }
+        };
     }
 
     public String getField() {
@@ -50,5 +102,13 @@ public class QueryParserEditor extends PropertyEditorSupport {
 
     public void setAnalyzer(Analyzer analyzer) {
         this.analyzer = analyzer;
+    }
+
+    public boolean isDoubleValue() {
+        return doubleValue;
+    }
+
+    public void setDoubleValue(boolean doubleValue) {
+        this.doubleValue = doubleValue;
     }
 }

@@ -38,6 +38,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -157,6 +158,17 @@ public class DataServiceDAO implements Serializable {
                 .setParameter("dataCategoryIds", dataCategoryIds)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
+                .getResultList();
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    public List<DataCategory> getDataCategoriesModifiedSince(Environment environment, Date modifiedSince) {
+        return (List<DataCategory>) entityManager.createQuery(
+                "FROM DataCategory " +
+                        "WHERE environment.id = :environmentId " +
+                        "AND modified >= :modifiedSince")
+                .setParameter("environmentId", environment.getId())
+                .setParameter("modifiedSince", modifiedSince)
                 .getResultList();
     }
 

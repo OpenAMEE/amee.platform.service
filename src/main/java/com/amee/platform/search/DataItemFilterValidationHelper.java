@@ -37,7 +37,24 @@ public class DataItemFilterValidationHelper extends ValidationHelper {
         dataBinder.registerCustomEditor(Query.class, "label", new QueryParserEditor("label"));
         for (ItemValueDefinition ivd : dataItemFilter.getItemDefinition().getActiveItemValueDefinitions()) {
             if (ivd.isFromData()) {
-                dataBinder.registerCustomEditor(Query.class, "queries[" + ivd.getPath() + "]", new QueryParserEditor(ivd.getPath()));
+                if (ivd.isDrillDown()) {
+                    dataBinder.registerCustomEditor(
+                            Query.class,
+                            "queries[" + ivd.getPath() + "]",
+                            new QueryParserEditor(ivd.getPath(), SearchService.KEYWORD_ANALYZER));
+                } else {
+                    if (ivd.isDouble()) {
+                        dataBinder.registerCustomEditor(
+                                Query.class,
+                                "queries[" + ivd.getPath() + "]",
+                                new QueryParserEditor(ivd.getPath(), SearchService.STANDARD_ANALYZER, true));
+                    } else {
+                        dataBinder.registerCustomEditor(
+                                Query.class,
+                                "queries[" + ivd.getPath() + "]",
+                                new QueryParserEditor(ivd.getPath()));
+                    }
+                }
             }
         }
     }

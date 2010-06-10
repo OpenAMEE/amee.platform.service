@@ -47,6 +47,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -187,6 +188,10 @@ public class DataService extends BaseService implements ApplicationListener {
 
     public List<DataCategory> getDataCategories(Environment environment, Set<Long> dataCategoryIds) {
         return dao.getDataCategories(environment, dataCategoryIds);
+    }
+
+    public List<DataCategory> getDataCategoriesModifiedSince(Environment environment, Date date) {
+        return dao.getDataCategoriesModifiedSince(environment, date);
     }
 
     public void persist(DataCategory dataCategory) {

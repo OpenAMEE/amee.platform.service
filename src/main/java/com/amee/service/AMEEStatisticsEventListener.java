@@ -40,7 +40,7 @@ public class AMEEStatisticsEventListener implements ApplicationListener {
                     log.debug("onApplicationEvent() BEFORE_END - {calculationDuration=" + ameeStatistics.getThreadCalculationDuration() + "}");
                     break;
                 default:
-                    log.debug("onApplicationEvent() Unhandled TransactionEventType: " + te.getType());
+                    // Do nothing!
             }
         }
     }

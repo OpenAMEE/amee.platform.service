@@ -56,7 +56,7 @@ public class LocaleService implements ILocaleService, ApplicationListener {
                     clearLocaleNames();
                     break;
                 default:
-                    log.debug("onApplicationEvent() Unhandled TransactionEventType: " + te.getType());
+                    // Do nothing!
             }
         }
     }

@@ -51,7 +51,7 @@ public class MetadataService implements IMetadataService, ApplicationListener {
                     clearMetadatas();
                     break;
                 default:
-                    log.debug("onApplicationEvent() Unhandled TransactionEventType: " + te.getType());
+                    // Do nothing!
             }
         }
     }

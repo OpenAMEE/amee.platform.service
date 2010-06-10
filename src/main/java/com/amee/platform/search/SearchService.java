@@ -9,6 +9,7 @@ import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemValue;
 import com.amee.domain.path.PathItem;
 import com.amee.domain.path.PathItemGroup;
+import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
 import com.amee.service.environment.EnvironmentService;
 import com.amee.service.invalidation.InvalidationMessage;
@@ -23,17 +24,18 @@ import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.Version;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,22 +87,53 @@ public class SearchService implements ApplicationListener {
         }
     }
 
-    @Transactional(readOnly = true)
     private void onInvalidationMessage(InvalidationMessage invalidationMessage) {
         if (!invalidationMessage.isLocal() && invalidationMessage.getObjectType().equals(ObjectType.DC)) {
             log.debug("onInvalidationMessage() Handling InvalidationMessage.");
+            transactionController.begin(false);
             DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid(), true);
-            if ((dataCategory != null) && !dataCategory.isTrash()) {
+            if (dataCategory != null) {
                 update(dataCategory);
-            } else {
-                remove(invalidationMessage.getObjectType(), invalidationMessage.getEntityUid());
             }
+            transactionController.end();
         }
+    }
+
+    // Scheduled jobs.
+
+    public void update() {
+        updateCategories();
+        updateDataItems();
+    }
+
+    /**
+     * Update all Data Categories in the search index which have been modified in
+     * the last X minutes.
+     */
+    public void updateCategories() {
+        log.debug("updateCategories()");
+        transactionController.begin(false);
+        List<DataCategory> dataCategories = dataService.getDataCategoriesModifiedSince(
+                environmentService.getEnvironmentByName("AMEE"),
+                new DateTime().minusMinutes(1).withSecondOfMinute(0).withMillisOfSecond(0).toDate());
+        for (DataCategory dataCategory : dataCategories) {
+            update(dataCategory);
+        }
+        transactionController.end();
+    }
+
+    public void updateDataItems() {
+        log.debug("updateDataItems()");
     }
 
     // Index & Document management.
 
+    /**
+     * Will update or create the whole search index.
+     */
     public void init() {
+        // Always make sure index is unlocked.
+        luceneService.unlockIndex();
         // Clear the index?
         if (clearIndex) {
             luceneService.clearIndex();
@@ -114,8 +147,6 @@ public class SearchService implements ApplicationListener {
             // Add DataItems.
             buildDataItems();
         }
-        // Always make sure index is unlocked.
-        luceneService.unlockIndex();
     }
 
     /**
@@ -210,18 +241,24 @@ public class SearchService implements ApplicationListener {
     }
 
     /**
-     * Update index with a new Document for the DataCategory.
-     * <p/>
-     * TODO: Also need to update any 'child' Documents. Look up with the UID.
+     * Update or remove a Data Category from the search index.
      *
      * @param dataCategory to update index with
      */
     protected void update(DataCategory dataCategory) {
-        log.debug("update() DataCategory: " + dataCategory.getUid());
-        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
-        Document document = getDocumentForDataCategory(dataCategory, pathItemGroup.findByUId(dataCategory.getUid()));
-        luceneService.updateDocument(
-                new Term("entityUid", dataCategory.getUid()), document, luceneService.getAnalyzer());
+        if (!dataCategory.isTrash()) {
+            log.debug("update() Update: " + dataCategory.toString());
+            PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
+            Document document = getDocumentForDataCategory(dataCategory, pathItemGroup.findByUId(dataCategory.getUid()));
+            luceneService.updateDocument(
+                    document,
+                    new Term("entityType", ObjectType.DC.getName()),
+                    new Term("entityUid", dataCategory.getUid()));
+        } else {
+            log.debug("update() Remove: " + dataCategory.toString());
+            removeDataCategory(dataCategory);
+            removeDataItems(dataCategory);
+        }
     }
 
     /**
@@ -245,6 +282,16 @@ public class SearchService implements ApplicationListener {
     protected void remove(ObjectType entityType) {
         log.debug("remove() " + entityType.getName());
         luceneService.deleteDocuments(new Term("entityType", entityType.getName()));
+    }
+
+    /**
+     * Remove the supplied DataCategory from the search index.
+     *
+     * @param dataCategory to remove
+     */
+    protected void removeDataCategory(DataCategory dataCategory) {
+        log.debug("removeDataCatgory() " + dataCategory.toString());
+        remove(ObjectType.DC, dataCategory.getUid());
     }
 
     /**
@@ -298,7 +345,22 @@ public class SearchService implements ApplicationListener {
         doc.add(new Field("itemDefinitionUid", dataItem.getItemDefinition().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         doc.add(new Field("itemDefinitionName", dataItem.getItemDefinition().getName(), Field.Store.NO, Field.Index.ANALYZED));
         for (ItemValue itemValue : dataItem.getItemValues()) {
-            doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue(), Field.Store.NO, Field.Index.ANALYZED));
+            if (itemValue.isUsableValue()) {
+                if (itemValue.getItemValueDefinition().isDrillDown()) {
+                    doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+                } else {
+                    if (itemValue.isDouble()) {
+                        try {
+                            doc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValue()).getValue()));
+                        } catch (NumberFormatException e) {
+                            log.warn("getDocumentForDataItem() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValue() + "' for DataItem " + dataItem.toString() + ".");
+                            doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue(), Field.Store.NO, Field.Index.ANALYZED));
+                        }
+                    } else {
+                        doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue(), Field.Store.NO, Field.Index.ANALYZED));
+                    }
+                }
+            }
         }
         doc.add(new Field("label", dataItem.getLabel(), Field.Store.NO, Field.Index.ANALYZED));
         return doc;
@@ -435,23 +497,6 @@ public class SearchService implements ApplicationListener {
         }
         localeService.loadLocaleNamesForDataCategories(resultsWrapper.getResults());
         return resultsWrapper;
-    }
-
-    /**
-     * TODO: I don't think this is needed.
-     *
-     * @param key
-     * @param value
-     * @return
-     */
-    private List<DataCategory> getDataCategories(String key, String value) {
-        Set<Long> dataCategoryIds = new HashSet<Long>();
-        for (Document document : luceneService.doSearch(key, value).getResults()) {
-            dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
-        }
-        return dataService.getDataCategories(
-                environmentService.getEnvironmentByName("AMEE"),
-                dataCategoryIds);
     }
 
     public ResultsWrapper<DataCategory> getDataCategories(Query query, int resultStart, int resultLimit) {
