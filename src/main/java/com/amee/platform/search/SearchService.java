@@ -113,13 +113,15 @@ public class SearchService implements ApplicationListener {
     /**
      * Update all Data Categories in the search index which have been modified in
      * the last X minutes.
+     * <p/>
+     * TODO: Make values below configurable.
      */
     public void updateCategories() {
         log.debug("updateCategories()");
         transactionController.begin(false);
+        DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesModifiedSince(
-                environmentService.getEnvironmentByName("AMEE"),
-                new DateTime().minusMinutes(1).withSecondOfMinute(0).withMillisOfSecond(0).toDate());
+                environmentService.getEnvironmentByName("AMEE"), anHourAgoRoundedUp.toDate());
         for (DataCategory dataCategory : dataCategories) {
             updateDataCategory(dataCategory);
         }
