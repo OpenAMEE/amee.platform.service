@@ -63,12 +63,17 @@ public class LuceneService implements Serializable {
     private Analyzer analyzer;
     private Directory directory;
     private IndexWriter indexWriter;
-    private IndexSearcher indexSearcher;
 
     /**
      * Is this instance the master index node? There can be only one!
      */
     private boolean masterIndex = false;
+
+    /**
+     * A start-up option to force the Lucene index to be cleared. Intended for infrequent use.
+     * This will also disable the snapshot process.
+     */
+    private boolean clearIndex = false;
 
     /**
      * Conduct a search in the Lucene index based on the supplied Query.
@@ -91,14 +96,18 @@ public class LuceneService implements Serializable {
             }
             // Get Collector limited to numHits + 1, so we can detect truncations.
             TopScoreDocCollector collector = TopScoreDocCollector.create(numHits + 1, true);
-            getIndexSearcher().search(query, collector);
+            // Get the IndexSearcher and do the search.
+            IndexSearcher searcher = new IndexSearcher(getDirectory(), true);
+            searcher.search(query, collector);
             // Get hits within our start and limit range.
             ScoreDoc[] hits = collector.topDocs(resultStart, resultLimit + 1).scoreDocs;
             // Assemble List of Documents.
             List<Document> documents = new ArrayList<Document>();
             for (ScoreDoc hit : hits) {
-                documents.add(getIndexSearcher().doc(hit.doc));
+                documents.add(searcher.doc(hit.doc));
             }
+            // Safe to close the IndexSearcher now.
+            searcher.close();
             // Trim resultLimit if we're close to MAX_NUM_HITS.
             if (resultStart >= MAX_NUM_HITS) {
                 // Never return results.
@@ -215,7 +224,6 @@ public class LuceneService implements Serializable {
      */
     protected synchronized void finalize() throws Throwable {
         super.finalize();
-        closeIndexSearcher();
         closeIndexWriter();
         closeDirectory();
     }
@@ -337,38 +345,12 @@ public class LuceneService implements Serializable {
             try {
                 indexWriter.optimize();
                 indexWriter.commit();
-                if (pastSnapTime()) {
+                if (!clearIndex && pastSnapTime()) {
                     log.debug("closeIndexWriter() Passed time threshold for snapshot.");
                     takeSnapshot();
                 }
                 indexWriter.close();
                 indexWriter = null;
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-            }
-        }
-    }
-
-    private IndexSearcher getIndexSearcher() {
-        if (indexSearcher == null) {
-            synchronized (this) {
-                if (indexSearcher == null) {
-                    try {
-                        indexSearcher = new IndexSearcher(getDirectory());
-                    } catch (IOException e) {
-                        throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-                    }
-                }
-            }
-        }
-        return indexSearcher;
-    }
-
-    private synchronized void closeIndexSearcher() {
-        if (indexSearcher != null) {
-            try {
-                indexSearcher.close();
-                indexSearcher = null;
             } catch (IOException e) {
                 throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
             }
@@ -395,7 +377,6 @@ public class LuceneService implements Serializable {
     private boolean pastSnapTime() {
         Date now = new Date();
         return (now.getTime() - getLastSnapshotTime()) > (getSnapTime() * 1000);
-
     }
 
     /**
@@ -424,6 +405,11 @@ public class LuceneService implements Serializable {
     @Value("#{ systemProperties['amee.masterIndex'] }")
     public void setMasterIndex(Boolean masterIndex) {
         this.masterIndex = masterIndex;
+    }
+
+    @Value("#{ systemProperties['amee.clearIndex'] }")
+    public void setClearIndex(Boolean clearIndex) {
+        this.clearIndex = clearIndex;
     }
 
     public String getIndexDirPath() {

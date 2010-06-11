@@ -32,6 +32,8 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.Version;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEvent;
@@ -47,6 +49,8 @@ import java.util.Set;
 public class SearchService implements ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
+
+    public final static DateTimeFormatter DATE_TO_SECOND = DateTimeFormat.forPattern("yyyyMMddHHmmss");
 
     public final static Analyzer STANDARD_ANALYZER = new StandardAnalyzer(Version.LUCENE_30);
     public final static Analyzer KEYWORD_ANALYZER = new KeywordAnalyzer();
@@ -93,7 +97,7 @@ public class SearchService implements ApplicationListener {
             transactionController.begin(false);
             DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid(), true);
             if (dataCategory != null) {
-                update(dataCategory);
+                updateDataCategory(dataCategory);
             }
             transactionController.end();
         }
@@ -117,7 +121,7 @@ public class SearchService implements ApplicationListener {
                 environmentService.getEnvironmentByName("AMEE"),
                 new DateTime().minusMinutes(1).withSecondOfMinute(0).withMillisOfSecond(0).toDate());
         for (DataCategory dataCategory : dataCategories) {
-            update(dataCategory);
+            updateDataCategory(dataCategory);
         }
         transactionController.end();
     }
@@ -210,6 +214,11 @@ public class SearchService implements ApplicationListener {
         }
     }
 
+    /**
+     * Create all DataItem documents for the supplied DataCategory UIDs.
+     *
+     * @param dataCategoryUid DataCategory UIDs to create DataItem documents for
+     */
     protected void buildDataItems(String dataCategoryUid) {
         DataCategory dataCategory;
         transactionController.begin(false);
@@ -218,26 +227,35 @@ public class SearchService implements ApplicationListener {
         transactionController.end();
     }
 
+    /**
+     * Create all DataItem documents for the supplied DataCategory.
+     *
+     * @param dataCategory DataCategory to create DataItem documents for
+     */
     public void buildDataItems(DataCategory dataCategory) {
-        log.info("buildDataItems() Starting... (" + dataCategory.toString() + ")");
-        metadataService.loadMetadatasForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
-        localeService.loadLocaleNamesForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
-        List<DataItem> dataItems = dataService.getDataItems(dataCategory, false);
-        metadataService.loadMetadatasForDataItems(dataItems);
-        localeService.loadLocaleNamesForDataItems(dataItems);
-        // Clear existing DataItem Documents?
-        if (!clearIndex) {
-            removeDataItems(dataCategory);
+        if (dataCategory.getItemDefinition() != null) {
+            log.info("buildDataItems() Starting... (" + dataCategory.toString() + ")");
+            metadataService.loadMetadatasForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
+            localeService.loadLocaleNamesForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
+            List<DataItem> dataItems = dataService.getDataItems(dataCategory, false);
+            metadataService.loadMetadatasForDataItems(dataItems);
+            localeService.loadLocaleNamesForDataItems(dataItems);
+            // Clear existing DataItem Documents?
+            if (!clearIndex) {
+                removeDataItems(dataCategory);
+            }
+            // Create DataItem Documents and store to Lucene.
+            List<Document> documents = new ArrayList<Document>();
+            for (DataItem dataItem : dataItems) {
+                documents.add(getDocumentForDataItem(dataItem));
+            }
+            luceneService.addDocuments(documents);
+            metadataService.clearMetadatas();
+            localeService.clearLocaleNames();
+            log.info("buildDataItems() ...done (" + dataCategory.toString() + ").");
+        } else {
+            log.debug("buildDataItems() DataCategory does not have items: " + dataCategory.toString());
         }
-        // Create DataItem Documents and store to Lucene.
-        List<Document> documents = new ArrayList<Document>();
-        for (DataItem dataItem : dataItems) {
-            documents.add(getDocumentForDataItem(dataItem));
-        }
-        luceneService.addDocuments(documents);
-        metadataService.clearMetadatas();
-        localeService.clearLocaleNames();
-        log.info("buildDataItems() ...done (" + dataCategory.toString() + ").");
     }
 
     /**
@@ -245,20 +263,52 @@ public class SearchService implements ApplicationListener {
      *
      * @param dataCategory to update index with
      */
-    protected void update(DataCategory dataCategory) {
+    protected void updateDataCategory(DataCategory dataCategory) {
+        log.debug("updateDataCategory() DataCategory: " + dataCategory.toString());
         if (!dataCategory.isTrash()) {
-            log.debug("update() Update: " + dataCategory.toString());
-            PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
-            Document document = getDocumentForDataCategory(dataCategory, pathItemGroup.findByUId(dataCategory.getUid()));
-            luceneService.updateDocument(
-                    document,
-                    new Term("entityType", ObjectType.DC.getName()),
-                    new Term("entityUid", dataCategory.getUid()));
+            Document document = getDocument(dataCategory);
+            if (document != null) {
+                Field modifiedField = document.getField("entityModified");
+                if (modifiedField != null) {
+                    DateTime modifiedInIndex =
+                            DATE_TO_SECOND.parseDateTime(modifiedField.stringValue());
+                    DateTime modifiedInDatabase =
+                            new DateTime(dataCategory.getModified()).withMillisOfSecond(0);
+                    if (modifiedInDatabase.isAfter(modifiedInIndex)) {
+                        log.debug("updateDataCategory() DataCategory has been modified, updating.");
+                        addDataCategory(dataCategory);
+                    } else {
+                        log.debug("updateDataCategory() DataCategory is up-to-date, skipping.");
+                    }
+                } else {
+                    log.warn("updateDataCategory() The modified field was missing, updating");
+                    addDataCategory(dataCategory);
+                }
+            } else {
+                log.debug("updateDataCategory() DataCategory not in index, adding.");
+                addDataCategory(dataCategory);
+                buildDataItems(dataCategory);
+            }
         } else {
-            log.debug("update() Remove: " + dataCategory.toString());
+            log.debug("updateDataCategory() DataCategory needs to be removed.");
             removeDataCategory(dataCategory);
             removeDataItems(dataCategory);
         }
+    }
+
+    /**
+     * Add a Document for the supplied DataCategory to the Lucene index.
+     *
+     * @param dataCategory to add to the search index.
+     */
+    protected void addDataCategory(DataCategory dataCategory) {
+        log.debug("addDataCategory() " + dataCategory.toString());
+        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
+        Document document = getDocumentForDataCategory(dataCategory, pathItemGroup.findByUId(dataCategory.getUid()));
+        luceneService.updateDocument(
+                document,
+                new Term("entityType", ObjectType.DC.getName()),
+                new Term("entityUid", dataCategory.getUid()));
     }
 
     /**
@@ -371,6 +421,10 @@ public class SearchService implements ApplicationListener {
         doc.add(new Field("entityType", entity.getObjectType().getName(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("entityId", entity.getId().toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("entityUid", entity.getUid(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field("entityCreated",
+                new DateTime(entity.getCreated()).toString(DATE_TO_SECOND), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        doc.add(new Field("entityModified",
+                new DateTime(entity.getModified()).toString(DATE_TO_SECOND), Field.Store.YES, Field.Index.NOT_ANALYZED));
         return doc;
     }
 
@@ -540,6 +594,29 @@ public class SearchService implements ApplicationListener {
         }
         localeService.loadLocaleNamesForDataItems(dataItems, filter.isLoadDataItemValues());
         return new ResultsWrapper<DataItem>(dataItems, resultsWrapper.isTruncated());
+    }
+
+    // Document search.
+
+    /**
+     * Find a single Lucene Document that matches the supplied entity.
+     *
+     * @param entity to search for
+     * @return Document matching entity or null
+     */
+    protected Document getDocument(AMEEEntity entity) {
+        BooleanQuery query = new BooleanQuery();
+        query.add(new TermQuery(new Term("entityType", entity.getObjectType().getName())), BooleanClause.Occur.MUST);
+        query.add(new TermQuery(new Term("entityUid", entity.getUid())), BooleanClause.Occur.MUST);
+        ResultsWrapper<Document> resultsWrapper = luceneService.doSearch(query, 0, 1);
+        if (resultsWrapper.isTruncated()) {
+            log.warn("getDocument() Entity in index more than once: " + entity.toString());
+        }
+        if (!resultsWrapper.getResults().isEmpty()) {
+            return resultsWrapper.getResults().get(0);
+        } else {
+            return null;
+        }
     }
 
     @Value("#{ systemProperties['amee.clearIndex'] }")
