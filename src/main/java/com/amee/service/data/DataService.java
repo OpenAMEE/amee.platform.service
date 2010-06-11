@@ -190,8 +190,8 @@ public class DataService extends BaseService implements ApplicationListener {
         return dao.getDataCategories(environment, dataCategoryIds);
     }
 
-    public List<DataCategory> getDataCategoriesModifiedSince(Environment environment, Date date) {
-        return dao.getDataCategoriesModifiedSince(environment, date);
+    public List<DataCategory> getDataCategoriesModifiedWithin(Environment environment, Date modifiedSince, Date modifiedUntil) {
+        return dao.getDataCategoriesModifiedWithin(environment, modifiedSince, modifiedUntil);
     }
 
     public void persist(DataCategory dataCategory) {

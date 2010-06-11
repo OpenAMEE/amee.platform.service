@@ -162,13 +162,18 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public List<DataCategory> getDataCategoriesModifiedSince(Environment environment, Date modifiedSince) {
+    public List<DataCategory> getDataCategoriesModifiedWithin(
+            Environment environment,
+            Date modifiedSince,
+            Date modifiedUntil) {
         return (List<DataCategory>) entityManager.createQuery(
                 "FROM DataCategory " +
                         "WHERE environment.id = :environmentId " +
-                        "AND modified >= :modifiedSince")
+                        "AND modified >= :modifiedSince " +
+                        "AND modified < :modifiedUntil")
                 .setParameter("environmentId", environment.getId())
                 .setParameter("modifiedSince", modifiedSince)
+                .setParameter("modifiedUntil", modifiedUntil)
                 .getResultList();
     }
 
