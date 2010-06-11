@@ -128,8 +128,22 @@ public class SearchService implements ApplicationListener {
         transactionController.end();
     }
 
+    /**
+     * Update all Data Categories & Data Items in the search index where the
+     * Data Items have been modified in the last one hour segment.
+     */
     public void updateDataItems() {
         log.debug("updateDataItems()");
+        transactionController.begin(false);
+        DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
+        List<DataCategory> dataCategories = dataService.getDataCategoriesForDataItemsModifiedWithin(
+                environmentService.getEnvironmentByName("AMEE"),
+                anHourAgoRoundedUp.toDate(),
+                anHourAgoRoundedUp.plusHours(1).toDate());
+        for (DataCategory dataCategory : dataCategories) {
+            updateDataCategory(dataCategory, true);
+        }
+        transactionController.end();
     }
 
     // Index & Document management.
@@ -266,6 +280,16 @@ public class SearchService implements ApplicationListener {
      * @param dataCategory to update index with
      */
     protected void updateDataCategory(DataCategory dataCategory) {
+        updateDataCategory(dataCategory, false);
+    }
+
+    /**
+     * Update or remove Data Category & Data Items from the search index.
+     *
+     * @param dataCategory to update index with
+     * @param dataItems    true if Data Items should also be updated
+     */
+    protected void updateDataCategory(DataCategory dataCategory, boolean dataItems) {
         log.debug("updateDataCategory() DataCategory: " + dataCategory.toString());
         if (!dataCategory.isTrash()) {
             Document document = getDocument(dataCategory);
@@ -285,6 +309,10 @@ public class SearchService implements ApplicationListener {
                 } else {
                     log.warn("updateDataCategory() The modified field was missing, updating");
                     addDataCategory(dataCategory);
+                }
+                // Should we also update the DataItems now?
+                if (dataItems) {
+                    buildDataItems(dataCategory);
                 }
             } else {
                 log.debug("updateDataCategory() DataCategory not in index, adding.");
