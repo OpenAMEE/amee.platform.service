@@ -388,24 +388,24 @@ public class SearchService implements ApplicationListener {
 
     protected Document getDocumentForDataCategory(DataCategory dataCategory, PathItem pathItem) {
         Document doc = getDocumentForAMEEEntity(dataCategory);
-        doc.add(new Field("name", dataCategory.getName(), Field.Store.NO, Field.Index.ANALYZED));
-        doc.add(new Field("path", dataCategory.getPath(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+        doc.add(new Field("name", dataCategory.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("path", dataCategory.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         if (pathItem != null) {
-            doc.add(new Field("fullPath", pathItem.getFullPath(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+            doc.add(new Field("fullPath", pathItem.getFullPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         }
-        doc.add(new Field("wikiName", dataCategory.getWikiName(), Field.Store.NO, Field.Index.ANALYZED));
-        doc.add(new Field("wikiDoc", dataCategory.getWikiDoc(), Field.Store.NO, Field.Index.ANALYZED));
-        doc.add(new Field("provenance", dataCategory.getProvenance(), Field.Store.NO, Field.Index.ANALYZED));
-        doc.add(new Field("authority", dataCategory.getAuthority(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("wikiName", dataCategory.getWikiName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("wikiDoc", dataCategory.getWikiDoc().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("provenance", dataCategory.getProvenance().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("authority", dataCategory.getAuthority().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         if (dataCategory.getDataCategory() != null) {
             doc.add(new Field("parentUid", dataCategory.getDataCategory().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-            doc.add(new Field("parentWikiName", dataCategory.getDataCategory().getWikiName(), Field.Store.NO, Field.Index.ANALYZED));
+            doc.add(new Field("parentWikiName", dataCategory.getDataCategory().getWikiName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         }
         if (dataCategory.getItemDefinition() != null) {
             doc.add(new Field("itemDefinitionUid", dataCategory.getItemDefinition().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-            doc.add(new Field("itemDefinitionName", dataCategory.getItemDefinition().getName(), Field.Store.NO, Field.Index.ANALYZED));
+            doc.add(new Field("itemDefinitionName", dataCategory.getItemDefinition().getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         }
-        doc.add(new Field("tags", tagService.getTagsCSV(dataCategory), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("tags", tagService.getTagsCSV(dataCategory).toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         return doc;
     }
 
@@ -413,36 +413,36 @@ public class SearchService implements ApplicationListener {
         PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(dataItem.getEnvironment());
         PathItem pathItem = pathItemGroup.findByUId(dataItem.getDataCategory().getUid());
         Document doc = getDocumentForAMEEEntity(dataItem);
-        doc.add(new Field("name", dataItem.getName(), Field.Store.NO, Field.Index.ANALYZED));
-        doc.add(new Field("path", dataItem.getPath(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+        doc.add(new Field("name", dataItem.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("path", dataItem.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         if (pathItem != null) {
-            doc.add(new Field("fullPath", pathItem.getFullPath() + "/" + dataItem.getDisplayPath(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+            doc.add(new Field("fullPath", pathItem.getFullPath().toLowerCase() + "/" + dataItem.getDisplayPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         }
-        doc.add(new Field("wikiDoc", dataItem.getWikiDoc(), Field.Store.NO, Field.Index.ANALYZED));
-        doc.add(new Field("provenance", dataItem.getProvenance(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("wikiDoc", dataItem.getWikiDoc().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("provenance", dataItem.getProvenance().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("categoryUid", dataItem.getDataCategory().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-        doc.add(new Field("categoryWikiName", dataItem.getDataCategory().getWikiName(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("categoryWikiName", dataItem.getDataCategory().getWikiName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("itemDefinitionUid", dataItem.getItemDefinition().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-        doc.add(new Field("itemDefinitionName", dataItem.getItemDefinition().getName(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("itemDefinitionName", dataItem.getItemDefinition().getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         for (ItemValue itemValue : dataItem.getItemValues()) {
             if (itemValue.isUsableValue()) {
                 if (itemValue.getItemValueDefinition().isDrillDown()) {
-                    doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+                    doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
                 } else {
                     if (itemValue.isDouble()) {
                         try {
                             doc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValue()).getValue()));
                         } catch (NumberFormatException e) {
                             log.warn("getDocumentForDataItem() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValue() + "' for DataItem " + dataItem.toString() + ".");
-                            doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue(), Field.Store.NO, Field.Index.ANALYZED));
+                            doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
                         }
                     } else {
-                        doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue(), Field.Store.NO, Field.Index.ANALYZED));
+                        doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
                     }
                 }
             }
         }
-        doc.add(new Field("label", dataItem.getLabel(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("label", dataItem.getLabel().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         return doc;
     }
 
