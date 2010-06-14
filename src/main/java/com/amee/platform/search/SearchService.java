@@ -600,30 +600,35 @@ public class SearchService implements ApplicationListener {
 
     // DataItem search.
 
-    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, QueryFilter filter) {
+    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemFilter filter) {
         BooleanQuery query = new BooleanQuery();
         for (Query q : filter.getQueries().values()) {
             query.add(q, BooleanClause.Occur.MUST);
         }
-        query.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.MUST);
-        query.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);
-        ResultsWrapper<Document> resultsWrapper =
-                luceneService.doSearch(query, filter.getResultStart(), filter.getResultLimit());
-        Set<Long> dataItemIds = new HashSet<Long>();
-        for (Document document : resultsWrapper.getResults()) {
-            dataItemIds.add(new Long(document.getField("entityId").stringValue()));
-        }
         // Get the DataItems.
-        List<DataItem> dataItems = dataService.getDataItems(
-                environmentService.getEnvironmentByName("AMEE"),
-                dataItemIds,
-                filter.isLoadDataItemValues());
-        // Pre-loading of LocaleNames & DataCategories.
+        ResultsWrapper<DataItem> resultsWrapper = getDataItems(dataCategory, query, filter.getResultStart(), filter.getResultLimit());
+        // Pre-loading of Metadatas, LocaleNames and ItemValues.
         if (filter.isLoadMetadatas()) {
-            metadataService.loadMetadatasForDataItems(dataItems);
+            metadataService.loadMetadatasForDataItems(resultsWrapper.getResults());
         }
-        localeService.loadLocaleNamesForDataItems(dataItems, filter.isLoadDataItemValues());
-        return new ResultsWrapper<DataItem>(dataItems, resultsWrapper.isTruncated());
+        localeService.loadLocaleNamesForDataItems(resultsWrapper.getResults(), filter.isLoadDataItemValues());
+        return resultsWrapper;
+    }
+
+    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, Query query, int resultStart, int resultLimit) {
+        BooleanQuery q = new BooleanQuery();
+        q.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.MUST);
+        q.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);
+        q.add(query, BooleanClause.Occur.MUST);
+        ResultsWrapper<Document> resultsWrapper =
+                luceneService.doSearch(q, resultStart, resultLimit);
+        Set<Long> dataCategoryIds = new HashSet<Long>();
+        for (Document document : resultsWrapper.getResults()) {
+            dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
+        }
+        return new ResultsWrapper<DataItem>(
+                dataService.getDataItems(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds),
+                resultsWrapper.isTruncated());
     }
 
     // Document search.
