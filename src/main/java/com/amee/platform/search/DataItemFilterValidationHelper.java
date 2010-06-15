@@ -27,7 +27,7 @@ public class DataItemFilterValidationHelper extends ValidationHelper {
     protected void registerCustomEditors(DataBinder dataBinder) {
         dataBinder.registerCustomEditor(Query.class, "uid", new QueryParserEditor("entityUid", SearchService.KEYWORD_ANALYZER));
         dataBinder.registerCustomEditor(Query.class, "name", new QueryParserEditor("name"));
-        dataBinder.registerCustomEditor(Query.class, "path", new QueryParserEditor("path", SearchService.KEYWORD_ANALYZER));
+        dataBinder.registerCustomEditor(Query.class, "path", new QueryParserEditor("path", SearchService.LOWER_CASE_KEYWORD_ANALYZER));
         dataBinder.registerCustomEditor(Query.class, "wikiDoc", new QueryParserEditor("wikiDoc"));
         dataBinder.registerCustomEditor(Query.class, "provenance", new QueryParserEditor("provenance"));
         dataBinder.registerCustomEditor(Query.class, "categoryUid", new QueryParserEditor("categoryUid", SearchService.KEYWORD_ANALYZER));
@@ -41,7 +41,7 @@ public class DataItemFilterValidationHelper extends ValidationHelper {
                     dataBinder.registerCustomEditor(
                             Query.class,
                             "queries[" + ivd.getPath() + "]",
-                            new QueryParserEditor(ivd.getPath(), SearchService.KEYWORD_ANALYZER));
+                            new QueryParserEditor(ivd.getPath(), SearchService.LOWER_CASE_KEYWORD_ANALYZER));
                 } else {
                     if (ivd.isDouble()) {
                         dataBinder.registerCustomEditor(

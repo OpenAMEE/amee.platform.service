@@ -21,6 +21,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.KeywordTokenizer;
+import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -39,6 +42,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,6 +58,13 @@ public class SearchService implements ApplicationListener {
 
     public final static Analyzer STANDARD_ANALYZER = new StandardAnalyzer(Version.LUCENE_30);
     public final static Analyzer KEYWORD_ANALYZER = new KeywordAnalyzer();
+    public final static Analyzer LOWER_CASE_KEYWORD_ANALYZER = new Analyzer() {
+        public TokenStream tokenStream(String fieldName, Reader reader) {
+            TokenStream result = new KeywordTokenizer(reader);
+            result = new LowerCaseFilter(result);
+            return result;
+        }
+    };
 
     @Autowired
     private TransactionController transactionController;
@@ -586,7 +597,9 @@ public class SearchService implements ApplicationListener {
     public ResultsWrapper<DataCategory> getDataCategories(Query query, int resultStart, int resultLimit) {
         BooleanQuery q = new BooleanQuery();
         q.add(new TermQuery(new Term("entityType", ObjectType.DC.getName())), BooleanClause.Occur.MUST);
-        q.add(query, BooleanClause.Occur.MUST);
+        if (query != null) {
+            q.add(query, BooleanClause.Occur.MUST);
+        }
         ResultsWrapper<Document> resultsWrapper =
                 luceneService.doSearch(q, resultStart, resultLimit);
         Set<Long> dataCategoryIds = new HashSet<Long>();
@@ -601,9 +614,12 @@ public class SearchService implements ApplicationListener {
     // DataItem search.
 
     public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemFilter filter) {
-        BooleanQuery query = new BooleanQuery();
-        for (Query q : filter.getQueries().values()) {
-            query.add(q, BooleanClause.Occur.MUST);
+        BooleanQuery query = null;
+        if (!filter.getQueries().isEmpty()) {
+            query = new BooleanQuery();
+            for (Query q : filter.getQueries().values()) {
+                query.add(q, BooleanClause.Occur.MUST);
+            }
         }
         // Get the DataItems.
         ResultsWrapper<DataItem> resultsWrapper = getDataItems(dataCategory, query, filter.getResultStart(), filter.getResultLimit());
@@ -619,7 +635,9 @@ public class SearchService implements ApplicationListener {
         BooleanQuery q = new BooleanQuery();
         q.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.MUST);
         q.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);
-        q.add(query, BooleanClause.Occur.MUST);
+        if (query != null) {
+            q.add(query, BooleanClause.Occur.MUST);
+        }
         ResultsWrapper<Document> resultsWrapper =
                 luceneService.doSearch(q, resultStart, resultLimit);
         Set<Long> dataCategoryIds = new HashSet<Long>();
