@@ -16,7 +16,7 @@
         <amee-persist.version>1.0.3</amee-persist.version>
         <amee-messaging.version>1.0.2</amee-messaging.version>
         <amee-platform-science.version>1.0.9</amee-platform-science.version>
-        <amee-platform-domain.version>1.0.1</amee-platform-domain.version>
+        <amee-platform-domain.version>1.0.2</amee-platform-domain.version>
         <!-- External Versions. -->
         <junit.version>4.7</junit.version>
         <lucene-core.version>3.0.1</lucene-core.version>
