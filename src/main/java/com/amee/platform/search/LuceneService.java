@@ -10,13 +10,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
@@ -26,11 +20,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * LuceneIndexWrapper wraps a Lucene file system index and provides a simplified abstraction of
@@ -270,7 +260,7 @@ public class LuceneService implements Serializable {
      */
     private void createDirectory() {
         try {
-            String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-back/lucene/index");
+            String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-api/lucene/index");
             setDirectory(FSDirectory.open(new File(path)));
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
