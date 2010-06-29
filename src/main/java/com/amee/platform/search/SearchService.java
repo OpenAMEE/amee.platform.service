@@ -541,7 +541,10 @@ public class SearchService implements ApplicationListener {
         for (Document document : resultsWrapper.getResults()) {
             entityId = new Long(document.getField("entityId").stringValue());
             entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
-            results.add(entities.get(entityType).get(entityId));
+            AMEEEntity result = entities.get(entityType).get(entityId);
+            if (result != null) {
+                results.add(result);
+            }
         }
         return new ResultsWrapper<AMEEEntity>(results, resultsWrapper.isTruncated());
     }
