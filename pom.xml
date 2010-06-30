@@ -5,7 +5,7 @@
     <name>amee-platform-service</name>
     <groupId>com.amee.platform</groupId>
     <artifactId>amee-platform-service</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>1.0.5</version>
     <packaging>jar</packaging>
 
     <!-- Properties. -->
