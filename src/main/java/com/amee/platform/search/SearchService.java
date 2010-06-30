@@ -544,6 +544,8 @@ public class SearchService implements ApplicationListener {
             AMEEEntity result = entities.get(entityType).get(entityId);
             if (result != null) {
                 results.add(result);
+            } else {
+                log.warn("getEntities() Entity was missing: " + entityType + " / " + entityId);
             }
         }
         return new ResultsWrapper<AMEEEntity>(results, resultsWrapper.isTruncated());
