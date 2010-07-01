@@ -384,7 +384,7 @@ public class LuceneService implements Serializable {
             }
         });
 
-        if (snapshotFiles.length > 0) {
+        if (snapshotFiles != null && snapshotFiles.length > 0) {
             Arrays.sort(snapshotFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
             return snapshotFiles[0].lastModified();
         } else {
