@@ -19,7 +19,6 @@
  */
 package com.amee.calculation.service;
 
-import com.amee.base.transaction.TransactionController;
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.APIVersion;
 import com.amee.domain.algorithm.Algorithm;
@@ -30,7 +29,9 @@ import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.domain.sheet.Choices;
-import com.amee.platform.science.*;
+import com.amee.platform.science.AlgorithmRunner;
+import com.amee.platform.science.InternalValue;
+import com.amee.platform.science.ReturnValues;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -50,9 +51,6 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
     private final Log log = LogFactory.getLog(getClass());
     private final Log scienceLog = LogFactory.getLog("science");
-
-    @Autowired
-    private TransactionController transactionController;
 
     @Autowired
     private AMEEStatistics ameeStatistics;
@@ -108,7 +106,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * for execution is desirable.
      *
      * @param algorithm the algorithm to use
-     * @param values input values for the algorithm
+     * @param values    input values for the algorithm
      * @return the algorithm result
      */
     public ReturnValues calculate(Algorithm algorithm, Map<String, Object> values) {
