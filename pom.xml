@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Identity. -->
@@ -13,10 +14,10 @@
         <!-- Versions. -->
         <!-- Note: These versions were last checked & upgraded on 15/04/2010. -->
         <amee-base.version>1.0.2</amee-base.version>
-        <amee-persist.version>1.0.3</amee-persist.version>
+        <amee-persist.version>1.0.4-SNAPSHOT</amee-persist.version>
         <amee-messaging.version>1.0.2</amee-messaging.version>
         <amee-platform-science.version>1.0.9</amee-platform-science.version>
-        <amee-platform-domain.version>1.0.3</amee-platform-domain.version>
+        <amee-platform-domain.version>1.0.4-SNAPSHOT</amee-platform-domain.version>
         <!-- External Versions. -->
         <junit.version>4.7</junit.version>
         <lucene-core.version>3.0.1</lucene-core.version>

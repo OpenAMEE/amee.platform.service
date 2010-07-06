@@ -1,23 +1,25 @@
 package com.amee.service.tag;
 
+import com.amee.base.transaction.TransactionEvent;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.tag.EntityTag;
 import com.amee.domain.tag.Tag;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
-public class TagService {
+public class TagService implements ApplicationListener {
+
+    private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
     private TagServiceDAO dao;
@@ -29,6 +31,26 @@ public class TagService {
                     return new HashMap<String, List<EntityTag>>();
                 }
             };
+
+    public void onApplicationEvent(ApplicationEvent e) {
+        if (e instanceof TransactionEvent) {
+            TransactionEvent te = (TransactionEvent) e;
+            switch (te.getType()) {
+                case BEFORE_BEGIN:
+                    log.debug("onApplicationEvent() BEFORE_BEGIN");
+                    // Reset thread bound data.
+                    clearEntityTags();
+                    break;
+                case END:
+                    log.debug("onApplicationEvent() END");
+                    // Reset thread bound data.
+                    clearEntityTags();
+                    break;
+                default:
+                    // Do nothing!
+            }
+        }
+    }
 
     public List<Tag> getAllTags() {
         return dao.getTagsWithCount();
