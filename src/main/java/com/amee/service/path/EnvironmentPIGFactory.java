@@ -92,15 +92,16 @@ public class EnvironmentPIGFactory implements CacheableFactory {
         return null;
     }
 
-    private void addDataCategories(PathItemGroup pathItemGroup, List<DataCategory> dataCategories) {
+    public void addDataCategories(PathItemGroup pathItemGroup, List<DataCategory> dataCategories) {
 
         log.debug("addDataCategories() Starting...");
 
         PathItem pathItem;
+        PathItem rootPI = pathItemGroup.getRootPathItem();
         Map<String, PathItem> pathItems = new HashMap<String, PathItem>();
 
         // Add root PathItem.
-        pathItems.put(pathItemGroup.getRootPathItem().getUid(), pathItemGroup.getRootPathItem());
+        pathItems.put(rootPI.getUid(), pathItemGroup.getRootPathItem());
 
         // Step One - Create all PathItems.
         for (DataCategory dataCategory : dataCategories) {
@@ -116,18 +117,25 @@ public class EnvironmentPIGFactory implements CacheableFactory {
         for (DataCategory dataCategory : dataCategories) {
             // Find previously created PathItem.
             pathItem = pathItems.get(dataCategory.getUid());
-            // Bind current PathItem to parent, if possible.
-            if (pathItems.containsKey(dataCategory.getDataCategory().getUid())) {
-                // Add child PI to parent PI.
-                pathItems.get(dataCategory.getDataCategory().getUid()).add(pathItem);
+            if (pathItem != null) {
+                // Bind current PathItem to parent, if possible.
+                if (pathItems.containsKey(dataCategory.getDataCategory().getUid())) {
+                    // Add child PI to parent PI.
+                    pathItems.get(dataCategory.getDataCategory().getUid()).add(pathItem);
+                } else {
+                    log.warn("addDataCategories() Parent PathItem not found for DC: " + dataCategory.getUid() + " (" + dataCategory.getPath() + ")");
+                    // Remove orphaned PIs.
+                    removeAll(pathItems, pathItem);
+                }
             } else {
-                log.warn("addDataCategories() Parent PathItem not found for DC: " + dataCategory.getUid() + " (" + dataCategory.getPath() + ")");
-                // Remove orphaned PIs.
-                removeAll(pathItems, pathItem);
+                log.warn("addDataCategories() No PathItem for DC: " + dataCategory.getUid() + " (" + dataCategory.getPath() + ")");
             }
         }
 
-        // Step Three - Add PathItems to PathItemGroup.
+        // Step Three - Do fullPath calculation.
+        rootPI.updateFullPaths();
+
+        // Step Four - Add PathItems to PathItemGroup.
         pathItemGroup.addAll(pathItems.values());
 
         log.debug("addDataCategories() ...done.");

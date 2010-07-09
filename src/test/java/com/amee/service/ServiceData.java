@@ -22,9 +22,9 @@
 package com.amee.service;
 
 import com.amee.domain.AMEEEntity;
+import com.amee.domain.AMEEStatus;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
-import com.amee.domain.AMEEStatus;
 import com.amee.domain.auth.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
@@ -32,10 +32,7 @@ import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.environment.Environment;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class ServiceData {
@@ -51,12 +48,15 @@ public class ServiceData {
     public Map<IAMEEEntityReference, List<Permission>> PRINCIPAL_TO_PERMISSIONS;
     public Map<ObjectType, Long> ID_MAP;
     public Map<String, AMEEEntity> ENTITY_MAP;
+    public List<DataCategory> creationOrderedCategories = new ArrayList<DataCategory>();
+    public List<DataCategory> reverseCreationOrderedCategories = new ArrayList<DataCategory>();
 
     public void init() {
         initCollections();
         initEnvironment();
         initDefinitions();
         initDataCategories();
+        initOrderedDataCategories();
         initDataItems();
         initGroupsAndUsers();
         initPermissions();
@@ -87,6 +87,31 @@ public class ServiceData {
         DC_DEPRECATED = new DataCategory(DC_ROOT, "DC Deprecated", "dc_deprecated");
         DC_DEPRECATED.setStatus(AMEEStatus.DEPRECATED);
         addEntities(DC_ROOT, DC_PUBLIC, DC_PUBLIC_SUB, DC_PREMIUM, DC_DEPRECATED);
+    }
+
+    private void initOrderedDataCategories() {
+        DataCategory A1 = new DataCategory(DC_ROOT, "A1", "a1");
+        DataCategory A2 = new DataCategory(A1, "A2", "a2");
+        DataCategory A3 = new DataCategory(A2, "A3", "a3");
+        DataCategory A4 = new DataCategory(A3, "A4", "a4");
+        DataCategory A5 = new DataCategory(A3, "A5", "a5");
+        DataCategory B1 = new DataCategory(DC_ROOT, "B1", "b1");
+        DataCategory B2 = new DataCategory(B1, "B2", "b2");
+        DataCategory B3 = new DataCategory(B2, "B3", "b3");
+        DataCategory B4 = new DataCategory(B3, "B4", "b4");
+        DataCategory B5 = new DataCategory(A3, "B5", "b5");
+        creationOrderedCategories.add(A1);
+        creationOrderedCategories.add(A2);
+        creationOrderedCategories.add(A3);
+        creationOrderedCategories.add(A4);
+        creationOrderedCategories.add(A5);
+        creationOrderedCategories.add(B1);
+        creationOrderedCategories.add(B2);
+        creationOrderedCategories.add(B3);
+        creationOrderedCategories.add(B4);
+        creationOrderedCategories.add(B5);
+        reverseCreationOrderedCategories.addAll(creationOrderedCategories);
+        Collections.reverse(reverseCreationOrderedCategories);
     }
 
     private void initDataItems() {
