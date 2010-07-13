@@ -19,11 +19,7 @@ import com.amee.service.path.PathItemService;
 import com.amee.service.tag.TagService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.analysis.KeywordTokenizer;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.*;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -43,14 +39,33 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class SearchService implements ApplicationListener {
+
+    protected class DocumentContext {
+
+        // Current Data Category.
+        private DataCategory dataCategory;
+
+        // Current Data Category Document.
+        private Document dataCategoryDoc;
+
+        // String of all Data Item Values for a Data Category.
+        private StringBuilder dataCategoryDataItemValues;
+
+        // Should Data Item documents be handled when handling a Data Category.
+        private boolean handleDataItems = false;
+
+        // Work-in-progress List of Data Item Documents.
+        private List<Document> dataItemDocs;
+
+        // Current Data Item.
+        private DataItem dataItem;
+
+        // Current Data Item Document
+        private Document dataItemDoc;
+    }
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -108,7 +123,9 @@ public class SearchService implements ApplicationListener {
             transactionController.begin(false);
             DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid(), true);
             if (dataCategory != null) {
-                updateDataCategory(dataCategory);
+                DocumentContext ctx = new DocumentContext();
+                ctx.dataCategory = dataCategory;
+                updateDataCategory(ctx);
             }
             transactionController.end();
         }
@@ -134,7 +151,9 @@ public class SearchService implements ApplicationListener {
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());
         for (DataCategory dataCategory : dataCategories) {
-            updateDataCategory(dataCategory);
+            DocumentContext ctx = new DocumentContext();
+            ctx.dataCategory = dataCategory;
+            updateDataCategory(ctx);
         }
         transactionController.end();
     }
@@ -152,7 +171,10 @@ public class SearchService implements ApplicationListener {
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());
         for (DataCategory dataCategory : dataCategories) {
-            updateDataCategory(dataCategory, true);
+            DocumentContext ctx = new DocumentContext();
+            ctx.dataCategory = dataCategory;
+            ctx.handleDataItems = true;
+            updateDataCategory(ctx);
         }
         transactionController.end();
     }
@@ -173,183 +195,166 @@ public class SearchService implements ApplicationListener {
         if (indexDataCategories) {
             buildDataCategories();
         }
-        // Add DataItems?
-        if (indexDataItems) {
-            // Add DataItems.
-            buildDataItems();
-        }
     }
 
     /**
      * Add all DataCategories to the index.
      */
     protected void buildDataCategories() {
-        log.info("buildDataCategories()");
-        // Wipe all DataCategory Documents from Lucene index.
-        if (!clearIndex) {
-            remove(ObjectType.DC);
-        }
-        transactionController.begin(false);
-        // We need PathItems to exclude test DataCategories.
-        PathItem pathItem;
-        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
-        // Iterate over all DataCategories and add Documents to Lucene index.
-        List<Document> documents = new ArrayList<Document>();
-        for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
-            log.info("buildDataCategories() " + dataCategory.toString());
-            pathItem = pathItemGroup.findByUId(dataCategory.getUid());
-            if (pathItem == null || !pathItem.getFullPath().startsWith("/test")) {
-                documents.add(getDocumentForDataCategory(dataCategory, pathItem));
-            }
-        }
-        transactionController.end();
-        luceneService.addDocuments(documents);
+        log.info("handleDataCategories()");
+        buildDataCategories(getDataCategoryUids());
     }
 
     /**
-     * Add all DataItems to the index.
+     * Get a Set of Data Category UIDs for all.
+     *
+     * @return Set of Data Category UIDs
      */
-    protected void buildDataItems() {
-        log.info("buildDataItems() Starting...");
+    protected Set<String> getDataCategoryUids() {
+        log.debug("getDataCategoryUids()");
         transactionController.begin(false);
         // We need PathItems to exclude test DataCategories.
-        PathItem pathItem;
         PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
-        // Iterate over all DataCategories and gather DataCategory UIDs. 
+        // Iterate over all DataCategories and gather DataCategory UIDs.
         Set<String> dataCategoryUids = new HashSet<String>();
         for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
-            pathItem = pathItemGroup.findByUId(dataCategory.getUid());
-            if ((pathItem != null) &&
-                    !pathItem.getFullPath().startsWith("/test") &&
-                    (dataCategory.getItemDefinition() != null)) {
+            PathItem pathItem = pathItemGroup.findByUId(dataCategory.getUid());
+            if (pathItem == null || !pathItem.getFullPath().startsWith("/test")) {
                 dataCategoryUids.add(dataCategory.getUid());
             }
         }
         transactionController.end();
-        buildDataItems(dataCategoryUids);
-        log.info("buildDataItems() ...done.");
+        return dataCategoryUids;
     }
 
     /**
-     * Add all DataItems to the index.
+     * Add all DataCategories to the index.
      *
-     * @param dataCategoryUids UIDs of DataCategories to add.
+     * @param dataCategoryUids UIDs of Data Categories to index.
      */
-    protected void buildDataItems(Set<String> dataCategoryUids) {
+    protected void buildDataCategories(Set<String> dataCategoryUids) {
+        log.info("handleDataCategories()");
         for (String uid : dataCategoryUids) {
-            buildDataItems(uid);
+            buildDataCategory(uid);
         }
     }
 
-    /**
-     * Create all DataItem documents for the supplied DataCategory UIDs.
-     *
-     * @param dataCategoryUid DataCategory UIDs to create DataItem documents for
-     */
-    protected void buildDataItems(String dataCategoryUid) {
-        DataCategory dataCategory;
+    protected void buildDataCategory(String dataCategoryUid) {
+        log.info("buildDataCategory()");
         transactionController.begin(false);
-        dataCategory = dataService.getDataCategoryByUid(dataCategoryUid);
-        buildDataItems(dataCategory);
+        DocumentContext ctx = new DocumentContext();
+        ctx.dataCategory = dataService.getDataCategoryByUid(dataCategoryUid);
+        ctx.handleDataItems = indexDataItems;
+        updateDataCategory(ctx);
         transactionController.end();
     }
 
     /**
      * Create all DataItem documents for the supplied DataCategory.
      *
-     * @param dataCategory DataCategory to create DataItem documents for
+     * @param ctx
      */
-    public void buildDataItems(DataCategory dataCategory) {
-        if (dataCategory.getItemDefinition() != null) {
-            log.info("buildDataItems() Starting... (" + dataCategory.toString() + ")");
-            metadataService.loadMetadatasForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
-            localeService.loadLocaleNamesForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
-            List<DataItem> dataItems = dataService.getDataItems(dataCategory, false);
+    public void handleDataItems(DocumentContext ctx) {
+        ctx.dataItemDoc = null;
+        ctx.dataItemDocs = null;
+        // There are only Data Items for a Data Category if there is an Item Definition.
+        if (ctx.dataCategory.getItemDefinition() != null) {
+            log.info("handleDataItems() Starting... (" + ctx.dataCategory.toString() + ")");
+            // Pre-cache metadata and locales for the Data Items.
+            metadataService.loadMetadatasForItemValueDefinitions(ctx.dataCategory.getItemDefinition().getItemValueDefinitions());
+            localeService.loadLocaleNamesForItemValueDefinitions(ctx.dataCategory.getItemDefinition().getItemValueDefinitions());
+            List<DataItem> dataItems = dataService.getDataItems(ctx.dataCategory, false);
             metadataService.loadMetadatasForDataItems(dataItems);
             localeService.loadLocaleNamesForDataItems(dataItems);
-            // Clear existing DataItem Documents?
-            if (!clearIndex) {
-                removeDataItems(dataCategory);
+            // Are we handling Data Items?
+            if (ctx.handleDataItems) {
+                ctx.dataItemDocs = new ArrayList<Document>();
             }
-            // Create DataItem Documents and store to Lucene.
-            List<Document> documents = new ArrayList<Document>();
             for (DataItem dataItem : dataItems) {
-                documents.add(getDocumentForDataItem(dataItem));
+                ctx.dataItem = dataItem;
+                // Are we handling Data Items?
+                if (ctx.handleDataItems) {
+                    // Create new Data Item Document.
+                    ctx.dataItemDoc = getDocumentForDataItem(dataItem);
+                    ctx.dataItemDocs.add(ctx.dataItemDoc);
+                }
+                // Handle the Data Item Values.
+                handleDataItemValues(ctx);
             }
-            luceneService.addDocuments(documents);
+            // Clear caches.
             metadataService.clearMetadatas();
             localeService.clearLocaleNames();
-            log.info("buildDataItems() ...done (" + dataCategory.toString() + ").");
+            // Update Data Items in index (if relevant).
+            if (ctx.handleDataItems) {
+                // Ensure we clear existing DataItem Documents for this Data Category.
+                removeDataItems(ctx.dataCategory);
+                // Add the new Data Item Documents to the index (if any).
+                luceneService.addDocuments(ctx.dataItemDocs);
+            }
+            log.info("handleDataItems() ...done (" + ctx.dataCategory.toString() + ").");
         } else {
-            log.debug("buildDataItems() DataCategory does not have items: " + dataCategory.toString());
+            log.debug("handleDataItems() DataCategory does not have items: " + ctx.dataCategory.toString());
+            // Ensure we clear any Data Item Documents for this Data Category.
+            removeDataItems(ctx.dataCategory);
         }
-    }
-
-    /**
-     * Update or remove a Data Category from the search index.
-     *
-     * @param dataCategory to update index with
-     */
-    protected void updateDataCategory(DataCategory dataCategory) {
-        updateDataCategory(dataCategory, false);
     }
 
     /**
      * Update or remove Data Category & Data Items from the search index.
      *
-     * @param dataCategory to update index with
-     * @param dataItems    true if Data Items should also be updated
+     * @param ctx
      */
-    protected void updateDataCategory(DataCategory dataCategory, boolean dataItems) {
-        log.debug("updateDataCategory() DataCategory: " + dataCategory.toString());
-        if (!dataCategory.isTrash()) {
-            Document document = getDocument(dataCategory);
+    protected void updateDataCategory(DocumentContext ctx) {
+        log.debug("updateDataCategory() DataCategory: " + ctx.dataCategory.toString());
+        if (!ctx.dataCategory.isTrash()) {
+            Document document = getDocument(ctx.dataCategory);
             if (document != null) {
                 Field modifiedField = document.getField("entityModified");
                 if (modifiedField != null) {
                     DateTime modifiedInIndex =
                             DATE_TO_SECOND.parseDateTime(modifiedField.stringValue());
                     DateTime modifiedInDatabase =
-                            new DateTime(dataCategory.getModified()).withMillisOfSecond(0);
-                    if (modifiedInDatabase.isAfter(modifiedInIndex)) {
-                        log.debug("updateDataCategory() DataCategory has been modified, updating.");
-                        addDataCategory(dataCategory);
+                            new DateTime(ctx.dataCategory.getModified()).withMillisOfSecond(0);
+                    if (indexDataCategories || ctx.handleDataItems || modifiedInDatabase.isAfter(modifiedInIndex)) {
+                        log.debug("updateDataCategory() DataCategory has been modified or re-index requested, updating.");
+                        handleDataCategory(ctx);
                     } else {
                         log.debug("updateDataCategory() DataCategory is up-to-date, skipping.");
                     }
                 } else {
                     log.warn("updateDataCategory() The modified field was missing, updating");
-                    addDataCategory(dataCategory);
-                }
-                // Should we also update the DataItems now?
-                if (dataItems) {
-                    buildDataItems(dataCategory);
+                    handleDataCategory(ctx);
                 }
             } else {
                 log.debug("updateDataCategory() DataCategory not in index, adding.");
-                addDataCategory(dataCategory);
-                buildDataItems(dataCategory);
+                handleDataCategory(ctx);
             }
         } else {
             log.debug("updateDataCategory() DataCategory needs to be removed.");
-            removeDataCategory(dataCategory);
-            removeDataItems(dataCategory);
+            removeDataCategory(ctx.dataCategory);
+            removeDataItems(ctx.dataCategory);
         }
     }
 
     /**
      * Add a Document for the supplied DataCategory to the Lucene index.
      *
-     * @param dataCategory to add to the search index.
+     * @param ctx
      */
-    protected void addDataCategory(DataCategory dataCategory) {
-        log.debug("addDataCategory() " + dataCategory.toString());
+    protected void handleDataCategory(DocumentContext ctx) {
+        log.debug("handleDataCategory() " + ctx.dataCategory.toString());
         PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
-        Document document = getDocumentForDataCategory(dataCategory, pathItemGroup.findByUId(dataCategory.getUid()));
+        // Get Data Category Document.
+        ctx.dataCategoryDoc = getDocumentForDataCategory(ctx.dataCategory, pathItemGroup.findByUId(ctx.dataCategory.getUid()));
+        // Handle Data Items (Create, store & update documents).
+        ctx.dataCategoryDataItemValues = new StringBuilder();
+        handleDataItems(ctx);
+        ctx.dataCategoryDoc.add(new Field("dataItemValues", ctx.dataCategoryDataItemValues.toString(), Field.Store.NO, Field.Index.ANALYZED));
+        // Store / update the Data Category Document.
         luceneService.updateDocument(
-                document,
+                ctx.dataCategoryDoc,
                 new Term("entityType", ObjectType.DC.getName()),
-                new Term("entityUid", dataCategory.getUid()));
+                new Term("entityUid", ctx.dataCategory.getUid()));
     }
 
     /**
@@ -392,10 +397,14 @@ public class SearchService implements ApplicationListener {
      */
     protected void removeDataItems(DataCategory dataCategory) {
         log.debug("removeDataItems() " + dataCategory.toString());
-        luceneService.deleteDocuments(
-                new Term("entityType", ObjectType.DI.getName()),
-                new Term("categoryUid", dataCategory.getUid()));
+        if (!clearIndex) {
+            luceneService.deleteDocuments(
+                    new Term("entityType", ObjectType.DI.getName()),
+                    new Term("categoryUid", dataCategory.getUid()));
+        }
     }
+
+    // Lucene Document creation.
 
     protected Document getDocumentForDataCategory(DataCategory dataCategory, PathItem pathItem) {
         Document doc = getDocumentForAMEEEntity(dataCategory);
@@ -457,7 +466,7 @@ public class SearchService implements ApplicationListener {
         return doc;
     }
 
-    private Document getDocumentForAMEEEntity(AMEEEntity entity) {
+    protected Document getDocumentForAMEEEntity(AMEEEntity entity) {
         Document doc = new Document();
         doc.add(new Field("entityType", entity.getObjectType().getName(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("entityId", entity.getId().toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
@@ -467,6 +476,39 @@ public class SearchService implements ApplicationListener {
         doc.add(new Field("entityModified",
                 new DateTime(entity.getModified()).toString(DATE_TO_SECOND), Field.Store.YES, Field.Index.NOT_ANALYZED));
         return doc;
+    }
+
+    protected void handleDataItemValues(DocumentContext ctx) {
+        for (ItemValue itemValue : ctx.dataItem.getItemValues()) {
+            if (itemValue.isUsableValue()) {
+                if (itemValue.getItemValueDefinition().isDrillDown()) {
+                    if (ctx.dataItemDoc != null) {
+                        ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+                    }
+                    if (ctx.dataCategoryDataItemValues != null) {
+                        ctx.dataCategoryDataItemValues.append(itemValue.getValue().toLowerCase());
+                        ctx.dataCategoryDataItemValues.append(" ");
+                    }
+                } else {
+                    if (itemValue.isDouble() && (ctx.dataItemDoc != null)) {
+                        try {
+                            ctx.dataItemDoc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValue()).getValue()));
+                        } catch (NumberFormatException e) {
+                            log.warn("handleDataItemValues() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValue() + "' for DataItem " + ctx.dataItem.toString() + ".");
+                            ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+                        }
+                    } else {
+                        if (ctx.dataItemDoc != null) {
+                            ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+                        }
+                        if (ctx.dataCategoryDataItemValues != null) {
+                            ctx.dataCategoryDataItemValues.append(itemValue.getValue().toLowerCase());
+                            ctx.dataCategoryDataItemValues.append(" ");
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Entity search.

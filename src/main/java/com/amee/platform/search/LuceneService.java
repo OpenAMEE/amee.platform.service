@@ -126,14 +126,16 @@ public class LuceneService implements Serializable {
     }
 
     public synchronized void addDocuments(Collection<Document> documents) {
-        if (!masterIndex) return;
-        try {
-            for (Document document : documents) {
-                getIndexWriter().addDocument(document);
+        if ((documents != null) && !documents.isEmpty()) {
+            if (!masterIndex) return;
+            try {
+                for (Document document : documents) {
+                    getIndexWriter().addDocument(document);
+                }
+                closeIndexWriter();
+            } catch (IOException e) {
+                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
             }
-            closeIndexWriter();
-        } catch (IOException e) {
-            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
     }
 
