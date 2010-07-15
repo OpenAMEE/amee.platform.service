@@ -48,12 +48,6 @@ public class SearchService implements ApplicationListener {
         // Current Data Category.
         private DataCategory dataCategory;
 
-        // Current Data Category Document.
-        private Document dataCategoryDoc;
-
-        // String of all Data Item Values for a Data Category.
-        private StringBuilder dataCategoryDataItemValues;
-
         // Should Data Item documents be handled when handling a Data Category.
         private boolean handleDataItems = false;
 
@@ -101,6 +95,9 @@ public class SearchService implements ApplicationListener {
 
     @Autowired
     private PathItemService pathItemService;
+
+    @Autowired
+    private SearchQueryService searchQueryService;
 
     @Autowired
     private LuceneService luceneService;
@@ -287,7 +284,7 @@ public class SearchService implements ApplicationListener {
             // Update Data Items in index (if relevant).
             if (ctx.handleDataItems) {
                 // Ensure we clear existing DataItem Documents for this Data Category.
-                removeDataItems(ctx.dataCategory);
+                searchQueryService.removeDataItems(ctx.dataCategory);
                 // Add the new Data Item Documents to the index (if any).
                 luceneService.addDocuments(ctx.dataItemDocs);
             }
@@ -295,7 +292,7 @@ public class SearchService implements ApplicationListener {
         } else {
             log.debug("handleDataItems() DataCategory does not have items: " + ctx.dataCategory.toString());
             // Ensure we clear any Data Item Documents for this Data Category.
-            removeDataItems(ctx.dataCategory);
+            searchQueryService.removeDataItems(ctx.dataCategory);
         }
     }
 
@@ -307,7 +304,7 @@ public class SearchService implements ApplicationListener {
     protected void updateDataCategory(DocumentContext ctx) {
         log.debug("updateDataCategory() DataCategory: " + ctx.dataCategory.toString());
         if (!ctx.dataCategory.isTrash()) {
-            Document document = getDocument(ctx.dataCategory);
+            Document document = searchQueryService.getDocument(ctx.dataCategory);
             if (document != null) {
                 Field modifiedField = document.getField("entityModified");
                 if (modifiedField != null) {
@@ -331,8 +328,8 @@ public class SearchService implements ApplicationListener {
             }
         } else {
             log.debug("updateDataCategory() DataCategory needs to be removed.");
-            removeDataCategory(ctx.dataCategory);
-            removeDataItems(ctx.dataCategory);
+            searchQueryService.removeDataCategory(ctx.dataCategory);
+            searchQueryService.removeDataItems(ctx.dataCategory);
         }
     }
 
@@ -345,63 +342,16 @@ public class SearchService implements ApplicationListener {
         log.debug("handleDataCategory() " + ctx.dataCategory.toString());
         PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
         // Get Data Category Document.
-        ctx.dataCategoryDoc = getDocumentForDataCategory(ctx.dataCategory, pathItemGroup.findByUId(ctx.dataCategory.getUid()));
+        Document dataCategoryDoc = getDocumentForDataCategory(ctx.dataCategory, pathItemGroup.findByUId(ctx.dataCategory.getUid()));
         // Handle Data Items (Create, store & update documents).
-        ctx.dataCategoryDataItemValues = new StringBuilder();
+        // ctx.dataCategoryDataItemValues = new StringBuilder();
         handleDataItems(ctx);
-        ctx.dataCategoryDoc.add(new Field("dataItemValues", ctx.dataCategoryDataItemValues.toString(), Field.Store.NO, Field.Index.ANALYZED));
+        // ctx.dataCategoryDoc.add(new Field("dataItemValues", ctx.dataCategoryDataItemValues.toString(), Field.Store.NO, Field.Index.ANALYZED));
         // Store / update the Data Category Document.
         luceneService.updateDocument(
-                ctx.dataCategoryDoc,
+                dataCategoryDoc,
                 new Term("entityType", ObjectType.DC.getName()),
                 new Term("entityUid", ctx.dataCategory.getUid()));
-    }
-
-    /**
-     * Removes a document from the index.
-     *
-     * @param entityType of document to remove
-     * @param uid        of document to remove
-     */
-    protected void remove(ObjectType entityType, String uid) {
-        log.debug("remove() " + uid);
-        luceneService.deleteDocuments(
-                new Term("entityType", entityType.getName()),
-                new Term("entityUid", uid));
-    }
-
-    /**
-     * Removes documents from the index.
-     *
-     * @param entityType of document to remove
-     */
-    protected void remove(ObjectType entityType) {
-        log.debug("remove() " + entityType.getName());
-        luceneService.deleteDocuments(new Term("entityType", entityType.getName()));
-    }
-
-    /**
-     * Remove the supplied DataCategory from the search index.
-     *
-     * @param dataCategory to remove
-     */
-    protected void removeDataCategory(DataCategory dataCategory) {
-        log.debug("removeDataCatgory() " + dataCategory.toString());
-        remove(ObjectType.DC, dataCategory.getUid());
-    }
-
-    /**
-     * Removes all DataItem Documents from the index for a DataCategory.
-     *
-     * @param dataCategory to remove Data Items Documents for
-     */
-    protected void removeDataItems(DataCategory dataCategory) {
-        log.debug("removeDataItems() " + dataCategory.toString());
-        if (!clearIndex) {
-            luceneService.deleteDocuments(
-                    new Term("entityType", ObjectType.DI.getName()),
-                    new Term("categoryUid", dataCategory.getUid()));
-        }
     }
 
     // Lucene Document creation.
@@ -418,11 +368,11 @@ public class SearchService implements ApplicationListener {
         doc.add(new Field("provenance", dataCategory.getProvenance().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("authority", dataCategory.getAuthority().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         if (dataCategory.getDataCategory() != null) {
-            doc.add(new Field("parentUid", dataCategory.getDataCategory().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+            doc.add(new Field("parentUid", dataCategory.getDataCategory().getUid(), Field.Store.YES, Field.Index.NOT_ANALYZED));
             doc.add(new Field("parentWikiName", dataCategory.getDataCategory().getWikiName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         }
         if (dataCategory.getItemDefinition() != null) {
-            doc.add(new Field("itemDefinitionUid", dataCategory.getItemDefinition().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+            doc.add(new Field("itemDefinitionUid", dataCategory.getItemDefinition().getUid(), Field.Store.YES, Field.Index.NOT_ANALYZED));
             doc.add(new Field("itemDefinitionName", dataCategory.getItemDefinition().getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         }
         doc.add(new Field("tags", tagService.getTagsCSV(dataCategory).toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
@@ -440,9 +390,9 @@ public class SearchService implements ApplicationListener {
         }
         doc.add(new Field("wikiDoc", dataItem.getWikiDoc().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("provenance", dataItem.getProvenance().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
-        doc.add(new Field("categoryUid", dataItem.getDataCategory().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+        doc.add(new Field("categoryUid", dataItem.getDataCategory().getUid(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("categoryWikiName", dataItem.getDataCategory().getWikiName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
-        doc.add(new Field("itemDefinitionUid", dataItem.getItemDefinition().getUid(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+        doc.add(new Field("itemDefinitionUid", dataItem.getItemDefinition().getUid(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("itemDefinitionName", dataItem.getItemDefinition().getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         for (ItemValue itemValue : dataItem.getItemValues()) {
             if (itemValue.isUsableValue()) {
@@ -479,31 +429,21 @@ public class SearchService implements ApplicationListener {
     }
 
     protected void handleDataItemValues(DocumentContext ctx) {
-        for (ItemValue itemValue : ctx.dataItem.getItemValues()) {
-            if (itemValue.isUsableValue()) {
-                if (itemValue.getItemValueDefinition().isDrillDown()) {
-                    if (ctx.dataItemDoc != null) {
+        if (ctx.dataItemDoc != null) {
+            for (ItemValue itemValue : ctx.dataItem.getItemValues()) {
+                if (itemValue.isUsableValue()) {
+                    if (itemValue.getItemValueDefinition().isDrillDown()) {
                         ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-                    }
-                    if (ctx.dataCategoryDataItemValues != null) {
-                        ctx.dataCategoryDataItemValues.append(itemValue.getValue().toLowerCase());
-                        ctx.dataCategoryDataItemValues.append(" ");
-                    }
-                } else {
-                    if (itemValue.isDouble() && (ctx.dataItemDoc != null)) {
-                        try {
-                            ctx.dataItemDoc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValue()).getValue()));
-                        } catch (NumberFormatException e) {
-                            log.warn("handleDataItemValues() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValue() + "' for DataItem " + ctx.dataItem.toString() + ".");
-                            ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
-                        }
                     } else {
-                        if (ctx.dataItemDoc != null) {
+                        if (itemValue.isDouble()) {
+                            try {
+                                ctx.dataItemDoc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValue()).getValue()));
+                            } catch (NumberFormatException e) {
+                                log.warn("handleDataItemValues() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValue() + "' for DataItem " + ctx.dataItem.toString() + ".");
+                                ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+                            }
+                        } else {
                             ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
-                        }
-                        if (ctx.dataCategoryDataItemValues != null) {
-                            ctx.dataCategoryDataItemValues.append(itemValue.getValue().toLowerCase());
-                            ctx.dataCategoryDataItemValues.append(" ");
                         }
                     }
                 }
@@ -514,28 +454,10 @@ public class SearchService implements ApplicationListener {
     // Entity search.
 
     public ResultsWrapper<AMEEEntity> getEntities(SearchFilter filter) {
-        Query query;
         Long entityId;
         ObjectType entityType;
-        // Obtain Query - Do we need to respect types?
-        if (!filter.getTypes().isEmpty()) {
-            // Only search specified types.
-            // First - add entityType queries.
-            BooleanQuery typesQuery = new BooleanQuery();
-            for (ObjectType objectType : filter.getTypes()) {
-                typesQuery.add(new TermQuery(new Term("entityType", objectType.getName())), BooleanClause.Occur.SHOULD);
-            }
-            // Second - combine filter query and types query
-            BooleanQuery combinedQuery = new BooleanQuery();
-            combinedQuery.add(typesQuery, BooleanClause.Occur.MUST);
-            combinedQuery.add(filter.getQ(), BooleanClause.Occur.MUST);
-            query = combinedQuery;
-        } else {
-            // Search all entities with filter query.
-            query = filter.getQ();
-        }
         // Do search and fetch Lucene documents.
-        ResultsWrapper<Document> resultsWrapper = luceneService.doSearch(query, filter.getResultStart(), filter.getResultLimit());
+        ResultsWrapper<Document> resultsWrapper = searchQueryService.doSearch(filter);
         // Collate entityIds against entityTypes.
         Map<ObjectType, Set<Long>> entityIds = new HashMap<ObjectType, Set<Long>>();
         for (Document document : resultsWrapper.getResults()) {
@@ -585,7 +507,9 @@ public class SearchService implements ApplicationListener {
             entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
             AMEEEntity result = entities.get(entityType).get(entityId);
             if (result != null) {
-                results.add(result);
+                if (!results.contains(result)) {
+                    results.add(result);
+                }
             } else {
                 log.warn("getEntities() Entity was missing: " + entityType + " / " + entityId);
             }
@@ -694,29 +618,6 @@ public class SearchService implements ApplicationListener {
         return new ResultsWrapper<DataItem>(
                 dataService.getDataItems(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds),
                 resultsWrapper.isTruncated());
-    }
-
-    // Document search.
-
-    /**
-     * Find a single Lucene Document that matches the supplied entity.
-     *
-     * @param entity to search for
-     * @return Document matching entity or null
-     */
-    protected Document getDocument(AMEEEntity entity) {
-        BooleanQuery query = new BooleanQuery();
-        query.add(new TermQuery(new Term("entityType", entity.getObjectType().getName())), BooleanClause.Occur.MUST);
-        query.add(new TermQuery(new Term("entityUid", entity.getUid())), BooleanClause.Occur.MUST);
-        ResultsWrapper<Document> resultsWrapper = luceneService.doSearch(query, 0, 1);
-        if (resultsWrapper.isTruncated()) {
-            log.warn("getDocument() Entity in index more than once: " + entity.toString());
-        }
-        if (!resultsWrapper.getResults().isEmpty()) {
-            return resultsWrapper.getResults().get(0);
-        } else {
-            return null;
-        }
     }
 
     @Value("#{ systemProperties['amee.clearIndex'] }")
