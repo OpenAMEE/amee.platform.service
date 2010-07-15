@@ -344,9 +344,7 @@ public class SearchService implements ApplicationListener {
         // Get Data Category Document.
         Document dataCategoryDoc = getDocumentForDataCategory(ctx.dataCategory, pathItemGroup.findByUId(ctx.dataCategory.getUid()));
         // Handle Data Items (Create, store & update documents).
-        // ctx.dataCategoryDataItemValues = new StringBuilder();
         handleDataItems(ctx);
-        // ctx.dataCategoryDoc.add(new Field("dataItemValues", ctx.dataCategoryDataItemValues.toString(), Field.Store.NO, Field.Index.ANALYZED));
         // Store / update the Data Category Document.
         luceneService.updateDocument(
                 dataCategoryDoc,
