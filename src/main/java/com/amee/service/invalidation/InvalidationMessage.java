@@ -4,6 +4,7 @@ import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
 import com.amee.messaging.Message;
 import com.amee.messaging.MessagingException;
+import org.apache.commons.lang.ArrayUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -13,6 +14,7 @@ public class InvalidationMessage extends Message {
     private String instanceName;
     private ObjectType objectType;
     private String entityUid;
+    private String options;
 
     public InvalidationMessage(Object source) {
         super(source);
@@ -47,6 +49,7 @@ public class InvalidationMessage extends Message {
             obj.put("in", getInstanceName());
             obj.put("ot", getObjectType().getName());
             obj.put("uid", getEntityUid());
+            obj.put("op", getOptions());
         } catch (JSONException e) {
             throw new MessagingException("Caught JSONException: " + e.getMessage(), e);
         }
@@ -80,6 +83,10 @@ public class InvalidationMessage extends Message {
         return !isFromSameInstance();
     }
 
+    public boolean hasOption(String option) {
+        return (getOptions() != null) && ArrayUtils.contains(getOptions().split(","), option);
+    }
+
     public String getServerName() {
         return serverName;
     }
@@ -110,5 +117,13 @@ public class InvalidationMessage extends Message {
 
     public void setEntityUid(String entityUid) {
         this.entityUid = entityUid;
+    }
+
+    public String getOptions() {
+        return options;
+    }
+
+    public void setOptions(String options) {
+        this.options = options;
     }
 }

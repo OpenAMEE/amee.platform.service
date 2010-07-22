@@ -19,7 +19,11 @@ import com.amee.service.path.PathItemService;
 import com.amee.service.tag.TagService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.analysis.*;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.KeywordTokenizer;
+import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -39,7 +43,12 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.io.Reader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class SearchService implements ApplicationListener {
 
@@ -122,6 +131,7 @@ public class SearchService implements ApplicationListener {
             if (dataCategory != null) {
                 DocumentContext ctx = new DocumentContext();
                 ctx.dataCategory = dataCategory;
+                ctx.handleDataItems = invalidationMessage.hasOption("indexDataItems");
                 updateDataCategory(ctx);
             }
             transactionController.end();
@@ -263,31 +273,23 @@ public class SearchService implements ApplicationListener {
             List<DataItem> dataItems = dataService.getDataItems(ctx.dataCategory, false);
             metadataService.loadMetadatasForDataItems(dataItems);
             localeService.loadLocaleNamesForDataItems(dataItems);
-            // Are we handling Data Items?
-            if (ctx.handleDataItems) {
-                ctx.dataItemDocs = new ArrayList<Document>();
-            }
+            // Iterate over all Data Items and create Documents.
+            ctx.dataItemDocs = new ArrayList<Document>();
             for (DataItem dataItem : dataItems) {
                 ctx.dataItem = dataItem;
-                // Are we handling Data Items?
-                if (ctx.handleDataItems) {
-                    // Create new Data Item Document.
-                    ctx.dataItemDoc = getDocumentForDataItem(dataItem);
-                    ctx.dataItemDocs.add(ctx.dataItemDoc);
-                }
+                // Create new Data Item Document.
+                ctx.dataItemDoc = getDocumentForDataItem(dataItem);
+                ctx.dataItemDocs.add(ctx.dataItemDoc);
                 // Handle the Data Item Values.
                 handleDataItemValues(ctx);
             }
             // Clear caches.
             metadataService.clearMetadatas();
             localeService.clearLocaleNames();
-            // Update Data Items in index (if relevant).
-            if (ctx.handleDataItems) {
-                // Ensure we clear existing DataItem Documents for this Data Category.
-                searchQueryService.removeDataItems(ctx.dataCategory);
-                // Add the new Data Item Documents to the index (if any).
-                luceneService.addDocuments(ctx.dataItemDocs);
-            }
+            // Ensure we clear existing DataItem Documents for this Data Category.
+            searchQueryService.removeDataItems(ctx.dataCategory);
+            // Add the new Data Item Documents to the index (if any).
+            luceneService.addDocuments(ctx.dataItemDocs);
             log.info("handleDataItems() ...done (" + ctx.dataCategory.toString() + ").");
         } else {
             log.debug("handleDataItems() DataCategory does not have items: " + ctx.dataCategory.toString());
@@ -344,7 +346,9 @@ public class SearchService implements ApplicationListener {
         // Get Data Category Document.
         Document dataCategoryDoc = getDocumentForDataCategory(ctx.dataCategory, pathItemGroup.findByUId(ctx.dataCategory.getUid()));
         // Handle Data Items (Create, store & update documents).
-        handleDataItems(ctx);
+        if (ctx.handleDataItems) {
+            handleDataItems(ctx);
+        }
         // Store / update the Data Category Document.
         luceneService.updateDocument(
                 dataCategoryDoc,
@@ -427,22 +431,20 @@ public class SearchService implements ApplicationListener {
     }
 
     protected void handleDataItemValues(DocumentContext ctx) {
-        if (ctx.dataItemDoc != null) {
-            for (ItemValue itemValue : ctx.dataItem.getItemValues()) {
-                if (itemValue.isUsableValue()) {
-                    if (itemValue.getItemValueDefinition().isDrillDown()) {
-                        ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-                    } else {
-                        if (itemValue.isDouble()) {
-                            try {
-                                ctx.dataItemDoc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValue()).getValue()));
-                            } catch (NumberFormatException e) {
-                                log.warn("handleDataItemValues() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValue() + "' for DataItem " + ctx.dataItem.toString() + ".");
-                                ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
-                            }
-                        } else {
+        for (ItemValue itemValue : ctx.dataItem.getItemValues()) {
+            if (itemValue.isUsableValue()) {
+                if (itemValue.getItemValueDefinition().isDrillDown()) {
+                    ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+                } else {
+                    if (itemValue.isDouble()) {
+                        try {
+                            ctx.dataItemDoc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValue()).getValue()));
+                        } catch (NumberFormatException e) {
+                            log.warn("handleDataItemValues() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValue() + "' for DataItem " + ctx.dataItem.toString() + ".");
                             ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
                         }
+                    } else {
+                        ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
                     }
                 }
             }
