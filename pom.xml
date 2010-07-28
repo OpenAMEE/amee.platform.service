@@ -191,4 +191,35 @@
         <url>scm:git:ssh://git@github.com/AMEE/amee.platform.service.git</url>
     </scm>
 
+    <profiles>
+        <profile>
+            <id>linux</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <os>
+                    <name>Linux</name>
+                    <family>unix</family>
+                </os>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <configuration>
+                                <source>1.6</source>
+                                <target>1.6</target>
+                                <compilerArguments>
+                                    <verbose/>
+                                    <bootclasspath>${java.home}/lib/rt.jar</bootclasspath>
+                                </compilerArguments>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
