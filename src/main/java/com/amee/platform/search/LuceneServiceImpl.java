@@ -100,7 +100,7 @@ public class LuceneServiceImpl implements LuceneService {
             searcher.close();
             // Trim resultLimit if we're close to MAX_NUM_HITS.
             int resultLimitWithCeiling = resultLimit;
-            if (resultLimit >= MAX_NUM_HITS) {
+            if (resultStart >= MAX_NUM_HITS) {
                 // Never return results.
                 resultLimitWithCeiling = 0;
             } else if ((resultStart + resultLimit) > MAX_NUM_HITS) {
@@ -110,7 +110,7 @@ public class LuceneServiceImpl implements LuceneService {
             // Create ResultsWrapper appropriate for our limit.
             return new ResultsWrapper<Document>(
                     documents.size() > resultLimitWithCeiling ? documents.subList(0, resultLimitWithCeiling) : documents,
-                    documents.size() > resultLimitWithCeiling,
+                    (documents.size() > resultLimitWithCeiling) && !((resultStart + resultLimitWithCeiling) >= MAX_NUM_HITS),
                     resultStart,
                     resultLimit,
                     collector.getTotalHits() > MAX_NUM_HITS ? MAX_NUM_HITS : collector.getTotalHits());
