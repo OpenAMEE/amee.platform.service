@@ -71,6 +71,7 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <parallel>methods</parallel>
                     <argLine>-javaagent:${basedir}/target/dependency/spring-instrument-${spring.version}.jar</argLine>
                     <systemProperties>
                         <property>
