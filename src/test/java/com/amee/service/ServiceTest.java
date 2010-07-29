@@ -36,8 +36,6 @@ public abstract class ServiceTest {
 
     @Before
     public void init() {
-        System.setProperty("amee.keyFile", "/var/www/apps/amee-local/shared/crypto/amee.key");
-        System.setProperty("amee.saltFile", "/var/www/apps/amee-local/shared/crypto/amee.salt");
         serviceData.init();
     }
 }
