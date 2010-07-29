@@ -71,7 +71,18 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <parallel>methods</parallel>
                     <argLine>-javaagent:${basedir}/target/dependency/spring-instrument-${spring.version}.jar</argLine>
+                    <systemProperties>
+                        <property>
+                            <name>amee.keyFile</name>
+                            <value>${project.build.directory}/test-classes/crypto/amee.key</value>
+                        </property>
+                        <property>
+                            <name>amee.saltFile</name>
+                            <value>${project.build.directory}/test-classes/crypto/amee.salt</value>
+                        </property>
+                    </systemProperties>
                     <additionalClasspathElements>
                         <element>${basedir}/src/test/resources</element>
                     </additionalClasspathElements>
@@ -190,5 +201,41 @@
         <developerConnection>scm:git:ssh://git@github.com/AMEE/amee.platform.service.git</developerConnection>
         <url>scm:git:ssh://git@github.com/AMEE/amee.platform.service.git</url>
     </scm>
+
+    <!--
+        Profile required to compile on linux.
+        sun.* packages are not included on javac bootclasspath on linux.
+        See: http://java.sun.com/products/jdk/faq/faq-sun-packages.html
+     -->
+    <profiles>
+        <profile>
+            <id>linux</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+                <os>
+                    <name>Linux</name>
+                    <family>unix</family>
+                </os>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <configuration>
+                                <source>1.6</source>
+                                <target>1.6</target>
+                                <compilerArguments>
+                                    <verbose/>
+                                    <bootclasspath>${java.home}/lib/rt.jar:${java.home}/lib/jce.jar</bootclasspath>
+                                </compilerArguments>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

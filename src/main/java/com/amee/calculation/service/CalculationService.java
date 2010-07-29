@@ -134,6 +134,9 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
             // Throw CalculationException for Exceptions from the JavaScript 'throw' keyword.
             if ((e.getCause() != null) && e.getCause() instanceof JavaScriptException) {
+
+                // Writing java programs that rely on sun.* is risky: they are not portable, and are not supported.
+                // http://java.sun.com/products/jdk/faq/faq-sun-packages.html
                 JavaScriptException jse = (JavaScriptException) e.getCause();
                 throw new CalculationException(
                         "Caught Exception in Algorithm (" +
