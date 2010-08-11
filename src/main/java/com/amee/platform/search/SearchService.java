@@ -304,7 +304,7 @@ public class SearchService implements ApplicationListener {
      * @param ctx
      */
     protected void updateDataCategory(DocumentContext ctx) {
-        log.debug("updateDataCategory() DataCategory: " + ctx.dataCategory.toString());
+        log.info("updateDataCategory() Handling update for DataCategory: " + ctx.dataCategory.toString());
         if (!ctx.dataCategory.isTrash()) {
             Document document = searchQueryService.getDocument(ctx.dataCategory);
             if (document != null) {
@@ -315,24 +315,25 @@ public class SearchService implements ApplicationListener {
                     DateTime modifiedInDatabase =
                             new DateTime(ctx.dataCategory.getModified()).withMillisOfSecond(0);
                     if (indexDataCategories || ctx.handleDataItems || modifiedInDatabase.isAfter(modifiedInIndex)) {
-                        log.debug("updateDataCategory() DataCategory has been modified or re-index requested, updating.");
+                        log.info("updateDataCategory() DataCategory has been modified or re-index requested, updating.");
                         handleDataCategory(ctx);
                     } else {
-                        log.debug("updateDataCategory() DataCategory is up-to-date, skipping.");
+                        log.info("updateDataCategory() DataCategory is up-to-date, skipping.");
                     }
                 } else {
                     log.warn("updateDataCategory() The modified field was missing, updating");
                     handleDataCategory(ctx);
                 }
             } else {
-                log.debug("updateDataCategory() DataCategory not in index, adding.");
+                log.info("updateDataCategory() DataCategory not in index, adding.");
                 handleDataCategory(ctx);
             }
         } else {
-            log.debug("updateDataCategory() DataCategory needs to be removed.");
+            log.info("updateDataCategory() DataCategory needs to be removed.");
             searchQueryService.removeDataCategory(ctx.dataCategory);
             searchQueryService.removeDataItems(ctx.dataCategory);
         }
+        log.info("updateDataCategory() Done handling update for DataCategory: " + ctx.dataCategory.toString());
     }
 
     /**

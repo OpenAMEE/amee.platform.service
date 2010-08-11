@@ -42,6 +42,7 @@ public class Invalidator {
                 new InvalidationMessage(
                         this,
                         new AMEEEntityReference(ObjectType.valueOf(entityType), entityUid));
+        message.setOptions("indexDataItems");
         System.out.println("    2) Configure RabbitMQ.");
         ConnectionParameters connectionParameters = new ConnectionParameters();
         connectionParameters.setUsername(username);

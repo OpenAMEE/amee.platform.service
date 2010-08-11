@@ -63,10 +63,21 @@ public class InvalidationMessage extends Message {
         }
         try {
             JSONObject obj = new JSONObject(message);
-            setServerName(obj.getString("sn"));
-            setInstanceName(obj.getString("in"));
-            setObjectType(ObjectType.valueOf(obj.getString("ot")));
-            setEntityUid(obj.getString("uid"));
+            if (obj.has("sn")) {
+                setServerName(obj.getString("sn"));
+            }
+            if (obj.has("in")) {
+                setInstanceName(obj.getString("in"));
+            }
+            if (obj.has("ot")) {
+                setObjectType(ObjectType.valueOf(obj.getString("ot")));
+            }
+            if (obj.has("uid")) {
+                setEntityUid(obj.getString("uid"));
+            }
+            if (obj.has("op")) {
+                setOptions(obj.getString("op"));
+            }
         } catch (IllegalArgumentException e) {
             throw new MessagingException("InvalidationEvent message has ObjectType cannot be parsed.");
         } catch (JSONException e) {
