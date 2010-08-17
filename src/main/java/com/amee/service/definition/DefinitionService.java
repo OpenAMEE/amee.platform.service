@@ -28,6 +28,7 @@ import com.amee.domain.algorithm.Algorithm;
 import com.amee.domain.algorithm.AlgorithmContext;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.ReturnValueDefinition;
 import com.amee.domain.environment.Environment;
 import com.amee.service.BaseService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,6 +120,28 @@ public class DefinitionService extends BaseService {
 
     public void remove(ItemValueDefinition itemValueDefinition) {
         dao.remove(itemValueDefinition);
+    }
+
+    // ReturnValueDefinitions
+    public ReturnValueDefinition getreturnValueDefinitionByUid(ItemDefinition itemDefinition, String uid) {
+        ReturnValueDefinition returnValueDefinition = getReturnValueDefinitionByUid(uid);
+        if (returnValueDefinition.getItemDefinition().equals(itemDefinition)) {
+            return returnValueDefinition;
+        } else {
+            return null;
+        }
+    }
+
+    public ReturnValueDefinition getReturnValueDefinitionByUid(String uid) {
+        return dao.getReturnValueDefinitionByUid(uid);
+    }
+
+    public void save(ReturnValueDefinition returnValueDefinition) {
+        dao.save(returnValueDefinition);
+    }
+
+    public void remove(ReturnValueDefinition returnValueDefinition) {
+        dao.remove(returnValueDefinition);
     }
 
     // ValueDefinitions

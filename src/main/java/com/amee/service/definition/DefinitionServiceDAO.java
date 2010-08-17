@@ -27,6 +27,7 @@ import com.amee.domain.algorithm.Algorithm;
 import com.amee.domain.algorithm.AlgorithmContext;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.ReturnValueDefinition;
 import com.amee.domain.environment.Environment;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -241,6 +242,38 @@ public class DefinitionServiceDAO implements Serializable {
 
     public void remove(ItemValueDefinition itemValueDefinition) {
         itemValueDefinition.setStatus(AMEEStatus.TRASH);
+    }
+
+    // ReturnValueDefinitions
+    @SuppressWarnings(value = "unchecked")
+    public ReturnValueDefinition getReturnValueDefinitionByUid(String uid) {
+        ReturnValueDefinition returnValueDefinition = null;
+        if (!StringUtils.isBlank(uid)) {
+            // See http://www.hibernate.org/117.html#A12 for notes on DISTINCT_ROOT_ENTITY.
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(ReturnValueDefinition.class);
+            criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+            criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.setCacheable(true);
+            criteria.setCacheRegion(CACHE_REGION);
+            List<ReturnValueDefinition> returnValueDefinitions = criteria.list();
+            if (returnValueDefinitions.size() == 1) {
+                log.debug("getReturnValueDefinitionByUid() found: " + uid);
+                returnValueDefinition = returnValueDefinitions.get(0);
+            } else {
+                log.debug("getReturnValueDefinitionByUid() NOT found: " + uid);
+            }
+        }
+        return returnValueDefinition;
+    }
+
+    public void save(ReturnValueDefinition returnValueDefinition) {
+        entityManager.persist(returnValueDefinition);
+    }
+
+    public void remove(ReturnValueDefinition returnValueDefinition) {
+        returnValueDefinition.setStatus(AMEEStatus.TRASH);
     }
 
     // ValueDefinitions
