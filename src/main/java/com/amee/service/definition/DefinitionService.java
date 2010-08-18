@@ -123,9 +123,10 @@ public class DefinitionService extends BaseService {
     }
 
     // ReturnValueDefinitions
-    public ReturnValueDefinition getreturnValueDefinitionByUid(ItemDefinition itemDefinition, String uid) {
+
+    public ReturnValueDefinition getReturnValueDefinitionByUid(ItemDefinition itemDefinition, String uid) {
         ReturnValueDefinition returnValueDefinition = getReturnValueDefinitionByUid(uid);
-        if (returnValueDefinition.getItemDefinition().equals(itemDefinition)) {
+        if ((returnValueDefinition != null) && returnValueDefinition.getItemDefinition().equals(itemDefinition)) {
             return returnValueDefinition;
         } else {
             return null;
