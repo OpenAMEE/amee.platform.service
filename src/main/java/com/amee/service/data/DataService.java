@@ -22,12 +22,10 @@ package com.amee.service.data;
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
+import com.amee.domain.AMEEEntityReference;
 import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
-import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
-import com.amee.domain.data.ItemValue;
-import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.*;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
@@ -46,13 +44,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Primary service interface to Data Resources.
@@ -198,6 +190,10 @@ public class DataService extends BaseService implements ApplicationListener {
         return dao.getDataCategoriesForDataItemsModifiedWithin(environment, modifiedSince, modifiedUntil);
     }
 
+    public Set<AMEEEntityReference> getDataCategoryReferences(ItemDefinition itemDefinition) {
+        return dao.getDataCategoryReferences(itemDefinition);
+    }
+
     public void persist(DataCategory dataCategory) {
         dao.persist(dataCategory);
     }
@@ -226,6 +222,10 @@ public class DataService extends BaseService implements ApplicationListener {
         log.info("clearCaches() dataCategory: " + dataCategory.getUid());
         drillDownService.clearDrillDownCache();
         dataSheetService.removeSheet(dataCategory);
+        dao.invalidate(dataCategory);
+        // TODO: Metadata?
+        // TODO: Locales?
+        // TODO: What else?
     }
 
     // DataItems

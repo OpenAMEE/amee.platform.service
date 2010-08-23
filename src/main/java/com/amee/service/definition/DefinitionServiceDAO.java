@@ -126,8 +126,12 @@ public class DefinitionServiceDAO implements Serializable {
 
     // ItemDefinition
 
-    @SuppressWarnings(value = "unchecked")
     public ItemDefinition getItemDefinitionByUid(String uid) {
+        return getItemDefinitionByUid(uid, false);
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    public ItemDefinition getItemDefinitionByUid(String uid, boolean includeTrash) {
         ItemDefinition itemDefinition = null;
         if (!StringUtils.isBlank(uid)) {
             // See http://www.hibernate.org/117.html#A12 for notes on DISTINCT_ROOT_ENTITY.
@@ -135,7 +139,9 @@ public class DefinitionServiceDAO implements Serializable {
             Criteria criteria = session.createCriteria(ItemDefinition.class);
             criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
-            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            if (!includeTrash) {
+                criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            }
             criteria.setFetchMode("itemValueDefinitions", FetchMode.JOIN);
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
@@ -211,6 +217,11 @@ public class DefinitionServiceDAO implements Serializable {
         itemDefinition.setStatus(AMEEStatus.TRASH);
     }
 
+    protected void invalidate(ItemDefinition itemDefinition) {
+        log.debug("invalidate() " + itemDefinition.toString());
+        ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(ItemDefinition.class, itemDefinition.getId());
+    }
+
     // ItemValueDefinitions
 
     @SuppressWarnings(value = "unchecked")
@@ -244,7 +255,13 @@ public class DefinitionServiceDAO implements Serializable {
         itemValueDefinition.setStatus(AMEEStatus.TRASH);
     }
 
+    public void invalidate(ItemValueDefinition itemValueDefinition) {
+        log.debug("invalidate() " + itemValueDefinition.toString());
+        ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(ItemValueDefinition.class, itemValueDefinition.getId());
+    }
+
     // ReturnValueDefinitions
+
     @SuppressWarnings(value = "unchecked")
     public ReturnValueDefinition getReturnValueDefinitionByUid(String uid) {
         ReturnValueDefinition returnValueDefinition = null;
@@ -274,6 +291,11 @@ public class DefinitionServiceDAO implements Serializable {
 
     public void remove(ReturnValueDefinition returnValueDefinition) {
         returnValueDefinition.setStatus(AMEEStatus.TRASH);
+    }
+
+    public void invalidate(ReturnValueDefinition returnValueDefinition) {
+        log.debug("invalidate() " + returnValueDefinition.toString());
+        ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(ReturnValueDefinition.class, returnValueDefinition.getId());
     }
 
     // ValueDefinitions

@@ -20,9 +20,12 @@
 package com.amee.service.data;
 
 import com.amee.base.domain.ResultsWrapper;
+import com.amee.domain.AMEEEntityReference;
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
+import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValue;
 import com.amee.domain.environment.Environment;
 import org.apache.commons.lang.StringUtils;
@@ -39,6 +42,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -194,15 +198,38 @@ public class DataServiceDAO implements Serializable {
                 .getResultList();
     }
 
+    public Set<AMEEEntityReference> getDataCategoryReferences(ItemDefinition itemDefinition) {
+        Set<AMEEEntityReference> dataCategoryReferences = new HashSet<AMEEEntityReference>();
+        if (itemDefinition != null) {
+            List<Object[]> rows = entityManager.createQuery(
+                    "SELECT id, uid " +
+                            "FROM DataCategory " +
+                            "WHERE itemDefinition.id = :itemDefinitionId " +
+                            "AND status != :trash")
+                    .setParameter("itemDefinitionId", itemDefinition.getId())
+                    .setParameter("trash", AMEEStatus.TRASH)
+                    .getResultList();
+            for (Object[] row : rows) {
+                dataCategoryReferences.add(new AMEEEntityReference(ObjectType.DC, (Long) row[0], (String) row[1]));
+            }
+        }
+        return dataCategoryReferences;
+    }
+
     protected void persist(DataCategory dc) {
         entityManager.persist(dc);
     }
 
     @SuppressWarnings(value = "unchecked")
     protected void remove(DataCategory dataCategory) {
-        log.debug("remove: " + dataCategory.toString());
+        log.debug("remove() " + dataCategory.toString());
         // trash this DataCategory
         dataCategory.setStatus(AMEEStatus.TRASH);
+    }
+
+    public void invalidate(DataCategory dataCategory) {
+        log.debug("invalidate() " + dataCategory.toString());
+        ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(DataCategory.class, dataCategory.getId());
     }
 
     // ItemValues

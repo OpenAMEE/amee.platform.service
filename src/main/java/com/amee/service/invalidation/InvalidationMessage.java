@@ -1,35 +1,55 @@
 package com.amee.service.invalidation;
 
+import com.amee.domain.AMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
+import com.amee.domain.auth.AccessSpecification;
 import com.amee.messaging.Message;
 import com.amee.messaging.MessagingException;
 import org.apache.commons.lang.ArrayUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class InvalidationMessage extends Message {
+public class InvalidationMessage extends Message implements IAMEEEntityReference {
 
     private String serverName;
     private String instanceName;
     private ObjectType objectType;
+    private Long entityId;
     private String entityUid;
     private String options;
 
     public InvalidationMessage(Object source) {
         super(source);
+        init();
         setServerName(System.getProperty("server.name"));
         setInstanceName(System.getProperty("instance.name"));
     }
 
-    public InvalidationMessage(Object source, IAMEEEntityReference entity) {
+    public InvalidationMessage(Object source, ObjectType objectType, Long entityId, String entityUid) {
         this(source);
-        setObjectType(entity.getObjectType());
-        setEntityUid(entity.getEntityUid());
+        setObjectType(objectType);
+        setEntityId(entityId);
+        setEntityUid(entityUid);
+    }
+
+    public InvalidationMessage(Object source, IAMEEEntityReference entity) {
+        this(source, entity.getObjectType(), entity.getEntityId(), entity.getEntityUid());
+    }
+
+    public InvalidationMessage(Object source, IAMEEEntityReference entity, String options) {
+        this(source, entity.getObjectType(), entity.getEntityId(), entity.getEntityUid());
+        setOptions(options);
     }
 
     public InvalidationMessage(Object source, String message) {
         super(source, message);
+    }
+
+    public void init() {
+        setEntityId(0L);
+        setEntityUid("");
+        setOptions("");
     }
 
     @Override
@@ -37,8 +57,25 @@ public class InvalidationMessage extends Message {
         if (this == o) return true;
         if ((o == null) || !InvalidationMessage.class.isAssignableFrom(o.getClass())) return false;
         InvalidationMessage message = (InvalidationMessage) o;
-        return getEntityUid().equals(message.getEntityUid()) &&
-                getObjectType().equals(message.getObjectType());
+        return (getEntityUid().equals(message.getEntityUid())) &&
+                getObjectType().equals(message.getObjectType()) &&
+                getOptions().equals(message.getOptions());
+    }
+
+    /**
+     * Returns a hash code based on the entityId and entityType properties.
+     * <p/>
+     * This should remain similar to com.amee.domain.AMEEEntity#hashCode.
+     *
+     * @return the hash code
+     */
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 31 * hash + (null == getEntityUid() ? 0 : getEntityUid().hashCode());
+        hash = 31 * hash + (null == getObjectType() ? 0 : getObjectType().hashCode());
+        hash = 31 * hash + (null == getOptions() ? 0 : getOptions().hashCode());
+        return hash;
     }
 
     @Override
@@ -48,6 +85,7 @@ public class InvalidationMessage extends Message {
             obj.put("sn", getServerName());
             obj.put("in", getInstanceName());
             obj.put("ot", getObjectType().getName());
+            obj.put("id", getEntityId());
             obj.put("uid", getEntityUid());
             obj.put("op", getOptions());
         } catch (JSONException e) {
@@ -61,6 +99,7 @@ public class InvalidationMessage extends Message {
         if (message == null) {
             throw new MessagingException("InvalidationEvent message was null.");
         }
+        init();
         try {
             JSONObject obj = new JSONObject(message);
             if (obj.has("sn")) {
@@ -71,6 +110,9 @@ public class InvalidationMessage extends Message {
             }
             if (obj.has("ot")) {
                 setObjectType(ObjectType.valueOf(obj.getString("ot")));
+            }
+            if (obj.has("id")) {
+                setEntityId(obj.getLong("id"));
             }
             if (obj.has("uid")) {
                 setEntityUid(obj.getString("uid"));
@@ -95,7 +137,7 @@ public class InvalidationMessage extends Message {
     }
 
     public boolean hasOption(String option) {
-        return (getOptions() != null) && ArrayUtils.contains(getOptions().split(","), option);
+        return !getOptions().isEmpty() && ArrayUtils.contains(getOptions().split(","), option);
     }
 
     public String getServerName() {
@@ -118,8 +160,36 @@ public class InvalidationMessage extends Message {
         return objectType;
     }
 
+    @Override
+    public AccessSpecification getAccessSpecification() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setAccessSpecification(AccessSpecification accessSpecification) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AMEEEntity getEntity() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setEntity(AMEEEntity entity) {
+        throw new UnsupportedOperationException();
+    }
+
     public void setObjectType(ObjectType objectType) {
         this.objectType = objectType;
+    }
+
+    public Long getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(Long entityId) {
+        this.entityId = entityId;
     }
 
     public String getEntityUid() {
@@ -127,6 +197,9 @@ public class InvalidationMessage extends Message {
     }
 
     public void setEntityUid(String entityUid) {
+        if (entityUid == null) {
+            entityUid = "";
+        }
         this.entityUid = entityUid;
     }
 
@@ -135,6 +208,9 @@ public class InvalidationMessage extends Message {
     }
 
     public void setOptions(String options) {
+        if (options == null) {
+            options = "";
+        }
         this.options = options;
     }
 }

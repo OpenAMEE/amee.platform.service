@@ -1,7 +1,6 @@
 package com.amee.service.invalidation;
 
 import com.amee.base.transaction.TransactionEvent;
-import com.amee.domain.AMEEEntityReference;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.messaging.MessageService;
 import com.amee.messaging.config.ExchangeConfig;
@@ -38,9 +37,9 @@ public class InvalidationService implements ApplicationContextAware, Application
 
     protected ApplicationContext applicationContext;
 
-    private ThreadLocal<Set<IAMEEEntityReference>> entities = new ThreadLocal<Set<IAMEEEntityReference>>() {
-        protected Set<IAMEEEntityReference> initialValue() {
-            return new HashSet<IAMEEEntityReference>();
+    private ThreadLocal<Set<InvalidationMessage>> invalidationMessages = new ThreadLocal<Set<InvalidationMessage>>() {
+        protected Set<InvalidationMessage> initialValue() {
+            return new HashSet<InvalidationMessage>();
         }
     };
 
@@ -69,7 +68,7 @@ public class InvalidationService implements ApplicationContextAware, Application
      */
     public synchronized void onBeforeBegin() {
         log.debug("onBeforeBegin()");
-        entities.get().clear();
+        invalidationMessages.get().clear();
     }
 
     /**
@@ -80,8 +79,19 @@ public class InvalidationService implements ApplicationContextAware, Application
      */
     public synchronized void add(IAMEEEntityReference entity) {
         log.debug("add()");
-        // Add entity to list of entities to invalidate.
-        entities.get().add(new AMEEEntityReference(entity));
+        invalidationMessages.get().add(new InvalidationMessage(this, entity));
+    }
+
+    /**
+     * Adds an InvalidationMessage to the entities Set for the supplied entity. This will later be sent out
+     * on the invalidation topic.
+     *
+     * @param entity  to invalidate caches for
+     * @param options invalidation options
+     */
+    public synchronized void add(IAMEEEntityReference entity, String options) {
+        log.debug("add()");
+        invalidationMessages.get().add(new InvalidationMessage(this, entity, options));
     }
 
     /**
@@ -91,30 +101,49 @@ public class InvalidationService implements ApplicationContextAware, Application
     public synchronized void onEnd() {
         log.debug("onEnd()");
         try {
-            for (IAMEEEntityReference entity : entities.get()) {
-                invalidate(entity);
+            for (InvalidationMessage invalidationMessage : invalidationMessages.get()) {
+                invalidate(invalidationMessage);
             }
         } finally {
-            entities.get().clear();
+            invalidationMessages.get().clear();
         }
     }
 
     /**
-     * Invalidate the specified entity from the cache. Sends an InvalidationMessage into the invalidation
-     * topic for the specified entity and publishes an InvalidationMessage into the local ApplicationContext.
+     * Invalidate the specified entity.
      *
      * @param entity to publish
      */
     public void invalidate(IAMEEEntityReference entity) {
-        InvalidationMessage m = new InvalidationMessage(this, entity);
+        invalidate(entity, null);
+    }
+
+    /**
+     * Invalidate the specified entity.
+     *
+     * @param entity  to publish
+     * @param options invalidation options
+     */
+    public void invalidate(IAMEEEntityReference entity, String options) {
+        InvalidationMessage m = new InvalidationMessage(this, entity, options);
+        invalidate(m);
+    }
+
+    /**
+     * Sends an InvalidationMessage into the invalidation topic and publishes an InvalidationMessage into
+     * the local ApplicationContext.
+     *
+     * @param invalidationMessage to publish
+     */
+    public void invalidate(InvalidationMessage invalidationMessage) {
         // Invalidate locally.
-        applicationContext.publishEvent(m);
+        applicationContext.publishEvent(invalidationMessage);
         // Publish to queue.
         messageService.publish(
                 exchangeConfig,
                 publishConfig,
                 "platform." + publishConfig.getScope() + ".invalidation",
-                m);
+                invalidationMessage);
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

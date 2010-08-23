@@ -21,6 +21,8 @@
  */
 package com.amee.service.definition;
 
+import com.amee.domain.IAMEEEntityReference;
+import com.amee.domain.ObjectType;
 import com.amee.domain.Pager;
 import com.amee.domain.ValueDefinition;
 import com.amee.domain.algorithm.AbstractAlgorithm;
@@ -31,16 +33,52 @@ import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ReturnValueDefinition;
 import com.amee.domain.environment.Environment;
 import com.amee.service.BaseService;
+import com.amee.service.data.DataService;
+import com.amee.service.invalidation.InvalidationMessage;
+import com.amee.service.invalidation.InvalidationService;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
-public class DefinitionService extends BaseService {
+public class DefinitionService extends BaseService implements ApplicationListener {
+
+    private final Log log = LogFactory.getLog(getClass());
+
+    @Autowired
+    private InvalidationService invalidationService;
+
+    @Autowired
+    private DataService dataService;
 
     @Autowired
     private DefinitionServiceDAO dao;
+
+    // Events
+
+    public void onApplicationEvent(ApplicationEvent event) {
+        if (InvalidationMessage.class.isAssignableFrom(event.getClass())) {
+            onInvalidationMessage((InvalidationMessage) event);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    private void onInvalidationMessage(InvalidationMessage invalidationMessage) {
+        if ((invalidationMessage.isLocal() || invalidationMessage.isFromOtherInstance()) &&
+                invalidationMessage.getObjectType().equals(ObjectType.ID)) {
+            log.debug("onInvalidationMessage() Handling InvalidationMessage.");
+            ItemDefinition itemDefinition = getItemDefinitionByUid(invalidationMessage.getEntityUid());
+            if (itemDefinition != null) {
+                clearCaches(itemDefinition);
+            }
+        }
+    }
 
     // Algorithms
 
@@ -69,7 +107,7 @@ public class DefinitionService extends BaseService {
     // ItemDefinition
 
     /**
-     * Returns the ItemDefinition for the Environnment and ItemDefinition UID specified. Returns null
+     * Returns the ItemDefinition for the Environment and ItemDefinition UID specified. Returns null
      * if the ItemDefinition could not be found. Throws a RuntimeException if the specified Environment
      * does not match the ItemDefinition Environment.
      *
@@ -81,6 +119,29 @@ public class DefinitionService extends BaseService {
         ItemDefinition itemDefinition = dao.getItemDefinitionByUid(uid);
         checkEnvironmentObject(environment, itemDefinition);
         return itemDefinition;
+    }
+
+    /**
+     * Returns the ItemDefinition for the ItemDefinition UID specified. Returns null
+     * if the ItemDefinition could not be found.
+     *
+     * @param uid of the ItemDefinition to fetch
+     * @return the ItemDefinition matching the ItemDefinition UID specified
+     */
+    public ItemDefinition getItemDefinitionByUid(String uid) {
+        return getItemDefinitionByUid(uid, false);
+    }
+
+    /**
+     * Returns the ItemDefinition for the ItemDefinition UID specified. Returns null
+     * if the ItemDefinition could not be found.
+     *
+     * @param uid          of the ItemDefinition to fetch
+     * @param includeTrash if true will include trashed ItemDefinitions
+     * @return the ItemDefinition matching the ItemDefinition UID specified
+     */
+    public ItemDefinition getItemDefinitionByUid(String uid, boolean includeTrash) {
+        return dao.getItemDefinitionByUid(uid, includeTrash);
     }
 
     public List<ItemDefinition> getItemDefinitions(Environment environment) {
@@ -97,6 +158,44 @@ public class DefinitionService extends BaseService {
 
     public void remove(ItemDefinition itemDefinition) {
         dao.remove(itemDefinition);
+    }
+
+    /**
+     * Invalidate a ItemDefinition. This will send an invalidation message via the
+     * InvalidationService and clear the local caches.
+     *
+     * @param itemDefinition to invalidate
+     */
+    public void invalidate(ItemDefinition itemDefinition) {
+        log.info("invalidate() itemDefinition: " + itemDefinition.getUid());
+        invalidationService.add(itemDefinition);
+        for (IAMEEEntityReference ref : dataService.getDataCategoryReferences(itemDefinition)) {
+            invalidationService.add(ref, "indexDataItems");
+        }
+    }
+
+    /**
+     * Clears all caches related to the supplied ItemDefinition.
+     *
+     * @param itemDefinition to clear caches for
+     */
+    public void clearCaches(ItemDefinition itemDefinition) {
+        log.info("clearCaches() itemDefinition: " + itemDefinition.getUid());
+        dao.invalidate(itemDefinition);
+        // TODO: Include trashed IVDs.
+        for (ItemValueDefinition itemValueDefinition : itemDefinition.getItemValueDefinitions()) {
+            // TODO: Call service method instead.
+            dao.invalidate(itemValueDefinition);
+        }
+        // TODO: Include trashed RVDs.
+        for (ReturnValueDefinition returnValueDefinition : itemDefinition.getReturnValueDefinitions()) {
+            // TODO: Call service method instead.
+            dao.invalidate(returnValueDefinition);
+        }
+        // TODO: Algorithms.
+        // TODO: ItemDefinition Metadata.
+        // TODO: ItemDefinition Locales.
+        // TODO: What else? Anything in the index?
     }
 
     // ItemValueDefinitions

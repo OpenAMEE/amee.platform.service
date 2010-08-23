@@ -19,11 +19,7 @@ import com.amee.service.path.PathItemService;
 import com.amee.service.tag.TagService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.analysis.KeywordTokenizer;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.*;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -43,12 +39,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class SearchService implements ApplicationListener {
 
@@ -111,8 +102,24 @@ public class SearchService implements ApplicationListener {
     @Autowired
     private LuceneService luceneService;
 
+    /**
+     * Is this instance the master index node? There can be only one!
+     */
+    private boolean masterIndex = false;
+
+    /**
+     * Should the search index be cleared on application start?
+     */
     private boolean clearIndex = false;
+
+    /**
+     * Should all Data Categories be re-indexed on application start?
+     */
     private boolean indexDataCategories = false;
+
+    /**
+     * Should all Data Items be re-indexed on application start?
+     */
     private boolean indexDataItems = false;
 
     // Events
@@ -124,7 +131,7 @@ public class SearchService implements ApplicationListener {
     }
 
     private void onInvalidationMessage(InvalidationMessage invalidationMessage) {
-        if (!invalidationMessage.isLocal() && invalidationMessage.getObjectType().equals(ObjectType.DC)) {
+        if (masterIndex && !invalidationMessage.isLocal() && invalidationMessage.getObjectType().equals(ObjectType.DC)) {
             log.debug("onInvalidationMessage() Handling InvalidationMessage.");
             transactionController.begin(false);
             DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid(), true);
@@ -619,6 +626,11 @@ public class SearchService implements ApplicationListener {
         return new ResultsWrapper<DataItem>(
                 dataService.getDataItems(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds),
                 resultsWrapper.isTruncated());
+    }
+
+    @Value("#{ systemProperties['amee.masterIndex'] }")
+    public void setMasterIndex(Boolean masterIndex) {
+        this.masterIndex = masterIndex;
     }
 
     @Value("#{ systemProperties['amee.clearIndex'] }")

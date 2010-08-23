@@ -3,7 +3,6 @@ package com.amee.service.invalidation;
 import com.amee.domain.AMEEEntityReference;
 import com.amee.domain.ObjectType;
 import com.rabbitmq.client.*;
-import org.json.JSONObject;
 
 import java.io.IOException;
 
@@ -41,8 +40,7 @@ public class Invalidator {
         InvalidationMessage message =
                 new InvalidationMessage(
                         this,
-                        new AMEEEntityReference(ObjectType.valueOf(entityType), entityUid));
-        message.setOptions("indexDataItems");
+                        new AMEEEntityReference(ObjectType.valueOf(entityType), entityUid), "indexDataItems");
         System.out.println("    2) Configure RabbitMQ.");
         ConnectionParameters connectionParameters = new ConnectionParameters();
         connectionParameters.setUsername(username);
