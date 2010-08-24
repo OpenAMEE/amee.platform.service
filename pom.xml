@@ -13,11 +13,11 @@
     <properties>
         <!-- Versions. -->
         <!-- Note: These versions were last checked & upgraded on 15/04/2010. -->
-        <amee-base.version>1.0.4-SNAPSHOT</amee-base.version>
-        <amee-persist.version>1.0.6-SNAPSHOT</amee-persist.version>
-        <amee-messaging.version>1.0.4-SNAPSHOT</amee-messaging.version>
+        <amee-base.version>1.0.4</amee-base.version>
+        <amee-persist.version>1.0.6</amee-persist.version>
+        <amee-messaging.version>1.0.4</amee-messaging.version>
         <amee-platform-science.version>1.0.9</amee-platform-science.version>
-        <amee-platform-domain.version>1.0.6-SNAPSHOT</amee-platform-domain.version>
+        <amee-platform-domain.version>1.0.6</amee-platform-domain.version>
         <!-- External Versions. -->
         <org-aspectj.version>1.6.8</org-aspectj.version>
         <junit.version>4.7</junit.version>
