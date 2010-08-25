@@ -11,7 +11,6 @@ import com.amee.domain.path.PathItem;
 import com.amee.domain.path.PathItemGroup;
 import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
-import com.amee.service.environment.EnvironmentService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
@@ -77,9 +76,6 @@ public class SearchService implements ApplicationListener {
 
     @Autowired
     private TransactionController transactionController;
-
-    @Autowired
-    private EnvironmentService environmentService;
 
     @Autowired
     private DataService dataService;
@@ -161,7 +157,6 @@ public class SearchService implements ApplicationListener {
         transactionController.begin(false);
         DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesModifiedWithin(
-                environmentService.getEnvironmentByName("AMEE"),
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());
         for (DataCategory dataCategory : dataCategories) {
@@ -181,7 +176,6 @@ public class SearchService implements ApplicationListener {
         transactionController.begin(false);
         DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesForDataItemsModifiedWithin(
-                environmentService.getEnvironmentByName("AMEE"),
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());
         for (DataCategory dataCategory : dataCategories) {
@@ -228,10 +222,10 @@ public class SearchService implements ApplicationListener {
         log.debug("getDataCategoryUids()");
         transactionController.begin(false);
         // We need PathItems to exclude test DataCategories.
-        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
+        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup();
         // Iterate over all DataCategories and gather DataCategory UIDs.
         Set<String> dataCategoryUids = new HashSet<String>();
-        for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
+        for (DataCategory dataCategory : dataService.getDataCategories()) {
             PathItem pathItem = pathItemGroup.findByUId(dataCategory.getUid());
             if (pathItem == null || !pathItem.getFullPath().startsWith("/test")) {
                 dataCategoryUids.add(dataCategory.getUid());
@@ -350,7 +344,7 @@ public class SearchService implements ApplicationListener {
      */
     protected void handleDataCategory(DocumentContext ctx) {
         log.debug("handleDataCategory() " + ctx.dataCategory.toString());
-        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
+        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup();
         // Get Data Category Document.
         Document dataCategoryDoc = getDocumentForDataCategory(ctx.dataCategory, pathItemGroup.findByUId(ctx.dataCategory.getUid()));
         // Handle Data Items (Create, store & update documents).
@@ -390,7 +384,7 @@ public class SearchService implements ApplicationListener {
     }
 
     protected Document getDocumentForDataItem(DataItem dataItem) {
-        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(dataItem.getEnvironment());
+        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup();
         PathItem pathItem = pathItemGroup.findByUId(dataItem.getDataCategory().getUid());
         Document doc = getDocumentForAMEEEntity(dataItem);
         doc.add(new Field("name", dataItem.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
@@ -482,9 +476,7 @@ public class SearchService implements ApplicationListener {
         Map<ObjectType, Map<Long, AMEEEntity>> entities = new HashMap<ObjectType, Map<Long, AMEEEntity>>();
         // Load DataCategories.
         if (entityIds.containsKey(ObjectType.DC)) {
-            Map<Long, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(
-                    environmentService.getEnvironmentByName("AMEE"),
-                    entityIds.get(ObjectType.DC));
+            Map<Long, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(entityIds.get(ObjectType.DC));
             addDataCategories(entities, dataCategoriesMap);
             // Pre-loading of EntityTags, LocaleNames & DataCategories.
             if (filter.isLoadEntityTags()) {
@@ -498,7 +490,6 @@ public class SearchService implements ApplicationListener {
         // Load DataItems.
         if (entityIds.containsKey(ObjectType.DI)) {
             Map<Long, DataItem> dataItemsMap = dataService.getDataItemMap(
-                    environmentService.getEnvironmentByName("AMEE"),
                     entityIds.get(ObjectType.DI),
                     filter.isLoadDataItemValues());
             addDataItems(entities, dataItemsMap);
@@ -558,7 +549,6 @@ public class SearchService implements ApplicationListener {
         } else {
             // Just get a simple list of Data Categories.
             resultsWrapper = dataService.getDataCategories(
-                    environmentService.getEnvironmentByName("AMEE"),
                     filter.getResultStart(),
                     filter.getResultLimit());
         }
@@ -586,7 +576,7 @@ public class SearchService implements ApplicationListener {
             dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
         }
         return new ResultsWrapper<DataCategory>(
-                dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds),
+                dataService.getDataCategories(dataCategoryIds),
                 resultsWrapper.isTruncated());
     }
 
@@ -624,7 +614,7 @@ public class SearchService implements ApplicationListener {
             dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
         }
         return new ResultsWrapper<DataItem>(
-                dataService.getDataItems(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds),
+                dataService.getDataItems(dataCategoryIds),
                 resultsWrapper.isTruncated());
     }
 

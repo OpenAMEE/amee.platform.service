@@ -26,7 +26,6 @@ import com.amee.domain.environment.Environment;
 import com.amee.domain.path.PathItem;
 import com.amee.domain.path.PathItemGroup;
 import com.amee.service.data.DataService;
-import com.amee.service.environment.EnvironmentService;
 import com.amee.service.invalidation.InvalidationMessage;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -40,9 +39,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class PathItemService implements ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
-
-    @Autowired
-    private EnvironmentService environmentService;
 
     @Autowired
     private DataService dataService;
@@ -62,26 +58,25 @@ public class PathItemService implements ApplicationListener {
         if ((invalidationMessage.isLocal() || invalidationMessage.isFromOtherInstance()) &&
                 invalidationMessage.getObjectType().equals(ObjectType.DC)) {
             log.debug("onInvalidationMessage() Handling InvalidationMessage.");
-            Environment environment = environmentService.getEnvironmentByName("AMEE");
             DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid(), true);
             if (dataCategory != null) {
-                update(environment, dataCategory);
+                update(dataCategory);
             } else {
-                remove(environment, invalidationMessage.getEntityUid());
+                remove(invalidationMessage.getEntityUid());
             }
         }
     }
 
     // Manage PathItems.
 
-    public void update(Environment environment, DataCategory dataCategory) {
-        PathItemGroup pig = getPathItemGroup(environment);
+    public void update(DataCategory dataCategory) {
+        PathItemGroup pig = getPathItemGroup();
         PathItem pathItem = pig.findByUId(dataCategory.getUid());
         if (pathItem != null) {
             if (dataCategory.isActive()) {
                 pathItem.update(dataCategory);
             } else {
-                remove(environment, dataCategory.getUid());
+                remove(dataCategory.getUid());
             }
         } else {
             if (dataCategory.isActive() && (dataCategory.getDataCategory() != null)) {
@@ -101,17 +96,17 @@ public class PathItemService implements ApplicationListener {
         }
     }
 
-    public void remove(Environment environment, String uid) {
-        PathItemGroup pig = getPathItemGroup(environment);
+    public void remove(String uid) {
+        PathItemGroup pig = getPathItemGroup();
         pig.remove(pig.findByUId(uid));
     }
 
-    public PathItemGroup getPathItemGroup(Environment environment) {
-        EnvironmentPIGFactory environmentPIGFactory = new EnvironmentPIGFactory(dataService, environment);
+    public PathItemGroup getPathItemGroup() {
+        EnvironmentPIGFactory environmentPIGFactory = new EnvironmentPIGFactory(dataService);
         return (PathItemGroup) cacheHelper.getCacheable(environmentPIGFactory);
     }
 
-    public void removePathItemGroup(Environment environment) {
-        cacheHelper.remove("EnvironmentPIGs", environment.getUid());
+    public void removePathItemGroup() {
+        cacheHelper.remove("EnvironmentPIGs", Environment.ENVIRONMENT.getUid());
     }
 }

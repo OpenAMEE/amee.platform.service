@@ -18,7 +18,7 @@ public class EnvironmentPIGFactoryTest extends ServiceTest {
 
     @Test
     public void canFindPathsInCreationOrderedCategories() {
-        EnvironmentPIGFactory o = new EnvironmentPIGFactory(null, null);
+        EnvironmentPIGFactory o = new EnvironmentPIGFactory(null);
         PathItem rootPI = new PathItem(serviceData.DC_ROOT);
         PathItemGroup pig = new PathItemGroup(rootPI);
         o.addDataCategories(pig, serviceData.creationOrderedCategories);
@@ -32,7 +32,7 @@ public class EnvironmentPIGFactoryTest extends ServiceTest {
 
     @Test
     public void canFindPathsInReverseCreationOrderedCategories() {
-        EnvironmentPIGFactory o = new EnvironmentPIGFactory(null, null);
+        EnvironmentPIGFactory o = new EnvironmentPIGFactory(null);
         PathItem rootPI = new PathItem(serviceData.DC_ROOT);
         PathItemGroup pig = new PathItemGroup(rootPI);
         o.addDataCategories(pig, serviceData.reverseCreationOrderedCategories);

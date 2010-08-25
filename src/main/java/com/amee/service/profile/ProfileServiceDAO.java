@@ -23,7 +23,6 @@ import com.amee.domain.AMEEStatus;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.environment.Environment;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.platform.science.StartEndDate;
@@ -77,15 +76,13 @@ public class ProfileServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected Profile getProfileByPath(Environment environment, String path) {
+    protected Profile getProfileByPath(String path) {
         Profile profile = null;
         List<Profile> profiles = entityManager.createQuery(
                 "FROM Profile p " +
                         "WHERE p.path = :path " +
-                        "AND p.environment.id = :environmentId " +
                         "AND p.status != :trash")
                 .setParameter("path", path)
-                .setParameter("environmentId", environment.getId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)

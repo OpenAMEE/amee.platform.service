@@ -21,14 +21,5 @@
  */
 package com.amee.service;
 
-import com.amee.domain.environment.Environment;
-import com.amee.domain.environment.EnvironmentObject;
-
 public class BaseService {
-
-    public void checkEnvironmentObject(Environment environment, EnvironmentObject environmentObject) {
-        if ((environmentObject != null) && (!environmentObject.getEnvironment().equals(environment))) {
-            throw new RuntimeException("Incorrect Environment for " + environmentObject.getClass().getSimpleName());
-        }
-    }
 }

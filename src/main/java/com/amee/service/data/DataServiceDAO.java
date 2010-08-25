@@ -27,7 +27,6 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValue;
-import com.amee.domain.environment.Environment;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -84,12 +83,11 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected DataCategory getDataCategoryByWikiName(Environment environment, String wikiName, boolean includeTrash) {
+    protected DataCategory getDataCategoryByWikiName(String wikiName, boolean includeTrash) {
         DataCategory dataCategory = null;
         if (!StringUtils.isBlank(wikiName)) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(DataCategory.class);
-            criteria.add(Restrictions.eq("environment.id", environment.getId()));
             criteria.add(Restrictions.eq("wikiName", wikiName));
             if (!includeTrash) {
                 criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
@@ -110,18 +108,16 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected ResultsWrapper<DataCategory> getDataCategories(Environment environment) {
-        return getDataCategories(environment, 0, 0);
+    protected ResultsWrapper<DataCategory> getDataCategories() {
+        return getDataCategories(0, 0);
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected ResultsWrapper<DataCategory> getDataCategories(Environment environment, int resultStart, int resultLimit) {
+    protected ResultsWrapper<DataCategory> getDataCategories(int resultStart, int resultLimit) {
         // Create Query, apply start and limit if relevant.
         Query query = entityManager.createQuery(
                 "FROM DataCategory " +
-                        "WHERE environment.id = :environmentId " +
-                        "AND status != :trash");
-        query.setParameter("environmentId", environment.getId());
+                        "WHERE status != :trash");
         query.setParameter("trash", AMEEStatus.TRASH);
         query.setHint("org.hibernate.cacheable", true);
         query.setHint("org.hibernate.cacheRegion", CACHE_REGION);
@@ -147,17 +143,15 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected List<DataCategory> getDataCategories(Environment environment, Set<Long> dataCategoryIds) {
+    protected List<DataCategory> getDataCategories(Set<Long> dataCategoryIds) {
         // Don't fail with an empty Set.
         if (dataCategoryIds.isEmpty()) {
             dataCategoryIds.add(0L);
         }
         return (List<DataCategory>) entityManager.createQuery(
                 "FROM DataCategory " +
-                        "WHERE environment.id = :environmentId " +
-                        "AND status != :trash " +
+                        "WHERE status != :trash " +
                         "AND id IN (:dataCategoryIds)")
-                .setParameter("environmentId", environment.getId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setParameter("dataCategoryIds", dataCategoryIds)
                 .setHint("org.hibernate.cacheable", true)
@@ -167,15 +161,12 @@ public class DataServiceDAO implements Serializable {
 
     @SuppressWarnings(value = "unchecked")
     public List<DataCategory> getDataCategoriesModifiedWithin(
-            Environment environment,
             Date modifiedSince,
             Date modifiedUntil) {
         return (List<DataCategory>) entityManager.createQuery(
                 "FROM DataCategory " +
-                        "WHERE environment.id = :environmentId " +
-                        "AND modified >= :modifiedSince " +
+                        "WHERE modified >= :modifiedSince " +
                         "AND modified < :modifiedUntil")
-                .setParameter("environmentId", environment.getId())
                 .setParameter("modifiedSince", modifiedSince)
                 .setParameter("modifiedUntil", modifiedUntil)
                 .getResultList();
@@ -183,16 +174,13 @@ public class DataServiceDAO implements Serializable {
 
     @SuppressWarnings(value = "unchecked")
     public List<DataCategory> getDataCategoriesForDataItemsModifiedWithin(
-            Environment environment,
             Date modifiedSince,
             Date modifiedUntil) {
         return (List<DataCategory>) entityManager.createQuery(
                 "SELECT DISTINCT di.dataCategory " +
                         "FROM DataItem di " +
-                        "WHERE di.environment.id = :environmentId " +
-                        "AND di.modified >= :modifiedSince " +
+                        "WHERE di.modified >= :modifiedSince " +
                         "AND di.modified < :modifiedUntil")
-                .setParameter("environmentId", environment.getId())
                 .setParameter("modifiedSince", modifiedSince)
                 .setParameter("modifiedUntil", modifiedUntil)
                 .getResultList();
@@ -292,18 +280,16 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected DataItem getDataItemByPath(Environment environment, String path) {
+    protected DataItem getDataItemByPath(String path) {
         DataItem dataItem = null;
-        if ((environment != null) && !StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             List<DataItem> dataItems = entityManager.createQuery(
                     "SELECT DISTINCT di " +
                             "FROM DataItem di " +
                             "LEFT JOIN FETCH di.itemValues " +
                             "WHERE di.path = :path " +
-                            "AND di.environment.id = :environmentId " +
                             "AND di.status != :trash")
                     .setParameter("path", path)
-                    .setParameter("environmentId", environment.getId())
                     .setParameter("trash", AMEEStatus.TRASH)
                     .setHint("org.hibernate.cacheable", true)
                     .setHint("org.hibernate.cacheRegion", CACHE_REGION)
@@ -340,12 +326,12 @@ public class DataServiceDAO implements Serializable {
         return dataItems;
     }
 
-    protected List<DataItem> getDataItems(Environment environment, Set<Long> dataItemIds) {
-        return getDataItems(environment, dataItemIds, false);
+    protected List<DataItem> getDataItems(Set<Long> dataItemIds) {
+        return getDataItems(dataItemIds, false);
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected List<DataItem> getDataItems(Environment environment, Set<Long> dataItemIds, boolean values) {
+    protected List<DataItem> getDataItems(Set<Long> dataItemIds, boolean values) {
         // Don't fail with an empty Set.
         if (dataItemIds.isEmpty()) {
             dataItemIds.add(0L);
@@ -356,11 +342,9 @@ public class DataServiceDAO implements Serializable {
         if (values) {
             hql.append("LEFT JOIN FETCH di.itemValues ");
         }
-        hql.append("WHERE di.environment.id = :environmentId ");
-        hql.append("AND di.status != :trash ");
+        hql.append("WHERE di.status != :trash ");
         hql.append("AND di.id IN (:dataItemIds)");
         return (List<DataItem>) entityManager.createQuery(hql.toString())
-                .setParameter("environmentId", environment.getId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setParameter("dataItemIds", dataItemIds)
                 .setHint("org.hibernate.cacheable", true)

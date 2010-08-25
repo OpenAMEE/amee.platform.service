@@ -38,22 +38,20 @@ public class EnvironmentPIGFactory implements CacheableFactory {
     private final Log log = LogFactory.getLog(getClass());
 
     private DataService dataService;
-    private Environment environment;
 
     private EnvironmentPIGFactory() {
         super();
     }
 
-    public EnvironmentPIGFactory(DataService dataService, Environment environment) {
+    public EnvironmentPIGFactory(DataService dataService) {
         this();
         this.dataService = dataService;
-        this.environment = environment;
     }
 
     public Object create() {
         log.debug("create()");
         PathItemGroup pathItemGroup = null;
-        List<DataCategory> dataCategories = dataService.getDataCategories(environment, true);
+        List<DataCategory> dataCategories = dataService.getDataCategories(true);
         DataCategory rootDataCategory = findRootDataCategory(dataCategories);
         if (rootDataCategory != null) {
             pathItemGroup = new PathItemGroup(new PathItem(rootDataCategory));
@@ -66,7 +64,7 @@ public class EnvironmentPIGFactory implements CacheableFactory {
     }
 
     public String getKey() {
-        return environment.getUid();
+        return Environment.ENVIRONMENT.getUid();
     }
 
     public String getCacheName() {
