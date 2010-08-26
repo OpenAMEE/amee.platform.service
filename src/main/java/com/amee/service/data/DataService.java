@@ -96,6 +96,10 @@ public class DataService extends BaseService implements ApplicationListener {
 
     // DataCategories
 
+    public DataCategory getRootDataCategory() {
+        return dao.getRootDataCategory();
+    }
+
     public DataCategory getDataCategoryByIdentifier(String identifier) {
         DataCategory dataCategory = null;
         if (UidGen.INSTANCE_12.isValid(identifier)) {
@@ -399,5 +403,21 @@ public class DataService extends BaseService implements ApplicationListener {
             }
         }
         return new Choices("userValueChoices", userValueChoices);
+    }
+
+    // API Versions
+
+    public List<APIVersion> getAPIVersions() {
+        return dao.getAPIVersions();
+    }
+
+    /**
+     * Gets an APIVersion based on the supplied version parameter.
+     *
+     * @param version to fetch
+     * @return APIVersion object, or null
+     */
+    public APIVersion getAPIVersion(String version) {
+        return dao.getAPIVersion(version);
     }
 }

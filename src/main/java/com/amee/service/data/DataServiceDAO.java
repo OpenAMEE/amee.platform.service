@@ -22,6 +22,7 @@ package com.amee.service.data;
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.AMEEEntityReference;
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
@@ -36,9 +37,7 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
+import javax.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
@@ -56,6 +55,24 @@ public class DataServiceDAO implements Serializable {
     private EntityManager entityManager;
 
     // DataCategories
+
+
+    @SuppressWarnings(value = "unchecked")
+    public DataCategory getRootDataCategory() {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataCategory.class);
+        criteria.add(Restrictions.eq("path", ""));
+        criteria.add(Restrictions.isNull("dataCategory"));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setCacheable(true);
+        criteria.setCacheRegion(CACHE_REGION);
+        List<DataCategory> dataCategories = criteria.list();
+        if (dataCategories.size() == 0) {
+            throw new RuntimeException("Root Data Category not found.");
+        } else {
+            return dataCategories.get(0);
+        }
+    }
 
     @SuppressWarnings(value = "unchecked")
     protected DataCategory getDataCategoryByUid(String uid, boolean includeTrash) {
@@ -362,5 +379,43 @@ public class DataServiceDAO implements Serializable {
 
     protected void remove(ItemValue dataItemValue) {
         dataItemValue.setStatus(AMEEStatus.TRASH);
+    }
+
+    //  API Versions
+
+    @SuppressWarnings(value = "unchecked")
+    public List<APIVersion> getAPIVersions() {
+        return entityManager.createQuery(
+                "FROM APIVersion av " +
+                        "WHERE av.status != :trash " +
+                        "ORDER BY av.version")
+                .setParameter("trash", AMEEStatus.TRASH)
+                .setHint("org.hibernate.cacheable", true)
+                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
+                .getResultList();
+    }
+
+    /**
+     * Gets an APIVersion based on the supplied version parameter.
+     *
+     * @param version to fetch
+     * @return APIVersion object, or null
+     */
+    public APIVersion getAPIVersion(String version) {
+        try {
+            return (APIVersion) entityManager.createQuery(
+                    "FROM APIVersion av " +
+                            "WHERE av.version = :version " +
+                            "AND av.status != :trash")
+                    .setParameter("version", version)
+                    .setParameter("trash", AMEEStatus.TRASH)
+                    .setHint("org.hibernate.cacheable", true)
+                    .setHint("org.hibernate.cacheRegion", CACHE_REGION)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        } catch (NonUniqueResultException e) {
+            return null;
+        }
     }
 }

@@ -33,17 +33,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class EnvironmentPIGFactory implements CacheableFactory {
+public class PIGFactory implements CacheableFactory {
 
     private final Log log = LogFactory.getLog(getClass());
 
     private DataService dataService;
 
-    private EnvironmentPIGFactory() {
+    private PIGFactory() {
         super();
     }
 
-    public EnvironmentPIGFactory(DataService dataService) {
+    public PIGFactory(DataService dataService) {
         this();
         this.dataService = dataService;
     }
@@ -68,7 +68,7 @@ public class EnvironmentPIGFactory implements CacheableFactory {
     }
 
     public String getCacheName() {
-        return "EnvironmentPIGs";
+        return "PIGs";
     }
 
     /**

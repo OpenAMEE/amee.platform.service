@@ -11,14 +11,14 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-public class EnvironmentPIGFactoryTest extends ServiceTest {
+public class PIGFactoryTest extends ServiceTest {
 
     public void init() {
     }
 
     @Test
     public void canFindPathsInCreationOrderedCategories() {
-        EnvironmentPIGFactory o = new EnvironmentPIGFactory(null);
+        PIGFactory o = new PIGFactory(null);
         PathItem rootPI = new PathItem(serviceData.DC_ROOT);
         PathItemGroup pig = new PathItemGroup(rootPI);
         o.addDataCategories(pig, serviceData.creationOrderedCategories);
@@ -32,7 +32,7 @@ public class EnvironmentPIGFactoryTest extends ServiceTest {
 
     @Test
     public void canFindPathsInReverseCreationOrderedCategories() {
-        EnvironmentPIGFactory o = new EnvironmentPIGFactory(null);
+        PIGFactory o = new PIGFactory(null);
         PathItem rootPI = new PathItem(serviceData.DC_ROOT);
         PathItemGroup pig = new PathItemGroup(rootPI);
         o.addDataCategories(pig, serviceData.reverseCreationOrderedCategories);

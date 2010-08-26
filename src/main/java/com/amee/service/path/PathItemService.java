@@ -102,11 +102,10 @@ public class PathItemService implements ApplicationListener {
     }
 
     public PathItemGroup getPathItemGroup() {
-        EnvironmentPIGFactory environmentPIGFactory = new EnvironmentPIGFactory(dataService);
-        return (PathItemGroup) cacheHelper.getCacheable(environmentPIGFactory);
+        return (PathItemGroup) cacheHelper.getCacheable(new PIGFactory(dataService));
     }
 
     public void removePathItemGroup() {
-        cacheHelper.remove("EnvironmentPIGs", Environment.ENVIRONMENT.getUid());
+        cacheHelper.remove("PIGs", Environment.ENVIRONMENT.getUid());
     }
 }
