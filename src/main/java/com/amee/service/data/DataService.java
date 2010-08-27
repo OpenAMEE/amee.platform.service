@@ -23,13 +23,9 @@ import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
 import com.amee.domain.AMEEEntityReference;
-import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.*;
 import com.amee.domain.environment.Environment;
-import com.amee.domain.sheet.Choice;
-import com.amee.domain.sheet.Choices;
-import com.amee.domain.sheet.Sheet;
 import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
@@ -62,9 +58,6 @@ public class DataService extends BaseService implements ApplicationListener {
 
     @Autowired
     private DataServiceDAO dao;
-
-    @Autowired
-    private DataSheetService dataSheetService;
 
     @Autowired
     private PathItemService pathItemService;
@@ -221,7 +214,6 @@ public class DataService extends BaseService implements ApplicationListener {
     public void clearCaches(DataCategory dataCategory) {
         log.info("clearCaches() dataCategory: " + dataCategory.getUid());
         drillDownService.clearDrillDownCache();
-        dataSheetService.removeSheet(dataCategory);
         dao.invalidate(dataCategory);
         // TODO: Metadata?
         // TODO: Locales?
@@ -376,32 +368,5 @@ public class DataService extends BaseService implements ApplicationListener {
 
     public void remove(ItemValue dataItemValue) {
         dao.remove(dataItemValue);
-    }
-
-    // Sheets & Choices
-
-    public Sheet getSheet(DataBrowser browser, String fullPath) {
-        return dataSheetService.getSheet(browser, fullPath);
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    public Choices getUserValueChoices(DataItem dataItem, APIVersion apiVersion) {
-        List<Choice> userValueChoices = new ArrayList<Choice>();
-        for (ItemValueDefinition ivd : dataItem.getItemDefinition().getItemValueDefinitions()) {
-            if (ivd.isFromProfile() && ivd.isValidInAPIVersion(apiVersion)) {
-                // start default value with value from ItemValueDefinition
-                String defaultValue = ivd.getValue();
-                // next give DataItem a chance to set the default value, if appropriate
-                if (ivd.isFromData()) {
-                    ItemValue dataItemValue = dataItem.getItemValue(ivd.getPath());
-                    if ((dataItemValue != null) && (dataItemValue.getValue().length() > 0)) {
-                        defaultValue = dataItemValue.getValue();
-                    }
-                }
-                // create Choice
-                userValueChoices.add(new Choice(ivd.getPath(), defaultValue));
-            }
-        }
-        return new Choices("userValueChoices", userValueChoices);
     }
 }
