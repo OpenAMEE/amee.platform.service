@@ -10,7 +10,6 @@ import com.amee.domain.cache.CacheableFactory;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemValue;
 import com.amee.domain.data.ItemValueDefinition;
-import com.amee.domain.environment.Environment;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.domain.sheet.Sheet;
@@ -23,12 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Primary service interface for Profile Resources.
@@ -81,31 +75,28 @@ public class ProfileService extends BaseService {
      * Profile with this UID is returned. If a profile with the UID is not found or the path is
      * not a valid UID format then a Profile with the matching path is searched for and returned.
      *
-     * @param environment that requested Profile belongs to
-     * @param path        to search for. Can be either a UID or a path alias.
+     * @param path to search for. Can be either a UID or a path alias.
      * @return the matching Profile
      */
-    public Profile getProfile(Environment environment, String path) {
+    public Profile getProfile(String path) {
         Profile profile = null;
         if (!StringUtils.isBlank(path)) {
             if (UidGen.INSTANCE_12.isValid(path)) {
-                profile = getProfileByUid(environment, path);
+                profile = getProfileByUid(path);
             }
             if (profile == null) {
-                profile = getProfileByPath(environment, path);
+                profile = getProfileByPath(path);
             }
         }
         return profile;
     }
 
-    public Profile getProfileByUid(Environment environment, String uid) {
-        Profile profile = dao.getProfileByUid(uid);
-        checkEnvironmentObject(environment, profile);
-        return profile;
+    public Profile getProfileByUid(String uid) {
+        return dao.getProfileByUid(uid);
     }
 
-    public Profile getProfileByPath(Environment environment, String path) {
-        return dao.getProfileByPath(environment, path);
+    public Profile getProfileByPath(String path) {
+        return dao.getProfileByPath(path);
     }
 
     public List<Profile> getProfiles(User user, Pager pager) {

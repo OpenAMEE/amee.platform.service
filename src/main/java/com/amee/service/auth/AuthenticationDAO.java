@@ -23,7 +23,6 @@ package com.amee.service.auth;
 
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.auth.User;
-import com.amee.domain.environment.Environment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.stereotype.Repository;
@@ -43,14 +42,12 @@ public class AuthenticationDAO {
     private EntityManager entityManager;
 
     @SuppressWarnings(value = "unchecked")
-    public User getUserByUid(Environment environment, String uid) {
+    public User getUserByUid(String uid) {
         List<User> users = entityManager.createQuery(
                 "SELECT DISTINCT u " +
                         "FROM User u " +
-                        "WHERE u.environment.id = :environmentId " +
-                        "AND u.uid = :userUid " +
+                        "WHERE u.uid = :userUid " +
                         "AND u.status != :trash")
-                .setParameter("environmentId", environment.getId())
                 .setParameter("userUid", uid)
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
@@ -65,14 +62,12 @@ public class AuthenticationDAO {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public User getUserByUsername(Environment environment, String username) {
+    public User getUserByUsername(String username) {
         List<User> users = entityManager.createQuery(
                 "SELECT DISTINCT u " +
                         "FROM User u " +
-                        "WHERE u.environment.id = :environmentId " +
-                        "AND u.username = :username " +
+                        "WHERE u.username = :username " +
                         "AND u.status != :trash")
-                .setParameter("environmentId", environment.getId())
                 .setParameter("username", username)
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)

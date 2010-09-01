@@ -29,7 +29,6 @@ import com.amee.domain.auth.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemDefinition;
-import com.amee.domain.environment.Environment;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -37,7 +36,6 @@ import java.util.*;
 @Service
 public class ServiceData {
 
-    public Environment ENVIRONMENT;
     public Group GROUP_STANDARD, GROUP_PREMIUM;
     public User USER_SUPER, USER_STANDARD, USER_PREMIUM;
     public GroupPrincipal GROUP_STANDARD_USER_STANDARD, GROUP_STANDARD_USER_PREMIUM, GROUP_PREMIUM_USER_PREMIUM;
@@ -53,7 +51,6 @@ public class ServiceData {
 
     public void init() {
         initCollections();
-        initEnvironment();
         initDefinitions();
         initDataCategories();
         initOrderedDataCategories();
@@ -68,19 +65,14 @@ public class ServiceData {
         ENTITY_MAP = new HashMap<String, AMEEEntity>();
     }
 
-    private void initEnvironment() {
-        ENVIRONMENT = new Environment("Environment");
-        setId(ENVIRONMENT);
-    }
-
     private void initDefinitions() {
-        ID_PUBLIC = new ItemDefinition(ENVIRONMENT, "Item Definition Public");
-        ID_PREMIUM = new ItemDefinition(ENVIRONMENT, "Item Definition Premium");
+        ID_PUBLIC = new ItemDefinition("Item Definition Public");
+        ID_PREMIUM = new ItemDefinition("Item Definition Premium");
         addEntities(ID_PUBLIC, ID_PREMIUM);
     }
 
     private void initDataCategories() {
-        DC_ROOT = new DataCategory(ENVIRONMENT, "Root", "root");
+        DC_ROOT = new DataCategory("Root", "root");
         DC_PUBLIC = new DataCategory(DC_ROOT, "DC Public", "dc_public");
         DC_PUBLIC_SUB = new DataCategory(DC_PUBLIC, "DC Public Sub", "dc_public_sub");
         DC_PREMIUM = new DataCategory(DC_ROOT, "DC Premium", "dc_premium");
@@ -122,14 +114,14 @@ public class ServiceData {
 
     private void initGroupsAndUsers() {
         // Groups
-        GROUP_STANDARD = new Group(ENVIRONMENT, "Group Standard");
-        GROUP_PREMIUM = new Group(ENVIRONMENT, "Group Premium");
+        GROUP_STANDARD = new Group("Group Standard");
+        GROUP_PREMIUM = new Group("Group Premium");
         addEntities(GROUP_STANDARD, GROUP_PREMIUM);
         // Users
-        USER_SUPER = new User(ENVIRONMENT, "user_super", "password", "User Super");
+        USER_SUPER = new User("user_super", "password", "User Super");
         USER_SUPER.setType(UserType.SUPER);
-        USER_STANDARD = new User(ENVIRONMENT, "user_standard", "password", "User Standard");
-        USER_PREMIUM = new User(ENVIRONMENT, "user_premium", "password", "User Premium");
+        USER_STANDARD = new User("user_standard", "password", "User Standard");
+        USER_PREMIUM = new User("user_premium", "password", "User Premium");
         addEntities(USER_SUPER, USER_STANDARD, USER_PREMIUM);
         // Users in Groups
         GROUP_STANDARD_USER_STANDARD = new GroupPrincipal(GROUP_STANDARD, USER_STANDARD);
@@ -140,19 +132,19 @@ public class ServiceData {
 
     private void initPermissions() {
         // Standard group members can view root data category.
-        PERMISSION_1 = new Permission(null, GROUP_STANDARD, DC_ROOT, PermissionEntry.VIEW);
+        PERMISSION_1 = new Permission(GROUP_STANDARD, DC_ROOT, PermissionEntry.VIEW);
         setId(PERMISSION_1);
         addPermissionToPrincipal(GROUP_STANDARD, PERMISSION_1);
         // Standard group members can not view premium data category.
-        PERMISSION_2 = new Permission(null, GROUP_STANDARD, DC_PREMIUM, PermissionEntry.VIEW_DENY);
+        PERMISSION_2 = new Permission(GROUP_STANDARD, DC_PREMIUM, PermissionEntry.VIEW_DENY);
         setId(PERMISSION_2);
         addPermissionToPrincipal(GROUP_STANDARD, PERMISSION_2);
         // Premium group members own premium data category.
-        PERMISSION_3 = new Permission(null, GROUP_PREMIUM, DC_PREMIUM, PermissionEntry.OWN);
+        PERMISSION_3 = new Permission(GROUP_PREMIUM, DC_PREMIUM, PermissionEntry.OWN);
         setId(PERMISSION_3);
         addPermissionToPrincipal(GROUP_PREMIUM, PERMISSION_3);
         // User can view deprecated data category.
-        PERMISSION_4 = new Permission(null, USER_STANDARD, DC_DEPRECATED, new PermissionEntry("v", true, AMEEStatus.DEPRECATED));
+        PERMISSION_4 = new Permission(USER_STANDARD, DC_DEPRECATED, new PermissionEntry("v", true, AMEEStatus.DEPRECATED));
         setId(PERMISSION_4);
         addPermissionToPrincipal(USER_STANDARD, PERMISSION_4);
 

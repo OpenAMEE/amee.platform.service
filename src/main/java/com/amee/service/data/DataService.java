@@ -23,9 +23,9 @@ import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
 import com.amee.domain.AMEEEntityReference;
+import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.*;
-import com.amee.domain.environment.Environment;
 import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
@@ -86,24 +86,28 @@ public class DataService extends BaseService implements ApplicationListener {
 
     // DataCategories
 
-    public DataCategory getDataCategoryByIdentifier(Environment environment, String identifier) {
+    public DataCategory getRootDataCategory() {
+        return dao.getRootDataCategory();
+    }
+
+    public DataCategory getDataCategoryByIdentifier(String identifier) {
         DataCategory dataCategory = null;
         if (UidGen.INSTANCE_12.isValid(identifier)) {
             dataCategory = getDataCategoryByUid(identifier);
         }
         if (dataCategory == null) {
-            dataCategory = getDataCategoryByWikiName(environment, identifier);
+            dataCategory = getDataCategoryByWikiName(identifier);
         }
         return dataCategory;
 
     }
 
-    public DataCategory getDataCategoryByWikiName(Environment environment, String wikiName) {
-        return getDataCategoryByWikiName(environment, wikiName, false);
+    public DataCategory getDataCategoryByWikiName(String wikiName) {
+        return getDataCategoryByWikiName(wikiName, false);
     }
 
-    public DataCategory getDataCategoryByWikiName(Environment environment, String wikiName, boolean includeTrash) {
-        DataCategory dataCategory = dao.getDataCategoryByWikiName(environment, wikiName, includeTrash);
+    public DataCategory getDataCategoryByWikiName(String wikiName, boolean includeTrash) {
+        DataCategory dataCategory = dao.getDataCategoryByWikiName(wikiName, includeTrash);
         if ((dataCategory != null) && (includeTrash || !dataCategory.isTrash())) {
             return dataCategory;
         } else {
@@ -124,30 +128,29 @@ public class DataService extends BaseService implements ApplicationListener {
         }
     }
 
-    public List<DataCategory> getDataCategories(Environment environment) {
-        return getDataCategories(environment, false);
+    public List<DataCategory> getDataCategories() {
+        return getDataCategories(false);
     }
 
-    public ResultsWrapper<DataCategory> getDataCategories(Environment environment, int resultStart, int resultLimit) {
-        return getDataCategories(environment, false, resultStart, resultLimit);
+    public ResultsWrapper<DataCategory> getDataCategories(int resultStart, int resultLimit) {
+        return getDataCategories(false, resultStart, resultLimit);
     }
 
-    public List<DataCategory> getDataCategories(Environment environment, boolean locales) {
-        return getDataCategories(environment, locales, 0, 0).getResults();
+    public List<DataCategory> getDataCategories(boolean locales) {
+        return getDataCategories(locales, 0, 0).getResults();
     }
 
     /**
      * TODO: There is a potential for confusing pagination truncation when removing inactive entries.
      *
-     * @param environment
      * @param locales
      * @param resultStart
      * @param resultLimit
      * @return
      */
-    public ResultsWrapper<DataCategory> getDataCategories(Environment environment, boolean locales, int resultStart, int resultLimit) {
+    public ResultsWrapper<DataCategory> getDataCategories(boolean locales, int resultStart, int resultLimit) {
         List<DataCategory> activeCategories = new ArrayList<DataCategory>();
-        ResultsWrapper<DataCategory> resultsWrapper = dao.getDataCategories(environment, resultStart, resultLimit);
+        ResultsWrapper<DataCategory> resultsWrapper = dao.getDataCategories(resultStart, resultLimit);
         for (DataCategory dataCategory : resultsWrapper.getResults()) {
             if (dataCategory != null && !dataCategory.isTrash()) {
                 activeCategories.add(dataCategory);
@@ -159,24 +162,24 @@ public class DataService extends BaseService implements ApplicationListener {
         return new ResultsWrapper<DataCategory>(activeCategories, resultsWrapper.isTruncated());
     }
 
-    public Map<Long, DataCategory> getDataCategoryMap(Environment environment, Set<Long> dataCategoryIds) {
+    public Map<Long, DataCategory> getDataCategoryMap(Set<Long> dataCategoryIds) {
         Map<Long, DataCategory> dataCategoryMap = new HashMap<Long, DataCategory>();
-        for (DataCategory dataCategory : dao.getDataCategories(environment, dataCategoryIds)) {
+        for (DataCategory dataCategory : dao.getDataCategories(dataCategoryIds)) {
             dataCategoryMap.put(dataCategory.getEntityId(), dataCategory);
         }
         return dataCategoryMap;
     }
 
-    public List<DataCategory> getDataCategories(Environment environment, Set<Long> dataCategoryIds) {
-        return dao.getDataCategories(environment, dataCategoryIds);
+    public List<DataCategory> getDataCategories(Set<Long> dataCategoryIds) {
+        return dao.getDataCategories(dataCategoryIds);
     }
 
-    public List<DataCategory> getDataCategoriesModifiedWithin(Environment environment, Date modifiedSince, Date modifiedUntil) {
-        return dao.getDataCategoriesModifiedWithin(environment, modifiedSince, modifiedUntil);
+    public List<DataCategory> getDataCategoriesModifiedWithin(Date modifiedSince, Date modifiedUntil) {
+        return dao.getDataCategoriesModifiedWithin(modifiedSince, modifiedUntil);
     }
 
-    public List<DataCategory> getDataCategoriesForDataItemsModifiedWithin(Environment environment, Date modifiedSince, Date modifiedUntil) {
-        return dao.getDataCategoriesForDataItemsModifiedWithin(environment, modifiedSince, modifiedUntil);
+    public List<DataCategory> getDataCategoriesForDataItemsModifiedWithin(Date modifiedSince, Date modifiedUntil) {
+        return dao.getDataCategoriesForDataItemsModifiedWithin(modifiedSince, modifiedUntil);
     }
 
     public List<DataCategory> getDataCategories(DataCategory dataCategory) {
@@ -242,21 +245,21 @@ public class DataService extends BaseService implements ApplicationListener {
 
     // DataItems
 
-    public DataItem getDataItem(Environment environment, String path) {
+    public DataItem getDataItem(String path) {
         DataItem dataItem = null;
         if (!StringUtils.isBlank(path)) {
             if (UidGen.INSTANCE_12.isValid(path)) {
-                dataItem = getDataItemByUid(environment, path);
+                dataItem = getDataItemByUid(path);
             }
             if (dataItem == null) {
-                dataItem = getDataItemByPath(environment, path);
+                dataItem = getDataItemByPath(path);
             }
         }
         return dataItem;
     }
 
     public DataItem getDataItemByUid(DataCategory dataCategory, String uid) {
-        DataItem dataItem = getDataItemByUid(dataCategory.getEnvironment(), uid);
+        DataItem dataItem = getDataItemByUid(uid);
         if ((dataItem != null) && dataItem.getDataCategory().equals(dataCategory)) {
             return dataItem;
         } else {
@@ -264,10 +267,9 @@ public class DataService extends BaseService implements ApplicationListener {
         }
     }
 
-    private DataItem getDataItemByUid(Environment environment, String uid) {
+    private DataItem getDataItemByUid(String uid) {
         DataItem dataItem = dao.getDataItemByUid(uid);
         if ((dataItem != null) && !dataItem.isTrash()) {
-            checkEnvironmentObject(environment, dataItem);
             checkDataItem(dataItem);
             return dataItem;
         } else {
@@ -275,10 +277,9 @@ public class DataService extends BaseService implements ApplicationListener {
         }
     }
 
-    private DataItem getDataItemByPath(Environment environment, String path) {
-        DataItem dataItem = dao.getDataItemByPath(environment, path);
+    private DataItem getDataItemByPath(String path) {
+        DataItem dataItem = dao.getDataItemByPath(path);
         if ((dataItem != null) && !dataItem.isTrash()) {
-            checkEnvironmentObject(environment, dataItem);
             checkDataItem(dataItem);
             return dataItem;
         } else {
@@ -286,24 +287,24 @@ public class DataService extends BaseService implements ApplicationListener {
         }
     }
 
-    public Map<Long, DataItem> getDataItemMap(Environment environment, Set<Long> dataItemIds) {
-        return getDataItemMap(environment, dataItemIds, false);
+    public Map<Long, DataItem> getDataItemMap(Set<Long> dataItemIds) {
+        return getDataItemMap(dataItemIds, false);
     }
 
-    public Map<Long, DataItem> getDataItemMap(Environment environment, Set<Long> dataItemIds, boolean values) {
+    public Map<Long, DataItem> getDataItemMap(Set<Long> dataItemIds, boolean values) {
         Map<Long, DataItem> dataItemMap = new HashMap<Long, DataItem>();
-        for (DataItem dataItem : dao.getDataItems(environment, dataItemIds, values)) {
+        for (DataItem dataItem : dao.getDataItems(dataItemIds, values)) {
             dataItemMap.put(dataItem.getEntityId(), dataItem);
         }
         return dataItemMap;
     }
 
-    public List<DataItem> getDataItems(Environment environment, Set<Long> dataItemIds) {
-        return getDataItems(environment, dataItemIds, false);
+    public List<DataItem> getDataItems(Set<Long> dataItemIds) {
+        return getDataItems(dataItemIds, false);
     }
 
-    public List<DataItem> getDataItems(Environment environment, Set<Long> dataItemIds, boolean values) {
-        return dao.getDataItems(environment, dataItemIds, values);
+    public List<DataItem> getDataItems(Set<Long> dataItemIds, boolean values) {
+        return dao.getDataItems(dataItemIds, values);
     }
 
     public List<DataItem> getDataItems(DataCategory dataCategory) {
@@ -388,5 +389,21 @@ public class DataService extends BaseService implements ApplicationListener {
 
     public void remove(ItemValue dataItemValue) {
         dao.remove(dataItemValue);
+    }
+
+    // API Versions
+
+    public List<APIVersion> getAPIVersions() {
+        return dao.getAPIVersions();
+    }
+
+    /**
+     * Gets an APIVersion based on the supplied version parameter.
+     *
+     * @param version to fetch
+     * @return APIVersion object, or null
+     */
+    public APIVersion getAPIVersion(String version) {
+        return dao.getAPIVersion(version);
     }
 }

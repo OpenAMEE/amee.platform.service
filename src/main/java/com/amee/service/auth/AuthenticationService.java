@@ -24,11 +24,11 @@ public class AuthenticationService implements Serializable {
     @Autowired
     private AuthenticationDAO authenticationDao;
 
-    public User doGuestSignIn(Environment environment) {
-        return getUserByUsername(environment, "guest");
+    public User doGuestSignIn() {
+        return getUserByUsername("guest");
     }
 
-    public String isAuthenticated(Environment environment, ISite site, String authToken, String remoteAddress) {
+    public String isAuthenticated(ISite site, String authToken, String remoteAddress) {
 
         User activeUser;
         Map<String, String> values;
@@ -113,7 +113,7 @@ public class AuthenticationService implements Serializable {
             // get and check auth
             String userUid = values.get(AuthToken.USER_UID);
             if (userUid != null) {
-                activeUser = getUserByUid(environment, userUid);
+                activeUser = getUserByUid(userUid);
                 if (activeUser != null) {
                     log.debug("auth authenticated and signed in: " + activeUser.getUsername());
                     Long touched = new Long(values.get(AuthToken.MODIFIED));
@@ -140,7 +140,7 @@ public class AuthenticationService implements Serializable {
      * @param authToken representing the active user.
      * @return the active user
      */
-    public User getActiveUser(Environment environment, String authToken) {
+    public User getActiveUser(String authToken) {
 
         if (authToken == null) {
             throw new IllegalArgumentException("AuthToken String must not be null.");
@@ -153,7 +153,7 @@ public class AuthenticationService implements Serializable {
         // get and check auth
         String userUid = values.get(AuthToken.USER_UID);
         if (userUid != null) {
-            return getUserByUid(environment, userUid);
+            return getUserByUid(userUid);
         } else {
             log.debug("getActiveUser() - active user NOT found");
             return null;
@@ -161,7 +161,7 @@ public class AuthenticationService implements Serializable {
     }
 
     /**
-     * Authenticates based on the supplied sample user. The sample user must have an environment, username and
+     * Authenticates based on the supplied sample user. The sample user must have a username and
      * password set. If authentication is successful the persistent User is returned.
      *
      * @param sampleUser sample User to authenticate against
@@ -169,7 +169,7 @@ public class AuthenticationService implements Serializable {
      */
     public User authenticate(User sampleUser) {
         // Try to find User based on 'sampleUser' User 'template'.
-        User activeUser = getUserByUsername(sampleUser.getEnvironment(), sampleUser.getUsername());
+        User activeUser = getUserByUsername(sampleUser.getUsername());
         if (activeUser != null) {
             if (activeUser.getPassword().equals(sampleUser.getPassword())) {
                 log.debug("authenticate() - User authenticated and signed in: " + sampleUser.getUsername());
@@ -189,13 +189,13 @@ public class AuthenticationService implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public User getUserByUid(Environment environment, String uid) {
-        return authenticationDao.getUserByUid(environment, uid);
+    public User getUserByUid(String uid) {
+        return authenticationDao.getUserByUid(uid);
     }
 
     @SuppressWarnings(value = "unchecked")
-    public User getUserByUsername(Environment environment, String username) {
-        return authenticationDao.getUserByUsername(environment, username);
+    public User getUserByUsername(String username) {
+        return authenticationDao.getUserByUsername(username);
     }
 
     private static class AuthToken implements Serializable {
@@ -242,7 +242,7 @@ public class AuthenticationService implements Serializable {
         public static String createToken(User user, String remoteAddress) {
             String now = "" + System.currentTimeMillis();
             Map<String, String> values = new HashMap<String, String>();
-            values.put(ENVIRONMENT_UID, user.getEnvironment().getUid());
+            values.put(ENVIRONMENT_UID, Environment.ENVIRONMENT.getUid());
             values.put(USER_UID, user.getUid());
             values.put(REMOTE_ADDRESS_HASH, "" + remoteAddress.hashCode());
             values.put(CREATED, now);

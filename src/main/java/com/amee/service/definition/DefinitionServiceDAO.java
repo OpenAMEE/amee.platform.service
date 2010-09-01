@@ -28,7 +28,6 @@ import com.amee.domain.algorithm.AlgorithmContext;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ReturnValueDefinition;
-import com.amee.domain.environment.Environment;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -76,13 +75,11 @@ public class DefinitionServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public List<AlgorithmContext> getAlgorithmContexts(Environment environment) {
+    public List<AlgorithmContext> getAlgorithmContexts() {
         List<AlgorithmContext> algorithmContexts =
                 entityManager.createQuery(
                         "FROM AlgorithmContext ac " +
-                                "WHERE ac.environment.id = :environmentId " +
-                                "AND ac.status != :trash")
-                        .setParameter("environmentId", environment.getId())
+                                "WHERE ac.status != :trash")
                         .setParameter("trash", AMEEStatus.TRASH)
                         .setHint("org.hibernate.cacheable", true)
                         .setHint("org.hibernate.cacheRegion", CACHE_REGION)
@@ -157,16 +154,14 @@ public class DefinitionServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public List<ItemDefinition> getItemDefinitions(Environment environment) {
+    public List<ItemDefinition> getItemDefinitions() {
         List<ItemDefinition> itemDefinitions;
         itemDefinitions = entityManager.createQuery(
                 "SELECT DISTINCT id " +
                         "FROM ItemDefinition id " +
                         "LEFT JOIN FETCH id.itemValueDefinitions ivd " +
-                        "WHERE id.environment.id = :environmentId " +
-                        "AND id.status != :trash " +
+                        "WHERE id.status != :trash " +
                         "ORDER BY id.name")
-                .setParameter("environmentId", environment.getId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
@@ -175,14 +170,12 @@ public class DefinitionServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public List<ItemDefinition> getItemDefinitions(Environment environment, Pager pager) {
+    public List<ItemDefinition> getItemDefinitions(Pager pager) {
         // first count all entities
         long count = (Long) entityManager.createQuery(
                 "SELECT count(id) " +
                         "FROM ItemDefinition id " +
-                        "WHERE id.environment.id = :environmentId " +
-                        "AND id.status != :trash")
-                .setParameter("environmentId", environment.getId())
+                        "WHERE id.status != :trash")
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
@@ -194,10 +187,8 @@ public class DefinitionServiceDAO implements Serializable {
         List<ItemDefinition> itemDefinitions = entityManager.createQuery(
                 "SELECT id " +
                         "FROM ItemDefinition id " +
-                        "WHERE id.environment.id = :environmentId " +
-                        "AND id.status != :trash " +
+                        "WHERE id.status != :trash " +
                         "ORDER BY id.name")
-                .setParameter("environmentId", environment.getId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
@@ -301,13 +292,11 @@ public class DefinitionServiceDAO implements Serializable {
     // ValueDefinitions
 
     @SuppressWarnings(value = "unchecked")
-    public List<ValueDefinition> getValueDefinitions(Environment environment) {
+    public List<ValueDefinition> getValueDefinitions() {
         return entityManager.createQuery(
                 "FROM ValueDefinition vd " +
-                        "WHERE vd.environment.id = :environmentId " +
-                        "AND vd.status != :trash " +
+                        "WHERE vd.status != :trash " +
                         "ORDER BY vd.name")
-                .setParameter("environmentId", environment.getId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
@@ -315,14 +304,12 @@ public class DefinitionServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public List<ValueDefinition> getValueDefinitions(Environment environment, Pager pager) {
+    public List<ValueDefinition> getValueDefinitions(Pager pager) {
         // first count all entities
         long count = (Long) entityManager.createQuery(
                 "SELECT count(vd) " +
                         "FROM ValueDefinition vd " +
-                        "WHERE vd.environment.id = :environmentId " +
-                        "AND vd.status != :trash")
-                .setParameter("environmentId", environment.getId())
+                        "WHERE vd.status != :trash")
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
@@ -334,10 +321,8 @@ public class DefinitionServiceDAO implements Serializable {
         List<ValueDefinition> valueDefinitions = entityManager.createQuery(
                 "SELECT vd " +
                         "FROM ValueDefinition vd " +
-                        "WHERE vd.environment.id = :environmentId " +
-                        "AND vd.status != :trash " +
+                        "WHERE vd.status != :trash " +
                         "ORDER BY vd.name")
-                .setParameter("environmentId", environment.getId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)

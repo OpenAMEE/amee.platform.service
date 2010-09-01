@@ -218,7 +218,6 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
         // Configure and add DataFinder.
         DataFinder dataFinder = (DataFinder) beanFactory.getBean("dataFinder");
-        dataFinder.setEnvironment(profileItem.getEnvironment());
         dataFinder.setStartDate(profileItem.getStartDate());
         dataFinder.setEndDate(profileItem.getEndDate());
         values.put("dataFinder", dataFinder);
@@ -251,7 +250,6 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         }
 
         DataFinder dataFinder = (DataFinder) beanFactory.getBean("dataFinder");
-        dataFinder.setEnvironment(dataItem.getEnvironment());
 
         ProfileFinder profileFinder = (ProfileFinder) beanFactory.getBean("profileFinder");
         profileFinder.setDataFinder(dataFinder);

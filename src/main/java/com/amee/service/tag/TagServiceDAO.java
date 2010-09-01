@@ -16,11 +16,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 public class TagServiceDAO implements Serializable {
@@ -33,7 +29,7 @@ public class TagServiceDAO implements Serializable {
         Criteria criteria = session.createCriteria(Tag.class);
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.add(Restrictions.ilike("tag", tag, MatchMode.EXACT));
-        criteria.setTimeout(1);
+        criteria.setTimeout(5);
         return (Tag) criteria.uniqueResult();
     }
 
@@ -42,7 +38,7 @@ public class TagServiceDAO implements Serializable {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(Tag.class);
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-        criteria.setTimeout(1);
+        criteria.setTimeout(5);
         return criteria.list();
     }
 
@@ -58,7 +54,7 @@ public class TagServiceDAO implements Serializable {
                         "GROUP BY t.tag " +
                         "ORDER BY t.tag");
         query.setParameter("trash", AMEEStatus.TRASH);
-        query.setHint("org.hibernate.timeout", 1);
+        query.setHint("org.hibernate.timeout", 5);
         // Collate Tags and set count value.
         List<Object> results = query.getResultList();
         List<Tag> tags = new ArrayList<Tag>();
@@ -79,7 +75,7 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.eq("entityReference.entityType", entity.getObjectType().getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.setFetchMode("tag", FetchMode.JOIN);
-        criteria.setTimeout(1);
+        criteria.setTimeout(5);
         return criteria.list();
     }
 
@@ -96,7 +92,7 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.eq("entityReference.entityType", objectType.getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.setFetchMode("tag", FetchMode.JOIN);
-        criteria.setTimeout(1);
+        criteria.setTimeout(5);
         return criteria.list();
     }
 
@@ -108,7 +104,7 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.eq("entityReference.entityType", entity.getObjectType().getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.add(Restrictions.ilike("t.tag", tag, MatchMode.EXACT));
-        criteria.setTimeout(1);
+        criteria.setTimeout(5);
         return (EntityTag) criteria.uniqueResult();
     }
 

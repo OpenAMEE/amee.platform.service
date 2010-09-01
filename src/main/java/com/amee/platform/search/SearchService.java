@@ -9,7 +9,6 @@ import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemValue;
 import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
-import com.amee.service.environment.EnvironmentService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
@@ -74,9 +73,6 @@ public class SearchService implements ApplicationListener {
 
     @Autowired
     private TransactionController transactionController;
-
-    @Autowired
-    private EnvironmentService environmentService;
 
     @Autowired
     private DataService dataService;
@@ -155,7 +151,6 @@ public class SearchService implements ApplicationListener {
         transactionController.begin(false);
         DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesModifiedWithin(
-                environmentService.getEnvironmentByName("AMEE"),
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());
         for (DataCategory dataCategory : dataCategories) {
@@ -175,7 +170,6 @@ public class SearchService implements ApplicationListener {
         transactionController.begin(false);
         DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesForDataItemsModifiedWithin(
-                environmentService.getEnvironmentByName("AMEE"),
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());
         for (DataCategory dataCategory : dataCategories) {
@@ -223,7 +217,7 @@ public class SearchService implements ApplicationListener {
         transactionController.begin(false);
         // Iterate over all DataCategories and gather DataCategory UIDs.
         Set<String> dataCategoryUids = new HashSet<String>();
-        for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
+        for (DataCategory dataCategory : dataService.getDataCategories()) {
             if (!dataCategory.getFullPath().startsWith("/test")) {
                 dataCategoryUids.add(dataCategory.getUid());
             }
@@ -466,9 +460,7 @@ public class SearchService implements ApplicationListener {
         Map<ObjectType, Map<Long, AMEEEntity>> entities = new HashMap<ObjectType, Map<Long, AMEEEntity>>();
         // Load DataCategories.
         if (entityIds.containsKey(ObjectType.DC)) {
-            Map<Long, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(
-                    environmentService.getEnvironmentByName("AMEE"),
-                    entityIds.get(ObjectType.DC));
+            Map<Long, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(entityIds.get(ObjectType.DC));
             addDataCategories(entities, dataCategoriesMap);
             // Pre-loading of EntityTags, LocaleNames & DataCategories.
             if (filter.isLoadEntityTags()) {
@@ -482,7 +474,6 @@ public class SearchService implements ApplicationListener {
         // Load DataItems.
         if (entityIds.containsKey(ObjectType.DI)) {
             Map<Long, DataItem> dataItemsMap = dataService.getDataItemMap(
-                    environmentService.getEnvironmentByName("AMEE"),
                     entityIds.get(ObjectType.DI),
                     filter.isLoadDataItemValues());
             addDataItems(entities, dataItemsMap);
@@ -542,7 +533,6 @@ public class SearchService implements ApplicationListener {
         } else {
             // Just get a simple list of Data Categories.
             resultsWrapper = dataService.getDataCategories(
-                    environmentService.getEnvironmentByName("AMEE"),
                     filter.getResultStart(),
                     filter.getResultLimit());
         }
@@ -570,7 +560,7 @@ public class SearchService implements ApplicationListener {
             dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
         }
         return new ResultsWrapper<DataCategory>(
-                dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds),
+                dataService.getDataCategories(dataCategoryIds),
                 resultsWrapper.isTruncated());
     }
 
@@ -608,7 +598,7 @@ public class SearchService implements ApplicationListener {
             dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
         }
         return new ResultsWrapper<DataItem>(
-                dataService.getDataItems(environmentService.getEnvironmentByName("AMEE"), dataCategoryIds),
+                dataService.getDataItems(dataCategoryIds),
                 resultsWrapper.isTruncated());
     }
 

@@ -31,7 +31,6 @@ import com.amee.domain.algorithm.AlgorithmContext;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ReturnValueDefinition;
-import com.amee.domain.environment.Environment;
 import com.amee.service.BaseService;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationMessage;
@@ -86,13 +85,12 @@ public class DefinitionService extends BaseService implements ApplicationListene
         return dao.getAlgorithmByUid(uid);
     }
 
-    public List<AlgorithmContext> getAlgorithmContexts(Environment environment) {
-        return dao.getAlgorithmContexts(environment);
+    public List<AlgorithmContext> getAlgorithmContexts() {
+        return dao.getAlgorithmContexts();
     }
 
-    public AlgorithmContext getAlgorithmContextByUid(Environment environment, String uid) {
+    public AlgorithmContext getAlgorithmContextByUid(String uid) {
         AlgorithmContext algorithmContext = dao.getAlgorithmContextByUid(uid);
-        checkEnvironmentObject(environment, algorithmContext);
         return algorithmContext;
     }
 
@@ -105,21 +103,6 @@ public class DefinitionService extends BaseService implements ApplicationListene
     }
 
     // ItemDefinition
-
-    /**
-     * Returns the ItemDefinition for the Environment and ItemDefinition UID specified. Returns null
-     * if the ItemDefinition could not be found. Throws a RuntimeException if the specified Environment
-     * does not match the ItemDefinition Environment.
-     *
-     * @param environment within which the ItemDefinition must belong
-     * @param uid         of the ItemDefinition to fetch
-     * @return the ItemDefinition matching the Environment and ItemDefinition UID specified
-     */
-    public ItemDefinition getItemDefinitionByUid(Environment environment, String uid) {
-        ItemDefinition itemDefinition = dao.getItemDefinitionByUid(uid);
-        checkEnvironmentObject(environment, itemDefinition);
-        return itemDefinition;
-    }
 
     /**
      * Returns the ItemDefinition for the ItemDefinition UID specified. Returns null
@@ -144,12 +127,12 @@ public class DefinitionService extends BaseService implements ApplicationListene
         return dao.getItemDefinitionByUid(uid, includeTrash);
     }
 
-    public List<ItemDefinition> getItemDefinitions(Environment environment) {
-        return dao.getItemDefinitions(environment);
+    public List<ItemDefinition> getItemDefinitions() {
+        return dao.getItemDefinitions();
     }
 
-    public List<ItemDefinition> getItemDefinitions(Environment environment, Pager pager) {
-        return dao.getItemDefinitions(environment, pager);
+    public List<ItemDefinition> getItemDefinitions(Pager pager) {
+        return dao.getItemDefinitions(pager);
     }
 
     public void save(ItemDefinition itemDefinition) {
@@ -246,17 +229,16 @@ public class DefinitionService extends BaseService implements ApplicationListene
 
     // ValueDefinitions
 
-    public List<ValueDefinition> getValueDefinitions(Environment environment) {
-        return dao.getValueDefinitions(environment);
+    public List<ValueDefinition> getValueDefinitions() {
+        return dao.getValueDefinitions();
     }
 
-    public List<ValueDefinition> getValueDefinitions(Environment environment, Pager pager) {
-        return dao.getValueDefinitions(environment, pager);
+    public List<ValueDefinition> getValueDefinitions(Pager pager) {
+        return dao.getValueDefinitions(pager);
     }
 
-    public ValueDefinition getValueDefinition(Environment environment, String uid) {
+    public ValueDefinition getValueDefinition(String uid) {
         ValueDefinition valueDefinition = dao.getValueDefinitionByUid(uid);
-        checkEnvironmentObject(environment, valueDefinition);
         return valueDefinition;
     }
 
