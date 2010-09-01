@@ -30,7 +30,6 @@ import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
 import com.amee.service.locale.LocaleService;
-import com.amee.service.path.PathItemService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,9 +57,6 @@ public class DataService extends BaseService implements ApplicationListener {
 
     @Autowired
     private DataServiceDAO dao;
-
-    @Autowired
-    private PathItemService pathItemService;
 
     @Autowired
     private DrillDownService drillDownService;
@@ -183,8 +179,32 @@ public class DataService extends BaseService implements ApplicationListener {
         return dao.getDataCategoriesForDataItemsModifiedWithin(environment, modifiedSince, modifiedUntil);
     }
 
+    public List<DataCategory> getDataCategories(DataCategory dataCategory) {
+        return dao.getDataCategories(dataCategory);
+    }
+
+    public boolean hasDataCategories(DataCategory dataCategory, Collection<Long> dataCategoryIds) {
+        log.debug("hasDataCategories() " + dataCategory.toString());
+        if (dataCategoryIds.contains(dataCategory.getId())) {
+            return true;
+        }
+        for (DataCategory dc : getDataCategories(dataCategory)) {
+            if (dataCategoryIds.contains(dc.getId())) {
+                return true;
+            }
+            if (hasDataCategories(dc, dataCategoryIds)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Set<AMEEEntityReference> getDataCategoryReferences(ItemDefinition itemDefinition) {
         return dao.getDataCategoryReferences(itemDefinition);
+    }
+
+    public boolean isUnique(DataCategory dataCategory) {
+        return dao.isUnique(dataCategory);
     }
 
     public void persist(DataCategory dataCategory) {

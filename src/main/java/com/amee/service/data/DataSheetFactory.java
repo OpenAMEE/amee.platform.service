@@ -19,14 +19,10 @@
  */
 package com.amee.service.data;
 
-import com.amee.domain.ValueType;
 import com.amee.domain.LocaleHolder;
+import com.amee.domain.ValueType;
 import com.amee.domain.cache.CacheableFactory;
-import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
-import com.amee.domain.data.ItemDefinition;
-import com.amee.domain.data.ItemValue;
-import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.*;
 import com.amee.domain.sheet.Cell;
 import com.amee.domain.sheet.Column;
 import com.amee.domain.sheet.Row;
@@ -65,13 +61,7 @@ public class DataSheetFactory implements CacheableFactory {
         ItemValue itemValue;
         Sheet sheet = null;
         ItemDefinition itemDefinition;
-        DataCategory dataCategory;
-
-        if (dataBrowser.getDataCategory().getAliasedCategory() != null) {
-            dataCategory = dataBrowser.getDataCategory().getAliasedCategory();
-        } else {
-            dataCategory = dataBrowser.getDataCategory();
-        }
+        DataCategory dataCategory = dataBrowser.getDataCategory();
 
         // must have an ItemDefinition
         itemDefinition = dataCategory.getItemDefinition();

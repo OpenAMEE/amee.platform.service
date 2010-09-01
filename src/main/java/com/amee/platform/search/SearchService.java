@@ -7,15 +7,12 @@ import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemValue;
-import com.amee.domain.path.PathItem;
-import com.amee.domain.path.PathItemGroup;
 import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
 import com.amee.service.environment.EnvironmentService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
-import com.amee.service.path.PathItemService;
 import com.amee.service.tag.TagService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -92,9 +89,6 @@ public class SearchService implements ApplicationListener {
 
     @Autowired
     private TagService tagService;
-
-    @Autowired
-    private PathItemService pathItemService;
 
     @Autowired
     private SearchQueryService searchQueryService;
@@ -227,13 +221,10 @@ public class SearchService implements ApplicationListener {
     protected Set<String> getDataCategoryUids() {
         log.debug("getDataCategoryUids()");
         transactionController.begin(false);
-        // We need PathItems to exclude test DataCategories.
-        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
         // Iterate over all DataCategories and gather DataCategory UIDs.
         Set<String> dataCategoryUids = new HashSet<String>();
         for (DataCategory dataCategory : dataService.getDataCategories(environmentService.getEnvironmentByName("AMEE"))) {
-            PathItem pathItem = pathItemGroup.findByUId(dataCategory.getUid());
-            if (pathItem == null || !pathItem.getFullPath().startsWith("/test")) {
+            if (!dataCategory.getFullPath().startsWith("/test")) {
                 dataCategoryUids.add(dataCategory.getUid());
             }
         }
@@ -350,9 +341,8 @@ public class SearchService implements ApplicationListener {
      */
     protected void handleDataCategory(DocumentContext ctx) {
         log.debug("handleDataCategory() " + ctx.dataCategory.toString());
-        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(environmentService.getEnvironmentByName("AMEE"));
         // Get Data Category Document.
-        Document dataCategoryDoc = getDocumentForDataCategory(ctx.dataCategory, pathItemGroup.findByUId(ctx.dataCategory.getUid()));
+        Document dataCategoryDoc = getDocumentForDataCategory(ctx.dataCategory);
         // Handle Data Items (Create, store & update documents).
         if (ctx.handleDataItems) {
             handleDataItems(ctx);
@@ -366,13 +356,11 @@ public class SearchService implements ApplicationListener {
 
     // Lucene Document creation.
 
-    protected Document getDocumentForDataCategory(DataCategory dataCategory, PathItem pathItem) {
+    protected Document getDocumentForDataCategory(DataCategory dataCategory) {
         Document doc = getDocumentForAMEEEntity(dataCategory);
         doc.add(new Field("name", dataCategory.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataCategory.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-        if (pathItem != null) {
-            doc.add(new Field("fullPath", pathItem.getFullPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-        }
+        doc.add(new Field("fullPath", dataCategory.getFullPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         doc.add(new Field("wikiName", dataCategory.getWikiName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("wikiDoc", dataCategory.getWikiDoc().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("provenance", dataCategory.getProvenance().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
@@ -390,14 +378,10 @@ public class SearchService implements ApplicationListener {
     }
 
     protected Document getDocumentForDataItem(DataItem dataItem) {
-        PathItemGroup pathItemGroup = pathItemService.getPathItemGroup(dataItem.getEnvironment());
-        PathItem pathItem = pathItemGroup.findByUId(dataItem.getDataCategory().getUid());
         Document doc = getDocumentForAMEEEntity(dataItem);
         doc.add(new Field("name", dataItem.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataItem.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-        if (pathItem != null) {
-            doc.add(new Field("fullPath", pathItem.getFullPath().toLowerCase() + "/" + dataItem.getDisplayPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-        }
+        doc.add(new Field("fullPath", dataItem.getFullPath().toLowerCase() + "/" + dataItem.getDisplayPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         doc.add(new Field("wikiDoc", dataItem.getWikiDoc().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("provenance", dataItem.getProvenance().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("categoryUid", dataItem.getDataCategory().getUid(), Field.Store.YES, Field.Index.NOT_ANALYZED));

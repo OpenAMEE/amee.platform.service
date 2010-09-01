@@ -198,6 +198,21 @@ public class DataServiceDAO implements Serializable {
                 .getResultList();
     }
 
+    @SuppressWarnings(value = "unchecked")
+    public List<DataCategory> getDataCategories(DataCategory dataCategory) {
+        return (List<DataCategory>) entityManager.createQuery(
+                "from DataCategory " +
+                        "WHERE dataCategory.id = :dataCategoryId " +
+                        "AND status != :trash " +
+                        "ORDER BY lower(path)")
+                .setParameter("dataCategoryId", dataCategory.getId())
+                .setParameter("trash", AMEEStatus.TRASH)
+                .setHint("org.hibernate.cacheable", true)
+                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
+                .getResultList();
+    }
+
+    @SuppressWarnings(value = "unchecked")
     public Set<AMEEEntityReference> getDataCategoryReferences(ItemDefinition itemDefinition) {
         Set<AMEEEntityReference> dataCategoryReferences = new HashSet<AMEEEntityReference>();
         if (itemDefinition != null) {
@@ -214,6 +229,26 @@ public class DataServiceDAO implements Serializable {
             }
         }
         return dataCategoryReferences;
+    }
+
+    /**
+     * Returns true if the path of the supplied DataCategory is unique amongst peers.
+     *
+     * @param dataCategory to check for uniqueness
+     * @return true if the DataCategory has a unique path amongst peers
+     */
+    public boolean isUnique(DataCategory dataCategory) {
+        if ((dataCategory != null) && (dataCategory.getDataCategory() != null)) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(DataCategory.class);
+            criteria.add(Restrictions.ne("uid", dataCategory.getUid()));
+            criteria.add(Restrictions.eq("path", dataCategory.getPath()));
+            criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getDataCategory().getId()));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            return criteria.list().isEmpty();
+        } else {
+            throw new RuntimeException("DataCategory was null or it doesn't have a parent.");
+        }
     }
 
     protected void persist(DataCategory dc) {

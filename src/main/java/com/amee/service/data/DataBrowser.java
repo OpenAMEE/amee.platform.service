@@ -28,7 +28,6 @@ import org.springframework.stereotype.Component;
 @Scope("prototype")
 public class DataBrowser extends BaseBrowser {
 
-    // DataCategories
     private DataCategory dataCategory = null;
 
     public DataBrowser() {
