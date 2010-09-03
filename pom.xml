@@ -16,7 +16,7 @@
         <amee-base.version>1.0.4</amee-base.version>
         <amee-persist.version>1.0.6</amee-persist.version>
         <amee-messaging.version>1.0.4</amee-messaging.version>
-        <amee-platform-science.version>1.0.9</amee-platform-science.version>
+        <amee-platform-science.version>1.0.10-SNAPSHOT</amee-platform-science.version>
         <amee-platform-domain.version>1.0.7-SNAPSHOT</amee-platform-domain.version>
         <!-- External Versions. -->
         <org-aspectj.version>1.6.8</org-aspectj.version>
