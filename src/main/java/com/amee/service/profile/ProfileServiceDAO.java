@@ -23,9 +23,12 @@ import com.amee.domain.AMEEStatus;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
 import com.amee.domain.data.DataCategory;
+import com.amee.domain.profile.LegacyProfileItem;
+import com.amee.domain.profile.LegacyProfileItemToProfileItemTransformer;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.platform.science.StartEndDate;
+import org.apache.commons.collections.list.TransformedList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -149,18 +152,18 @@ public class ProfileServiceDAO implements Serializable {
 
     @SuppressWarnings(value = "unchecked")
     protected ProfileItem getProfileItem(String uid) {
-        ProfileItem profileItem = null;
+        LegacyProfileItem profileItem = null;
         if (!StringUtils.isBlank(uid)) {
             // See http://www.hibernate.org/117.html#A12 for notes on DISTINCT_ROOT_ENTITY.
             Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(ProfileItem.class);
+            Criteria criteria = session.createCriteria(LegacyProfileItem.class);
             criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setFetchMode("itemValues", FetchMode.JOIN);
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
-            List<ProfileItem> profileItems = criteria.list();
+            List<LegacyProfileItem> profileItems = criteria.list();
             if (profileItems.size() == 1) {
                 log.debug("getProfileItem() found: " + uid);
                 profileItem = profileItems.get(0);
@@ -168,7 +171,7 @@ public class ProfileServiceDAO implements Serializable {
                 log.debug("getProfileItem() NOT found: " + uid);
             }
         }
-        return profileItem;
+        return ProfileItem.getProfileItem(profileItem);
     }
 
     @SuppressWarnings(value = "unchecked")
@@ -182,7 +185,7 @@ public class ProfileServiceDAO implements Serializable {
 
         int count = entityManager.createQuery(
                 "SELECT COUNT(pi.id) " +
-                        "FROM ProfileItem pi " +
+                        "FROM LegacyProfileItem pi " +
                         "WHERE pi.dataCategory.id = :dataCategoryId " +
                         "AND pi.profile.id = :profileId")
                 .setParameter("dataCategoryId", dataCategory.getId())
@@ -211,9 +214,9 @@ public class ProfileServiceDAO implements Serializable {
         profileDate = nextMonth.toDate();
 
         // now get all the Profile Items
-        List<ProfileItem> profileItems = entityManager.createQuery(
+        List<LegacyProfileItem> legacyProfileItems = entityManager.createQuery(
                 "SELECT DISTINCT pi " +
-                        "FROM ProfileItem pi " +
+                        "FROM LegacyProfileItem pi " +
                         "LEFT JOIN FETCH pi.itemValues " +
                         "WHERE pi.dataCategory.id = :dataCategoryId " +
                         "AND pi.profile.id = :profileId " +
@@ -229,8 +232,8 @@ public class ProfileServiceDAO implements Serializable {
 
 
         // Order the returned collection by pi.name, di.name and pi.startDate DESC
-        Collections.sort(profileItems, new Comparator<ProfileItem>() {
-            public int compare(ProfileItem p1, ProfileItem p2) {
+        Collections.sort(legacyProfileItems, new Comparator<LegacyProfileItem>() {
+            public int compare(LegacyProfileItem p1, LegacyProfileItem p2) {
                 int nd = p1.getName().compareTo(p2.getName());
                 int dnd = p1.getDataItem().getName().compareTo(p2.getDataItem().getName());
                 int sdd = p2.getStartDate().compareTo(p1.getStartDate());
@@ -242,9 +245,14 @@ public class ProfileServiceDAO implements Serializable {
         });
 
         if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() done (" + profileItems.size() + ")");
+            log.debug("getProfileItems() done (" + legacyProfileItems.size() + ")");
         }
 
+        // Convert from legacy to adapter.
+        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
+        for (LegacyProfileItem legacyProfileItem : legacyProfileItems) {
+            profileItems.add(ProfileItem.getProfileItem(legacyProfileItem));
+        }
         return profileItems;
     }
 
@@ -266,7 +274,7 @@ public class ProfileServiceDAO implements Serializable {
         // Create HQL.
         StringBuilder queryBuilder = new StringBuilder();
         queryBuilder.append("SELECT DISTINCT pi ");
-        queryBuilder.append("FROM ProfileItem pi ");
+        queryBuilder.append("FROM LegacyProfileItem pi ");
         queryBuilder.append("LEFT JOIN FETCH pi.itemValues ");
         queryBuilder.append("WHERE pi.dataCategory.id = :dataCategoryId ");
         queryBuilder.append("AND pi.profile.id = :profileId AND ");
@@ -291,20 +299,25 @@ public class ProfileServiceDAO implements Serializable {
         query.setHint("org.hibernate.cacheRegion", CACHE_REGION);
 
         // Execute query.
-        List<ProfileItem> profileItems = query.getResultList();
+        List<LegacyProfileItem> legacyProfileItems = query.getResultList();
 
         if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() done (" + profileItems.size() + ")");
+            log.debug("getProfileItems() done (" + legacyProfileItems.size() + ")");
         }
 
+        // Convert from legacy to adapter.
+        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
+        for (LegacyProfileItem legacyProfileItem : legacyProfileItems) {
+            profileItems.add(ProfileItem.getProfileItem(legacyProfileItem));
+        }
         return profileItems;
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected boolean equivilentProfileItemExists(ProfileItem profileItem) {
-        List<ProfileItem> profileItems = entityManager.createQuery(
+    protected boolean equivalentProfileItemExists(ProfileItem profileItem) {
+        List<LegacyProfileItem> profileItems = entityManager.createQuery(
                 "SELECT DISTINCT pi " +
-                        "FROM ProfileItem pi " +
+                        "FROM LegacyProfileItem pi " +
                         "LEFT JOIN FETCH pi.itemValues " +
                         "WHERE pi.profile.id = :profileId " +
                         "AND pi.uid != :uid " +
@@ -322,20 +335,20 @@ public class ProfileServiceDAO implements Serializable {
                 .setParameter("trash", AMEEStatus.TRASH)
                 .getResultList();
         if (profileItems.size() > 0) {
-            log.debug("equivilentProfileItemExists() - found ProfileItem(s)");
+            log.debug("equivalentProfileItemExists() - found ProfileItem(s)");
             return true;
         } else {
-            log.debug("equivilentProfileItemExists() - no ProfileItem(s) found");
+            log.debug("equivalentProfileItemExists() - no ProfileItem(s) found");
             return false;
         }
     }
 
     protected void persist(ProfileItem profileItem) {
-        entityManager.persist(profileItem);
+        entityManager.persist(profileItem.getLegacyEntity());
     }
 
     protected void remove(ProfileItem profileItem) {
-        profileItem.setStatus(AMEEStatus.TRASH);
+        profileItem.getLegacyEntity().setStatus(AMEEStatus.TRASH);
     }
 
     // Profile DataCategories

@@ -255,7 +255,7 @@ public class ProfileService extends BaseService {
     }
 
     public boolean isUnique(ProfileItem pi) {
-        return !dao.equivilentProfileItemExists(pi);
+        return !dao.equivalentProfileItemExists(pi);
     }
 
     public void persist(ProfileItem pi) {

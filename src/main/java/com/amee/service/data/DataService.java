@@ -187,7 +187,6 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public boolean hasDataCategories(DataCategory dataCategory, Collection<Long> dataCategoryIds) {
-        log.debug("hasDataCategories() " + dataCategory.toString());
         if (dataCategoryIds.contains(dataCategory.getId())) {
             return true;
         }

@@ -33,16 +33,11 @@ import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 public class DataServiceDAO implements Serializable {
@@ -53,9 +48,6 @@ public class DataServiceDAO implements Serializable {
 
     @PersistenceContext
     private EntityManager entityManager;
-
-    @Autowired
-    private ConversionService conversionService;
 
     // DataCategories
 
@@ -197,7 +189,7 @@ public class DataServiceDAO implements Serializable {
             Date modifiedUntil) {
         return (List<DataCategory>) entityManager.createQuery(
                 "SELECT DISTINCT di.dataCategory " +
-                        "FROM DataItem di " +
+                        "FROM LegacyDataItem di " +
                         "WHERE di.modified >= :modifiedSince " +
                         "AND di.modified < :modifiedUntil")
                 .setParameter("modifiedSince", modifiedSince)
@@ -309,18 +301,18 @@ public class DataServiceDAO implements Serializable {
      */
     @SuppressWarnings(value = "unchecked")
     protected DataItem getDataItemByUid(String uid) {
-        DataItem dataItem = null;
+        LegacyDataItem dataItem = null;
         if (!StringUtils.isBlank(uid)) {
             // See http://www.hibernate.org/117.html#A12 for notes on DISTINCT_ROOT_ENTITY.
             Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(DataItem.class);
+            Criteria criteria = session.createCriteria(LegacyDataItem.class);
             criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setFetchMode("itemValues", FetchMode.JOIN);
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
-            List<DataItem> dataItems = criteria.list();
+            List<LegacyDataItem> dataItems = criteria.list();
             if (dataItems.size() == 1) {
                 if (log.isTraceEnabled()) {
                     log.trace("getDataItemByUid() found: " + uid);
@@ -330,16 +322,16 @@ public class DataServiceDAO implements Serializable {
                 log.debug("getDataItemByUid() NOT found: " + uid);
             }
         }
-        return dataItem;
+        return DataItem.getDataItem(dataItem);
     }
 
     @SuppressWarnings(value = "unchecked")
     protected DataItem getDataItemByPath(String path) {
-        DataItem dataItem = null;
+        LegacyDataItem dataItem = null;
         if (!StringUtils.isBlank(path)) {
-            List<DataItem> dataItems = entityManager.createQuery(
+            List<LegacyDataItem> dataItems = entityManager.createQuery(
                     "SELECT DISTINCT di " +
-                            "FROM DataItem di " +
+                            "FROM LegacyDataItem di " +
                             "LEFT JOIN FETCH di.itemValues " +
                             "WHERE di.path = :path " +
                             "AND di.status != :trash")
@@ -357,13 +349,13 @@ public class DataServiceDAO implements Serializable {
                 log.debug("getDataItemByPath() NOT found: " + path);
             }
         }
-        return dataItem;
+        return DataItem.getDataItem(dataItem);
     }
 
     @SuppressWarnings(value = "unchecked")
     protected List<DataItem> getDataItems(DataCategory dataCategory) {
         log.debug("getDataItems() Start: " + dataCategory.toString());
-        List<LegacyDataItem> dataItems = entityManager.createQuery(
+        List<LegacyDataItem> legacyDataItems = entityManager.createQuery(
                 "SELECT DISTINCT di " +
                         "FROM LegacyDataItem di " +
                         "LEFT JOIN FETCH di.itemValues " +
@@ -376,8 +368,13 @@ public class DataServiceDAO implements Serializable {
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
-        log.debug("getDataItems() Done: " + dataCategory.toString() + " (" + dataItems.size() + ")");
-        return TransformedList.decorate(dataItems, LegacyDataItemToDataItemTransformer.getInstance());
+        log.debug("getDataItems() Done: " + dataCategory.toString() + " (" + legacyDataItems.size() + ")");
+        // Convert from legacy to adapter.
+        List<DataItem> dataItems = new ArrayList<DataItem>();
+        for (LegacyDataItem legacyDataItem : legacyDataItems) {
+            dataItems.add(DataItem.getDataItem(legacyDataItem));
+        }
+        return dataItems;
     }
 
     protected List<DataItem> getDataItems(Set<Long> dataItemIds) {
@@ -398,25 +395,30 @@ public class DataServiceDAO implements Serializable {
         }
         hql.append("WHERE di.status != :trash ");
         hql.append("AND di.id IN (:dataItemIds)");
-        List<LegacyDataItem> dataItems = (List<LegacyDataItem>) entityManager.createQuery(hql.toString())
+        List<LegacyDataItem> legacyDataItems = (List<LegacyDataItem>) entityManager.createQuery(hql.toString())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setParameter("dataItemIds", dataItemIds)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
-        return TransformedList.decorate(dataItems, LegacyDataItemToDataItemTransformer.getInstance());
+        // Convert from legacy to adapter.
+        List<DataItem> dataItems = new ArrayList<DataItem>();
+        for (LegacyDataItem legacyDataItem : legacyDataItems) {
+            dataItems.add(DataItem.getDataItem(legacyDataItem));
+        }
+        return dataItems;
     }
 
     protected void persist(DataItem dataItem) {
-        entityManager.persist(dataItem);
+        entityManager.persist(dataItem.getLegacyEntity());
     }
 
     protected void remove(DataItem dataItem) {
-        dataItem.setStatus(AMEEStatus.TRASH);
+        dataItem.getLegacyEntity().setStatus(AMEEStatus.TRASH);
     }
 
     protected void remove(ItemValue dataItemValue) {
-        dataItemValue.setStatus(AMEEStatus.TRASH);
+        dataItemValue.getLegacyEntity().setStatus(AMEEStatus.TRASH);
     }
 
     //  API Versions
