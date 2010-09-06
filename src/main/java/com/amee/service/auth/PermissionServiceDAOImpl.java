@@ -21,10 +21,7 @@
  */
 package com.amee.service.auth;
 
-import com.amee.domain.AMEEEntity;
-import com.amee.domain.AMEEStatus;
-import com.amee.domain.IAMEEEntityReference;
-import com.amee.domain.ObjectType;
+import com.amee.domain.*;
 import com.amee.domain.auth.Permission;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -107,7 +104,7 @@ public class PermissionServiceDAOImpl implements PermissionServiceDAO {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public AMEEEntity getEntity(IAMEEEntityReference entityReference) {
+    public IAMEEEntity getEntity(IAMEEEntityReference entityReference) {
         if (entityReference == null) {
             throw new IllegalArgumentException();
         }
@@ -123,7 +120,7 @@ public class PermissionServiceDAOImpl implements PermissionServiceDAO {
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
-            return (AMEEEntity) criteria.uniqueResult();
+            return (IAMEEEntity) criteria.uniqueResult();
         }
     }
 

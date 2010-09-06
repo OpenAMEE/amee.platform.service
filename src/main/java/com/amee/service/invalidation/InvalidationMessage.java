@@ -1,6 +1,7 @@
 package com.amee.service.invalidation;
 
 import com.amee.domain.AMEEEntity;
+import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
 import com.amee.domain.auth.AccessSpecification;
@@ -171,12 +172,12 @@ public class InvalidationMessage extends Message implements IAMEEEntityReference
     }
 
     @Override
-    public AMEEEntity getEntity() {
+    public IAMEEEntity getEntity() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void setEntity(AMEEEntity entity) {
+    public void setEntity(IAMEEEntity entity) {
         throw new UnsupportedOperationException();
     }
 

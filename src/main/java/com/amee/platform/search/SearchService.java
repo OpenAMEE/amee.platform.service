@@ -3,6 +3,7 @@ package com.amee.platform.search;
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.domain.AMEEEntity;
+import com.amee.domain.IAMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
@@ -404,7 +405,7 @@ public class SearchService implements ApplicationListener {
         return doc;
     }
 
-    protected Document getDocumentForAMEEEntity(AMEEEntity entity) {
+    protected Document getDocumentForAMEEEntity(IAMEEEntity entity) {
         Document doc = new Document();
         doc.add(new Field("entityType", entity.getObjectType().getName(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("entityId", entity.getId().toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
@@ -439,7 +440,7 @@ public class SearchService implements ApplicationListener {
 
     // Entity search.
 
-    public ResultsWrapper<AMEEEntity> getEntities(SearchFilter filter) {
+    public ResultsWrapper<IAMEEEntity> getEntities(SearchFilter filter) {
         Long entityId;
         ObjectType entityType;
         // Do search and fetch Lucene documents.
@@ -457,7 +458,7 @@ public class SearchService implements ApplicationListener {
             idSet.add(entityId);
         }
         // Collate AMEEEntities.
-        Map<ObjectType, Map<Long, AMEEEntity>> entities = new HashMap<ObjectType, Map<Long, AMEEEntity>>();
+        Map<ObjectType, Map<Long, IAMEEEntity>> entities = new HashMap<ObjectType, Map<Long, IAMEEEntity>>();
         // Load DataCategories.
         if (entityIds.containsKey(ObjectType.DC)) {
             Map<Long, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(entityIds.get(ObjectType.DC));
@@ -484,11 +485,11 @@ public class SearchService implements ApplicationListener {
             localeService.loadLocaleNamesForDataItems(dataItemsMap.values(), filter.isLoadDataItemValues());
         }
         // Create result list in relevance order.
-        List<AMEEEntity> results = new ArrayList<AMEEEntity>();
+        List<IAMEEEntity> results = new ArrayList<IAMEEEntity>();
         for (Document document : resultsWrapper.getResults()) {
             entityId = new Long(document.getField("entityId").stringValue());
             entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
-            AMEEEntity result = entities.get(entityType).get(entityId);
+            IAMEEEntity result = entities.get(entityType).get(entityId);
             if (result != null) {
                 if (!results.contains(result)) {
                     results.add(result);
@@ -497,19 +498,19 @@ public class SearchService implements ApplicationListener {
                 log.warn("getEntities() Entity was missing: " + entityType + " / " + entityId);
             }
         }
-        return new ResultsWrapper<AMEEEntity>(results, resultsWrapper.isTruncated());
+        return new ResultsWrapper<IAMEEEntity>(results, resultsWrapper.isTruncated());
     }
 
-    protected void addDataCategories(Map<ObjectType, Map<Long, AMEEEntity>> entities, Map<Long, DataCategory> dataCategoriesMap) {
-        Map<Long, AMEEEntity> e = new HashMap<Long, AMEEEntity>();
+    protected void addDataCategories(Map<ObjectType, Map<Long, IAMEEEntity>> entities, Map<Long, DataCategory> dataCategoriesMap) {
+        Map<Long, IAMEEEntity> e = new HashMap<Long, IAMEEEntity>();
         for (Long id : dataCategoriesMap.keySet()) {
             e.put(id, dataCategoriesMap.get(id));
         }
         entities.put(ObjectType.DC, e);
     }
 
-    protected void addDataItems(Map<ObjectType, Map<Long, AMEEEntity>> entities, Map<Long, DataItem> dataItemsMap) {
-        Map<Long, AMEEEntity> e = new HashMap<Long, AMEEEntity>();
+    protected void addDataItems(Map<ObjectType, Map<Long, IAMEEEntity>> entities, Map<Long, DataItem> dataItemsMap) {
+        Map<Long, IAMEEEntity> e = new HashMap<Long, IAMEEEntity>();
         for (Long id : dataItemsMap.keySet()) {
             e.put(id, dataItemsMap.get(id));
         }

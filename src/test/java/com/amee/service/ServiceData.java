@@ -21,10 +21,7 @@
  */
 package com.amee.service;
 
-import com.amee.domain.AMEEEntity;
-import com.amee.domain.AMEEStatus;
-import com.amee.domain.IAMEEEntityReference;
-import com.amee.domain.ObjectType;
+import com.amee.domain.*;
 import com.amee.domain.auth.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
@@ -45,7 +42,7 @@ public class ServiceData {
     public Permission PERMISSION_1, PERMISSION_2, PERMISSION_3, PERMISSION_4;
     public Map<IAMEEEntityReference, List<Permission>> PRINCIPAL_TO_PERMISSIONS;
     public Map<ObjectType, Long> ID_MAP;
-    public Map<String, AMEEEntity> ENTITY_MAP;
+    public Map<String, IAMEEEntity> ENTITY_MAP;
     public List<DataCategory> creationOrderedCategories = new ArrayList<DataCategory>();
     public List<DataCategory> reverseCreationOrderedCategories = new ArrayList<DataCategory>();
 
@@ -62,7 +59,7 @@ public class ServiceData {
     private void initCollections() {
         PRINCIPAL_TO_PERMISSIONS = new HashMap<IAMEEEntityReference, List<Permission>>();
         ID_MAP = new HashMap<ObjectType, Long>();
-        ENTITY_MAP = new HashMap<String, AMEEEntity>();
+        ENTITY_MAP = new HashMap<String, IAMEEEntity>();
     }
 
     private void initDefinitions() {
@@ -147,7 +144,6 @@ public class ServiceData {
         PERMISSION_4 = new Permission(USER_STANDARD, DC_DEPRECATED, new PermissionEntry("v", true, AMEEStatus.DEPRECATED));
         setId(PERMISSION_4);
         addPermissionToPrincipal(USER_STANDARD, PERMISSION_4);
-
     }
 
     private void addPermissionToPrincipal(IAMEEEntityReference principal, Permission permission) {
@@ -159,18 +155,18 @@ public class ServiceData {
         permissions.add(permission);
     }
 
-    private void addEntities(AMEEEntity... entities) {
-        for (AMEEEntity entity : entities) {
+    private void addEntities(IAMEEEntity... entities) {
+        for (IAMEEEntity entity : entities) {
             setId(entity);
             ENTITY_MAP.put(entity.getObjectType() + "_" + entity.getEntityUid(), entity);
         }
     }
 
-    private void setId(AMEEEntity entity) {
+    private void setId(IAMEEEntity entity) {
         entity.setId(getNextId(entity));
     }
 
-    private Long getNextId(AMEEEntity entity) {
+    private Long getNextId(IAMEEEntity entity) {
         Long id = ID_MAP.get(entity.getObjectType());
         if (id == null) {
             id = 0L;

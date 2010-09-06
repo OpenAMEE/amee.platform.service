@@ -22,6 +22,7 @@
 package com.amee.service.auth;
 
 import com.amee.domain.AMEEEntity;
+import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
 import com.amee.domain.auth.AuthorizationContext;
@@ -150,7 +151,7 @@ public class PermissionService {
             }
         }
         // Collect permissions for principals and entity.
-        AMEEEntity entity = getEntity(entityReference);
+        IAMEEEntity entity = getEntity(entityReference);
         List<Permission> permissions = new ArrayList<Permission>();
         permissions.addAll(entity.handleAuthorizationContext(authorizationContext));
         for (IAMEEEntityReference principal : authorizationContext.getPrincipals()) {
@@ -200,8 +201,8 @@ public class PermissionService {
      * @param entityReference to fetch
      * @return fetched entity
      */
-    public AMEEEntity getEntity(IAMEEEntityReference entityReference) {
-        AMEEEntity entity = entityReference.getEntity();
+    public IAMEEEntity getEntity(IAMEEEntityReference entityReference) {
+        IAMEEEntity entity = entityReference.getEntity();
         if (entity == null) {
             entity = dao.getEntity(entityReference);
             if (entity == null) {

@@ -22,6 +22,7 @@
 package com.amee.service.auth;
 
 import com.amee.domain.AMEEEntity;
+import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.auth.AccessSpecification;
 import com.amee.domain.auth.AuthorizationContext;
@@ -352,7 +353,7 @@ public class AuthorizationService implements Serializable {
      * @return true if access is authorized
      */
     protected boolean isAuthorized(AccessSpecification accessSpecification, Collection<PermissionEntry> principalEntries) {
-        AMEEEntity entity;
+        IAMEEEntity entity;
         // Default to not authorized.
         Boolean authorized = false;
         // Iterate over the desired PermissionEntries specified for the entity.

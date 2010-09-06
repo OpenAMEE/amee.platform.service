@@ -22,6 +22,7 @@
 package com.amee.service.auth;
 
 import com.amee.domain.AMEEEntity;
+import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.auth.Permission;
 import com.amee.service.ServiceData;
@@ -69,7 +70,7 @@ public class PermissionServiceDAOMock implements PermissionServiceDAO {
         return permissions;
     }
 
-    public AMEEEntity getEntity(IAMEEEntityReference entityReference) {
+    public IAMEEEntity getEntity(IAMEEEntityReference entityReference) {
         return serviceData.ENTITY_MAP.get(entityReference.getObjectType() + "_" + entityReference.getEntityUid());
     }
 

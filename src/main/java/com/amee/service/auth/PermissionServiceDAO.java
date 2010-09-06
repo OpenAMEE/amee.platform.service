@@ -22,6 +22,7 @@
 package com.amee.service.auth;
 
 import com.amee.domain.AMEEEntity;
+import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.auth.Permission;
 
@@ -47,7 +48,7 @@ public interface PermissionServiceDAO {
      * @param entityReference to fetch
      * @return fetched entity
      */
-    AMEEEntity getEntity(IAMEEEntityReference entityReference);
+    IAMEEEntity getEntity(IAMEEEntityReference entityReference);
 
     void trashPermissionsForEntity(IAMEEEntityReference entity);
 }

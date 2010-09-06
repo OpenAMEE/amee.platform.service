@@ -24,10 +24,8 @@ import com.amee.domain.AMEEEntityReference;
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
-import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
-import com.amee.domain.data.ItemDefinition;
-import com.amee.domain.data.ItemValue;
+import com.amee.domain.data.*;
+import org.apache.commons.collections.list.TransformedList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,6 +33,8 @@ import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.*;
@@ -54,8 +54,10 @@ public class DataServiceDAO implements Serializable {
     @PersistenceContext
     private EntityManager entityManager;
 
-    // DataCategories
+    @Autowired
+    private ConversionService conversionService;
 
+    // DataCategories
 
     @SuppressWarnings(value = "unchecked")
     public DataCategory getRootDataCategory() {
@@ -279,7 +281,7 @@ public class DataServiceDAO implements Serializable {
         ItemValue itemValue = null;
         if (!StringUtils.isBlank(uid)) {
             Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(ItemValue.class);
+            Criteria criteria = session.createCriteria(LegacyItemValue.class);
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setCacheable(true);
@@ -294,7 +296,7 @@ public class DataServiceDAO implements Serializable {
                 log.debug("getItemValueByUid() NOT found: " + uid);
             }
         }
-        return itemValue;
+        return (ItemValue) LegacyItemValueToItemValueTransformer.getInstance().transform(itemValue);
     }
 
     // DataItems
@@ -361,9 +363,9 @@ public class DataServiceDAO implements Serializable {
     @SuppressWarnings(value = "unchecked")
     protected List<DataItem> getDataItems(DataCategory dataCategory) {
         log.debug("getDataItems() Start: " + dataCategory.toString());
-        List<DataItem> dataItems = entityManager.createQuery(
+        List<LegacyDataItem> dataItems = entityManager.createQuery(
                 "SELECT DISTINCT di " +
-                        "FROM DataItem di " +
+                        "FROM LegacyDataItem di " +
                         "LEFT JOIN FETCH di.itemValues " +
                         "WHERE di.itemDefinition.id = :itemDefinitionId " +
                         "AND di.dataCategory.id = :dataCategoryId " +
@@ -375,7 +377,7 @@ public class DataServiceDAO implements Serializable {
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
         log.debug("getDataItems() Done: " + dataCategory.toString() + " (" + dataItems.size() + ")");
-        return dataItems;
+        return TransformedList.decorate(dataItems, LegacyDataItemToDataItemTransformer.getInstance());
     }
 
     protected List<DataItem> getDataItems(Set<Long> dataItemIds) {
@@ -390,18 +392,19 @@ public class DataServiceDAO implements Serializable {
         }
         StringBuilder hql = new StringBuilder();
         hql.append("SELECT DISTINCT di ");
-        hql.append("FROM DataItem di ");
+        hql.append("FROM LegacyDataItem di ");
         if (values) {
             hql.append("LEFT JOIN FETCH di.itemValues ");
         }
         hql.append("WHERE di.status != :trash ");
         hql.append("AND di.id IN (:dataItemIds)");
-        return (List<DataItem>) entityManager.createQuery(hql.toString())
+        List<LegacyDataItem> dataItems = (List<LegacyDataItem>) entityManager.createQuery(hql.toString())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setParameter("dataItemIds", dataItemIds)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
+        return TransformedList.decorate(dataItems, LegacyDataItemToDataItemTransformer.getInstance());
     }
 
     protected void persist(DataItem dataItem) {
