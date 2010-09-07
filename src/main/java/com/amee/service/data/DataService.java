@@ -94,6 +94,10 @@ public class DataService extends BaseService implements ApplicationListener {
         return dao.getRootDataCategory();
     }
 
+    public DataCategory getDataCategoryByPath(DataCategory parent, String path) {
+        return dao.getDataCategoryByPath(parent, path);
+    }
+
     public DataCategory getDataCategoryByIdentifier(String identifier) {
         DataCategory dataCategory = null;
         if (UidGen.INSTANCE_12.isValid(identifier)) {
@@ -103,7 +107,6 @@ public class DataService extends BaseService implements ApplicationListener {
             dataCategory = getDataCategoryByWikiName(identifier);
         }
         return dataCategory;
-
     }
 
     public DataCategory getDataCategoryByWikiName(String wikiName) {
@@ -248,29 +251,29 @@ public class DataService extends BaseService implements ApplicationListener {
 
     // DataItems
 
-    public DataItem getDataItem(String path) {
+    public DataItem getDataItemByIdentifier(DataCategory parent, String path) {
         DataItem dataItem = null;
         if (!StringUtils.isBlank(path)) {
             if (UidGen.INSTANCE_12.isValid(path)) {
-                dataItem = getDataItemByUid(path);
+                dataItem = getDataItemByUid(parent, path);
             }
             if (dataItem == null) {
-                dataItem = getDataItemByPath(path);
+                dataItem = getDataItemByPath(parent, path);
             }
         }
         return dataItem;
     }
 
-    public DataItem getDataItemByUid(DataCategory dataCategory, String uid) {
+    public DataItem getDataItemByUid(DataCategory parent, String uid) {
         DataItem dataItem = getDataItemByUid(uid);
-        if ((dataItem != null) && dataItem.getDataCategory().equals(dataCategory)) {
+        if ((dataItem != null) && dataItem.getDataCategory().equals(parent)) {
             return dataItem;
         } else {
             return null;
         }
     }
 
-    private DataItem getDataItemByUid(String uid) {
+    public DataItem getDataItemByUid(String uid) {
         DataItem dataItem = dao.getDataItemByUid(uid);
         if (dataItem == null) {
             dataItem = DataItem.getDataItem(dataItemService.getItemByUid(uid));
@@ -283,8 +286,8 @@ public class DataService extends BaseService implements ApplicationListener {
         }
     }
 
-    private DataItem getDataItemByPath(String path) {
-        DataItem dataItem = dao.getDataItemByPath(path);
+    public DataItem getDataItemByPath(DataCategory parent, String path) {
+        DataItem dataItem = dao.getDataItemByPath(parent, path);
         if ((dataItem != null) && !dataItem.isTrash()) {
             checkDataItem(dataItem);
             return dataItem;

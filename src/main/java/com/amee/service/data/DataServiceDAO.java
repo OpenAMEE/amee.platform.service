@@ -31,6 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.Session;
+import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
@@ -65,6 +66,29 @@ public class DataServiceDAO implements Serializable {
         } else {
             return dataCategories.get(0);
         }
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    protected DataCategory getDataCategoryByPath(DataCategory parent, String path) {
+        DataCategory dataCategory = null;
+        if ((parent != null) && !StringUtils.isBlank(path)) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(DataCategory.class);
+            criteria.add(Restrictions.eq("dataCategory.id", parent.getId()));
+            criteria.add(Restrictions.ilike("path", path, MatchMode.EXACT));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.setCacheable(true);
+            criteria.setCacheRegion(CACHE_REGION);
+            List<DataCategory> dataCategories = criteria.list();
+            if (dataCategories.size() == 0) {
+                log.debug("getDataCategoryByPath() DataCategory not found ('" + parent.getFullPath() + "/" + path + "').");
+            } else if (dataCategories.size() == 1) {
+                dataCategory = dataCategories.get(0);
+            } else {
+                log.warn("getDataCategoryByPath() More than one DataCategory found ('" + parent.getFullPath() + "/" + path + "').");
+            }
+        }
+        return dataCategory;
     }
 
     @SuppressWarnings(value = "unchecked")
@@ -324,15 +348,16 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected DataItem getDataItemByPath(String path) {
+    protected DataItem getDataItemByPath(DataCategory parent, String path) {
         LegacyDataItem dataItem = null;
-        if (!StringUtils.isBlank(path)) {
+        if ((parent != null) && !StringUtils.isBlank(path)) {
             List<LegacyDataItem> dataItems = entityManager.createQuery(
                     "SELECT DISTINCT di " +
                             "FROM LegacyDataItem di " +
                             "LEFT JOIN FETCH di.itemValues " +
                             "WHERE di.path = :path " +
                             "AND di.status != :trash")
+                    .setParameter("dataCategory.id", parent.getId())
                     .setParameter("path", path)
                     .setParameter("trash", AMEEStatus.TRASH)
                     .setHint("org.hibernate.cacheable", true)
