@@ -38,4 +38,8 @@
 
     <bean id="luceneService" class="com.amee.platform.search.LuceneServiceMock"/>
 
+    <bean id="dataItemServiceDAO" class="com.amee.service.item.DataItemServiceDAOMock"/>
+
+    <bean class="com.amee.service.item.DataItemService"/>
+
 </beans>

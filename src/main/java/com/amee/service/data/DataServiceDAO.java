@@ -25,7 +25,6 @@ import com.amee.domain.AMEEStatus;
 import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.*;
-import org.apache.commons.collections.list.TransformedList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -308,7 +307,6 @@ public class DataServiceDAO implements Serializable {
             Criteria criteria = session.createCriteria(LegacyDataItem.class);
             criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
-            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setFetchMode("itemValues", FetchMode.JOIN);
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);

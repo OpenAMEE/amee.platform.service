@@ -9,13 +9,13 @@ import java.util.List;
 
 public interface MetadataServiceDAO {
 
-    Metadata getMetadataForEntity(IAMEEEntityReference entity, String name);
+    public Metadata getMetadataForEntity(IAMEEEntityReference entity, String name);
 
-    List<Metadata> getMetadatas(IAMEEEntityReference entity);
+    public List<Metadata> getMetadatas(IAMEEEntityReference entity);
 
-    List<Metadata> getMetadatas(ObjectType objectType, Collection<IAMEEEntityReference> entities);
+    public List<Metadata> getMetadatas(ObjectType objectType, Collection<IAMEEEntityReference> entities);
 
-    void persist(Metadata metadata);
+    public void persist(Metadata metadata);
 
-    void remove(Metadata metadata);
+    public void remove(Metadata metadata);
 }

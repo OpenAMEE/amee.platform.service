@@ -29,6 +29,7 @@ import com.amee.domain.data.*;
 import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
+import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -63,6 +64,9 @@ public class DataService extends BaseService implements ApplicationListener {
 
     @Autowired
     private LocaleService localeService;
+
+    @Autowired
+    private DataItemService dataItemService;
 
     // Events
 
@@ -268,6 +272,9 @@ public class DataService extends BaseService implements ApplicationListener {
 
     private DataItem getDataItemByUid(String uid) {
         DataItem dataItem = dao.getDataItemByUid(uid);
+        if (dataItem == null) {
+            dataItem = DataItem.getDataItem(dataItemService.getItemByUid(uid));
+        }
         if ((dataItem != null) && !dataItem.isTrash()) {
             checkDataItem(dataItem);
             return dataItem;
