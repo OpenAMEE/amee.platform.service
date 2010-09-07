@@ -135,6 +135,34 @@ public class DataService extends BaseService implements ApplicationListener {
         }
     }
 
+    public DataCategory getDataCategoryByFullPath(String path) {
+        DataCategory dataCategory = null;
+        if (!StringUtils.isBlank(path)) {
+            dataCategory = getDataCategoryByFullPath(new ArrayList<String>(Arrays.asList(path.split("/"))));
+        }
+        return dataCategory;
+    }
+
+    public DataCategory getDataCategoryByFullPath(List<String> segments) {
+        DataCategory dataCategory = null;
+        if ((segments != null) && !segments.isEmpty()) {
+            // Start with the root DataCategory.
+            dataCategory = getRootDataCategory();
+            // Loop over all path segments and handle each.
+            for (String segment : segments) {
+                // We're looking for Data Categories.
+                dataCategory = getDataCategoryByPath(dataCategory, segment);
+                if (dataCategory == null) {
+                    break;
+                }
+            }
+            // At this point dataCategory will either reference the last DataCategory found or be null.
+            // It's not possible for dataCategory to reference the root DataCategory as there will
+            // have been at least one path segment.
+        }
+        return dataCategory;
+    }
+
     public List<DataCategory> getDataCategories() {
         return getDataCategories(false);
     }
