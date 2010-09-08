@@ -356,8 +356,9 @@ public class DataServiceDAO implements Serializable {
                             "FROM LegacyDataItem di " +
                             "LEFT JOIN FETCH di.itemValues " +
                             "WHERE di.path = :path " +
-                            "AND di.status != :trash")
-                    .setParameter("dataCategory.id", parent.getId())
+                            "AND di.status != :trash " +
+                            "AND di.dataCategory.id = :dataCategoryId")
+                    .setParameter("dataCategoryId", parent.getId())
                     .setParameter("path", path)
                     .setParameter("trash", AMEEStatus.TRASH)
                     .setHint("org.hibernate.cacheable", true)

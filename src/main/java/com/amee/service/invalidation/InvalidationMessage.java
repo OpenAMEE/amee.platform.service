@@ -1,6 +1,5 @@
 package com.amee.service.invalidation;
 
-import com.amee.domain.AMEEEntity;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
@@ -129,7 +128,9 @@ public class InvalidationMessage extends Message implements IAMEEEntityReference
     }
 
     public boolean isFromSameInstance() {
-        return getServerName().equalsIgnoreCase(System.getProperty("server.name")) &&
+        return (getServerName() != null) &&
+                getServerName().equalsIgnoreCase(System.getProperty("server.name")) &&
+                (getInstanceName() != null) &&
                 getInstanceName().equalsIgnoreCase(System.getProperty("instance.name"));
     }
 
