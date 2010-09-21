@@ -127,6 +127,10 @@ public class DefinitionService extends BaseService implements ApplicationListene
         return dao.getItemDefinitionByUid(uid, includeTrash);
     }
 
+    public List<ItemDefinition> getItemDefinitionsByName(String name) {
+        return dao.getItemDefinitionsByName(name);
+    }
+
     public List<ItemDefinition> getItemDefinitions() {
         return dao.getItemDefinitions();
     }

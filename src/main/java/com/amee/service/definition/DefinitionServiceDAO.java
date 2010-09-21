@@ -154,6 +154,24 @@ public class DefinitionServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
+    public List<ItemDefinition> getItemDefinitionsByName(String name) {
+        List<ItemDefinition> itemDefinitions = null;
+        if (!name.isEmpty()) {
+            // See http://www.hibernate.org/117.html#A12 for notes on DISTINCT_ROOT_ENTITY.
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(ItemDefinition.class);
+            criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+            criteria.add(Restrictions.eq("name", name));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.setFetchMode("itemValueDefinitions", FetchMode.JOIN);
+            criteria.setCacheable(true);
+            criteria.setCacheRegion(CACHE_REGION);
+            itemDefinitions = criteria.list();
+        }
+        return itemDefinitions;
+    }
+
+    @SuppressWarnings(value = "unchecked")
     public List<ItemDefinition> getItemDefinitions() {
         List<ItemDefinition> itemDefinitions;
         itemDefinitions = entityManager.createQuery(
