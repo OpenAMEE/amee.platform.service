@@ -264,6 +264,17 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     /**
+     * Invalidate a DataCategory fully. This will send an invalidation message via the
+     * InvalidationService and clear the local caches. It was also trigger a re-index of the Data Items.
+     *
+     * @param dataCategory to invalidate
+     */
+    public void invalidateFull(DataCategory dataCategory) {
+        log.info("invalidate() dataCategory: " + dataCategory.getUid());
+        invalidationService.add(dataCategory, "indexDataItems");
+    }
+
+    /**
      * Clears all caches related to the supplied DataCategory.
      *
      * @param dataCategory to clear caches for
