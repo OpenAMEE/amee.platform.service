@@ -2,7 +2,6 @@ package com.amee.platform.search;
 
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
-import com.amee.domain.AMEEEntity;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
@@ -104,6 +103,11 @@ public class SearchService implements ApplicationListener {
     private boolean clearIndex = false;
 
     /**
+     * Should all Data Categories be checked on application start?
+     */
+    private boolean checkDataCategories = false;
+
+    /**
      * Should all Data Categories be re-indexed on application start?
      */
     private boolean indexDataCategories = false;
@@ -194,8 +198,8 @@ public class SearchService implements ApplicationListener {
         if (clearIndex) {
             luceneService.clearIndex();
         }
-        // Add DataCategories?
-        if (indexDataCategories) {
+        // Check DataCategories?
+        if (checkDataCategories) {
             buildDataCategories();
         }
     }
@@ -611,6 +615,11 @@ public class SearchService implements ApplicationListener {
     @Value("#{ systemProperties['amee.clearIndex'] }")
     public void setClearIndex(Boolean clearIndex) {
         this.clearIndex = clearIndex;
+    }
+
+    @Value("#{ systemProperties['amee.checkDataCategories'] }")
+    public void setCheckDataCategories(Boolean checkDataCategories) {
+        this.checkDataCategories = checkDataCategories;
     }
 
     @Value("#{ systemProperties['amee.indexDataCategories'] }")
