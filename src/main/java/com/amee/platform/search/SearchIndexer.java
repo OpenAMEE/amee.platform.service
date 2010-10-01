@@ -78,6 +78,7 @@ public class SearchIndexer implements Runnable {
 
     private DocumentContext ctx;
     private DataCategory dataCategory;
+    private boolean newCategory = false;
 
     private SearchIndexer() {
         super();
@@ -136,6 +137,7 @@ public class SearchIndexer implements Runnable {
                 }
             } else {
                 log.info("updateDataCategory() DataCategory not in index, adding for the first time.");
+                newCategory = true;
                 ctx.handleDataItems = true;
                 handleDataCategory();
             }
@@ -158,11 +160,17 @@ public class SearchIndexer implements Runnable {
         if (ctx.handleDataItems) {
             handleDataItems();
         }
-        // Store / update the Data Category Document.
-        luceneService.updateDocument(
-                dataCategoryDoc,
-                new Term("entityType", ObjectType.DC.getName()),
-                new Term("entityUid", dataCategory.toString()));
+        // Are handling a new Data Category?
+        if (!newCategory) {
+            // Store / update the Data Category Document.
+            luceneService.updateDocument(
+                    dataCategoryDoc,
+                    new Term("entityType", ObjectType.DC.getName()),
+                    new Term("entityUid", dataCategory.toString()));
+        } else {
+            // Add the new Document.
+            luceneService.addDocument(dataCategoryDoc);
+        }
     }
 
     /**
@@ -193,8 +201,10 @@ public class SearchIndexer implements Runnable {
             // Clear caches.
             metadataService.clearMetadatas();
             localeService.clearLocaleNames();
-            // Ensure we clear existing DataItem Documents for this Data Category.
-            searchQueryService.removeDataItems(dataCategory);
+            // Ensure we clear existing DataItem Documents for this Data Category (only if the category is not new).
+            if (!newCategory) {
+                searchQueryService.removeDataItems(dataCategory);
+            }
             // Add the new Data Item Documents to the index (if any).
             luceneService.addDocuments(ctx.dataItemDocs);
             log.info("handleDataItems() ...done (" + dataCategory.toString() + ").");
