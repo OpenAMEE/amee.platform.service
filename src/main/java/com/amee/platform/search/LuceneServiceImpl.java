@@ -329,13 +329,10 @@ public class LuceneServiceImpl implements LuceneService {
      */
     private Analyzer getAnalyzer() {
         if (analyzer == null) {
-            wLock.lock();
-            try {
+            synchronized (this) {
                 if (analyzer == null) {
                     analyzer = new StandardAnalyzer(Version.LUCENE_30);
                 }
-            } finally {
-                wLock.unlock();
             }
         }
         return analyzer;
@@ -348,16 +345,15 @@ public class LuceneServiceImpl implements LuceneService {
      */
     private Directory getDirectory() {
         if (directory == null) {
-            wLock.lock();
-            try {
-                if (directory == null) {
-                    String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-api/lucene/index");
-                    directory = FSDirectory.open(new File(path));
+            synchronized (this) {
+                try {
+                    if (directory == null) {
+                        String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-api/lucene/index");
+                        directory = FSDirectory.open(new File(path));
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
                 }
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-            } finally {
-                wLock.unlock();
             }
         }
         return directory;
@@ -366,8 +362,7 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * Closes the Lucene directory.
      */
-    private void closeDirectory() {
-        wLock.lock();
+    private synchronized void closeDirectory() {
         try {
             if (directory != null) {
                 directory.close();
@@ -375,8 +370,6 @@ public class LuceneServiceImpl implements LuceneService {
             }
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-        } finally {
-            wLock.unlock();
         }
     }
 
@@ -391,13 +384,10 @@ public class LuceneServiceImpl implements LuceneService {
      */
     private IndexWriter getIndexWriter() {
         if (indexWriter == null) {
-            wLock.lock();
-            try {
+            synchronized (this) {
                 if (indexWriter == null) {
                     indexWriter = getNewIndexWriter(false);
                 }
-            } finally {
-                wLock.unlock();
             }
         }
         return indexWriter;
@@ -449,9 +439,8 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * Closes the IndexWriter. Will flush the index prior to closing.
      */
-    private void closeIndexWriter() {
+    private synchronized void closeIndexWriter() {
         log.info("closeIndexWriter()");
-        wLock.lock();
         try {
             if (indexWriter != null) {
                 flush();
@@ -460,8 +449,6 @@ public class LuceneServiceImpl implements LuceneService {
             }
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-        } finally {
-            wLock.unlock();
         }
     }
 
@@ -469,10 +456,9 @@ public class LuceneServiceImpl implements LuceneService {
      * Takes a snapshot of the lucene index using the solr snapshooter shell script.
      * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
      */
-    private void takeSnapshot() {
+    private synchronized void takeSnapshot() {
         String command = getSnapShooterPath() + " -d " + getIndexDirPath();
         log.info("takeSnapshot() executing " + command);
-        wLock.lock();
         try {
             // Invoke the Snapshooter and wait for it to complete.
             Process p = Runtime.getRuntime().exec(command);
@@ -481,8 +467,6 @@ public class LuceneServiceImpl implements LuceneService {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } catch (InterruptedException e) {
             throw new RuntimeException("Caught InterruptedException: " + e.getMessage(), e);
-        } finally {
-            wLock.unlock();
         }
     }
 

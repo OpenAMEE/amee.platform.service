@@ -147,7 +147,7 @@ public class SearchQueryService {
         query.add(new TermQuery(new Term("entityUid", uid)), BooleanClause.Occur.MUST);
         ResultsWrapper<Document> resultsWrapper = luceneService.doSearch(query, 0, 1);
         if (resultsWrapper.isTruncated()) {
-            log.warn("getDocument() Entity in index more than once: " + objectType + "/" + uid);
+            log.warn("getDocument() Entity in index more than once: " + objectType + "_" + uid);
         }
         if (!resultsWrapper.getResults().isEmpty()) {
             return resultsWrapper.getResults().get(0);
