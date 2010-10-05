@@ -14,7 +14,6 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.*;
 
@@ -24,8 +23,6 @@ public class SearchQueryService {
 
     @Autowired
     private LuceneService luceneService;
-
-    private boolean clearIndex = false;
 
     protected ResultsWrapper<Document> doSearch(SearchFilter filter) {
         Query primaryQuery;
@@ -199,15 +196,8 @@ public class SearchQueryService {
      */
     protected void removeDataItems(DataCategory dataCategory) {
         log.debug("removeDataItems() " + dataCategory.toString());
-        if (!clearIndex) {
-            luceneService.deleteDocuments(
-                    new Term("entityType", ObjectType.DI.getName()),
-                    new Term("categoryUid", dataCategory.getUid()));
-        }
-    }
-
-    @Value("#{ systemProperties['amee.clearIndex'] }")
-    public void setClearIndex(Boolean clearIndex) {
-        this.clearIndex = clearIndex;
+        luceneService.deleteDocuments(
+                new Term("entityType", ObjectType.DI.getName()),
+                new Term("categoryUid", dataCategory.getUid()));
     }
 }

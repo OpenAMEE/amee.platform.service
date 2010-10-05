@@ -19,25 +19,23 @@ import org.springframework.beans.factory.annotation.Value;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * LuceneIndexWrapper wraps a Lucene file system index and provides a simplified abstraction of
  * the Lucene API.
- * <p/>
- * Instances of this class should only be used by one thread. Care should be taken to respect the
- * sequence of method calls as described in the method documentation.
  */
 public class LuceneServiceImpl implements LuceneService {
 
     private final Log log = LogFactory.getLog(getClass());
 
     public final static int MAX_NUM_HITS = 1000;
-
-    /**
-     * A lock object for the index.
-     */
-    private final static Object LOCK = new Object();
 
     /**
      * Path to the snapshooter script
@@ -50,15 +48,17 @@ public class LuceneServiceImpl implements LuceneService {
     private String indexDirPath = "";
 
     /**
-     * Number of seconds to wait until taking a new snapshot
+     * The shared Lucene Analyzer.
      */
-    private int snapTime = 0;
-
     private Analyzer analyzer;
+
+    /**
+     * The shared Lucene directory.
+     */
     private Directory directory;
 
     /**
-     * The Lucene IndexWriter.
+     * The shared Lucene IndexWriter.
      */
     private IndexWriter indexWriter;
 
@@ -68,10 +68,16 @@ public class LuceneServiceImpl implements LuceneService {
     private boolean masterIndex = false;
 
     /**
-     * A start-up option to force the Lucene index to be cleared. Intended for infrequent use.
-     * This will also disable the snapshot process.
+     * The time tof the most recent index write.
      */
-    private boolean clearIndex = false;
+    private long lastWriteTime = 0l;
+
+    /**
+     * Lock objects for the index.
+     */
+    private ReadWriteLock rwLock = new ReentrantReadWriteLock(true);
+    private Lock rLock = rwLock.readLock();
+    private Lock wLock = rwLock.writeLock();
 
     /**
      * Conduct a search in the Lucene index based on the supplied Query, constrained by resultStart and resultLimit.
@@ -86,8 +92,9 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit) {
+        rLock.lock();
         try {
-            log.debug("doSearch() query='" + query.toString() + "', resultStart=" + resultStart + ", resultLimit=" + resultLimit);
+            log.info("doSearch() query='" + query.toString() + "', resultStart=" + resultStart + ", resultLimit=" + resultLimit);
             long start = System.currentTimeMillis();
             // Cannot go above MAX_NUM_HITS.
             int numHits = resultStart + resultLimit;
@@ -124,10 +131,12 @@ public class LuceneServiceImpl implements LuceneService {
                     resultStart,
                     resultLimit,
                     collector.getTotalHits() > MAX_NUM_HITS ? MAX_NUM_HITS : collector.getTotalHits());
-            log.debug("doSearch() Duration: " + ((System.currentTimeMillis() - start) / 1000));
+            log.info("doSearch() Duration: " + ((System.currentTimeMillis() - start) / 1000));
             return results;
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            rLock.unlock();
         }
     }
 
@@ -141,8 +150,9 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public ResultsWrapper<Document> doSearch(Query query) {
+        rLock.lock();
         try {
-            log.debug("doSearch() query='" + query.toString() + "'");
+            log.info("doSearch() query='" + query.toString() + "'");
             long start = System.currentTimeMillis();
             // Get Collector limited to numHits + 1, so we can detect truncations.
             TopScoreDocCollector collector = TopScoreDocCollector.create(MAX_NUM_HITS + 1, true);
@@ -162,36 +172,44 @@ public class LuceneServiceImpl implements LuceneService {
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents,
                     documents.size() > MAX_NUM_HITS);
-            log.debug("doSearch() Duration: " + ((System.currentTimeMillis() - start) / 1000));
+            log.info("doSearch() Duration: " + ((System.currentTimeMillis() - start) / 1000));
             return results;
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            rLock.unlock();
         }
     }
 
     @Override
     public void addDocument(Document document) {
-        if (!masterIndex) return;
+        if (!masterIndex || (document == null)) return;
+        rLock.lock();
         try {
             getIndexWriter().addDocument(document);
-            flush();
+            getIndexWriter().commit();
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            lastWriteTime = System.currentTimeMillis();
+            rLock.unlock();
         }
     }
 
     @Override
     public void addDocuments(Collection<Document> documents) {
-        if ((documents != null) && !documents.isEmpty()) {
-            if (!masterIndex) return;
-            try {
-                for (Document document : documents) {
-                    getIndexWriter().addDocument(document);
-                }
-                flush();
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        if (!masterIndex || (documents == null) || documents.isEmpty()) return;
+        rLock.lock();
+        try {
+            for (Document document : documents) {
+                getIndexWriter().addDocument(document);
             }
+            getIndexWriter().commit();
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            lastWriteTime = System.currentTimeMillis();
+            rLock.unlock();
         }
     }
 
@@ -203,17 +221,23 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public void updateDocument(Document document, Term... terms) {
-        if (!masterIndex) return;
+        if (!masterIndex || (document == null)) return;
         BooleanQuery q = new BooleanQuery();
         for (Term t : terms) {
-            q.add(new TermQuery(t), BooleanClause.Occur.MUST);
+            if (t != null) {
+                q.add(new TermQuery(t), BooleanClause.Occur.MUST);
+            }
         }
+        rLock.lock();
         try {
             getIndexWriter().deleteDocuments(q);
             getIndexWriter().addDocument(document);
-            flush();
+            getIndexWriter().commit();
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            lastWriteTime = System.currentTimeMillis();
+            rLock.unlock();
         }
     }
 
@@ -222,13 +246,19 @@ public class LuceneServiceImpl implements LuceneService {
         if (!masterIndex) return;
         BooleanQuery q = new BooleanQuery();
         for (Term t : terms) {
-            q.add(new TermQuery(t), BooleanClause.Occur.MUST);
+            if (t != null) {
+                q.add(new TermQuery(t), BooleanClause.Occur.MUST);
+            }
         }
+        rLock.lock();
         try {
             getIndexWriter().deleteDocuments(q);
-            flush();
+            getIndexWriter().commit();
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            lastWriteTime = System.currentTimeMillis();
+            rLock.unlock();
         }
     }
 
@@ -237,20 +267,21 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public void clearIndex() {
-        synchronized (LOCK) {
-            try {
-                // First ensure index is not locked (perhaps from a crash).
-                unlockIndex();
-                // Create a new index.
-                IndexWriter indexWriter = getNewIndexWriter(true);
-                // Close the index.
-                indexWriter.optimize();
-                indexWriter.commit();
-                indexWriter.close();
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-            }
+        wLock.lock();
+        try {
+            // First ensure index is not locked (perhaps from a crash).
+            unlockIndex();
+            // Create a new index.
+            IndexWriter indexWriter = getNewIndexWriter(true);
+            // Close the index.
+            indexWriter.optimize();
+            indexWriter.commit();
+            indexWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
             closeIndexWriter();
+            wLock.unlock();
         }
     }
 
@@ -259,17 +290,18 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public void unlockIndex() {
-        synchronized (LOCK) {
-            try {
-                if (IndexReader.indexExists(getDirectory())) {
-                    IndexReader.open(getDirectory());
-                    if (IndexWriter.isLocked(getDirectory())) {
-                        IndexWriter.unlock(getDirectory());
-                    }
+        wLock.lock();
+        try {
+            if (IndexReader.indexExists(getDirectory())) {
+                IndexReader.open(getDirectory());
+                if (IndexWriter.isLocked(getDirectory())) {
+                    IndexWriter.unlock(getDirectory());
                 }
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
             }
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            wLock.unlock();
         }
     }
 
@@ -280,10 +312,13 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     protected void finalize() throws Throwable {
-        synchronized (LOCK) {
+        wLock.lock();
+        try {
             super.finalize();
             closeIndexWriter();
             closeDirectory();
+        } finally {
+            wLock.unlock();
         }
     }
 
@@ -294,22 +329,16 @@ public class LuceneServiceImpl implements LuceneService {
      */
     private Analyzer getAnalyzer() {
         if (analyzer == null) {
-            synchronized (LOCK) {
+            wLock.lock();
+            try {
                 if (analyzer == null) {
-                    analyzer = getNewAnalyzer();
+                    analyzer = new StandardAnalyzer(Version.LUCENE_30);
                 }
+            } finally {
+                wLock.unlock();
             }
         }
         return analyzer;
-    }
-
-    /**
-     * Create a new Analyzer.
-     *
-     * @return Analyzer
-     */
-    private Analyzer getNewAnalyzer() {
-        return new StandardAnalyzer(Version.LUCENE_30);
     }
 
     /**
@@ -319,47 +348,36 @@ public class LuceneServiceImpl implements LuceneService {
      */
     private Directory getDirectory() {
         if (directory == null) {
-            synchronized (LOCK) {
+            wLock.lock();
+            try {
                 if (directory == null) {
-                    createDirectory();
+                    String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-api/lucene/index");
+                    directory = FSDirectory.open(new File(path));
                 }
+            } catch (IOException e) {
+                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+            } finally {
+                wLock.unlock();
             }
         }
         return directory;
     }
 
     /**
-     * Open the Directory.
-     */
-    private void createDirectory() {
-        try {
-            String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-api/lucene/index");
-            setDirectory(FSDirectory.open(new File(path)));
-        } catch (IOException e) {
-            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-        }
-    }
-
-    /**
      * Closes the Lucene directory.
      */
     private void closeDirectory() {
+        wLock.lock();
         try {
             if (directory != null) {
                 directory.close();
+                directory = null;
             }
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            wLock.unlock();
         }
-    }
-
-    /**
-     * Set the Directory.
-     *
-     * @param directory to set
-     */
-    private void setDirectory(Directory directory) {
-        this.directory = directory;
     }
 
     /**
@@ -373,10 +391,13 @@ public class LuceneServiceImpl implements LuceneService {
      */
     private IndexWriter getIndexWriter() {
         if (indexWriter == null) {
-            synchronized (LOCK) {
+            wLock.lock();
+            try {
                 if (indexWriter == null) {
                     indexWriter = getNewIndexWriter(false);
                 }
+            } finally {
+                wLock.unlock();
             }
         }
         return indexWriter;
@@ -404,22 +425,24 @@ public class LuceneServiceImpl implements LuceneService {
 
     /**
      * Flush the IndexWriter. Will optimise and commit the index and take a snapshot if appropriate.
-     * <p/>
-     * This must be called at least once following previous calls to getIndexWriter.
      */
-    private void flush() {
-        if (indexWriter != null) {
-            try {
+    public void flush() {
+        log.info("flush()");
+        wLock.lock();
+        try {
+            if (indexWriter != null) {
                 // Optimize and commit the IndexWriter.
                 indexWriter.optimize();
                 indexWriter.commit();
-                if (!clearIndex && pastSnapTime()) {
-                    log.debug("closeIndexWriter() Passed time threshold for snapshot.");
+                // Take a snapshot if it is due.
+                if (isSnapshotDue()) {
                     takeSnapshot();
                 }
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
             }
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            wLock.unlock();
         }
     }
 
@@ -427,18 +450,18 @@ public class LuceneServiceImpl implements LuceneService {
      * Closes the IndexWriter. Will flush the index prior to closing.
      */
     private void closeIndexWriter() {
-        if (indexWriter != null) {
-            synchronized (LOCK) {
-                if (indexWriter != null) {
-                    try {
-                        flush();
-                        indexWriter.close();
-                        indexWriter = null;
-                    } catch (IOException e) {
-                        throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-                    }
-                }
+        log.info("closeIndexWriter()");
+        wLock.lock();
+        try {
+            if (indexWriter != null) {
+                flush();
+                indexWriter.close();
+                indexWriter = null;
             }
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } finally {
+            wLock.unlock();
         }
     }
 
@@ -447,23 +470,27 @@ public class LuceneServiceImpl implements LuceneService {
      * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
      */
     private void takeSnapshot() {
-        synchronized (LOCK) {
-            String command = getSnapShooterPath() + " -d " + getIndexDirPath();
-            log.debug("takeSnapshot() - executing " + command);
-            try {
-                Runtime.getRuntime().exec(command);
-            } catch (IOException e) {
-                throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
-            }
+        String command = getSnapShooterPath() + " -d " + getIndexDirPath();
+        log.info("takeSnapshot() executing " + command);
+        wLock.lock();
+        try {
+            // Invoke the Snapshooter and wait for it to complete.
+            Process p = Runtime.getRuntime().exec(command);
+            p.waitFor();
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Caught InterruptedException: " + e.getMessage(), e);
+        } finally {
+            wLock.unlock();
         }
     }
 
     /**
-     * @return true if the last snapshot was taken longer than snapTime seconds ago.
+     * @return true if the last snapshot was taken longer than the most recent write
      */
-    private boolean pastSnapTime() {
-        Date now = new Date();
-        return (now.getTime() - getLastSnapshotTime()) > (getSnapTime() * 1000);
+    private boolean isSnapshotDue() {
+        return lastWriteTime > getLastSnapshotTime();
     }
 
     /**
@@ -480,7 +507,6 @@ public class LuceneServiceImpl implements LuceneService {
                 return name.startsWith("snapshot");
             }
         });
-
         if (snapshotFiles != null && snapshotFiles.length > 0) {
             Arrays.sort(snapshotFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
             return snapshotFiles[0].lastModified();
@@ -492,11 +518,6 @@ public class LuceneServiceImpl implements LuceneService {
     @Value("#{ systemProperties['amee.masterIndex'] }")
     public void setMasterIndex(Boolean masterIndex) {
         this.masterIndex = masterIndex;
-    }
-
-    @Value("#{ systemProperties['amee.clearIndex'] }")
-    public void setClearIndex(Boolean clearIndex) {
-        this.clearIndex = clearIndex;
     }
 
     public String getIndexDirPath() {
@@ -513,13 +534,5 @@ public class LuceneServiceImpl implements LuceneService {
 
     public void setSnapShooterPath(String snapShooterPath) {
         this.snapShooterPath = snapShooterPath;
-    }
-
-    public int getSnapTime() {
-        return snapTime;
-    }
-
-    public void setSnapTime(int snapTime) {
-        this.snapTime = snapTime;
     }
 }
