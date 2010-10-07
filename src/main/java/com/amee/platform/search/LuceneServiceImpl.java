@@ -19,10 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -131,7 +128,7 @@ public class LuceneServiceImpl implements LuceneService {
                     resultStart,
                     resultLimit,
                     collector.getTotalHits() > MAX_NUM_HITS ? MAX_NUM_HITS : collector.getTotalHits());
-            log.info("doSearch() Duration: " + ((System.currentTimeMillis() - start) / 1000));
+            log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
@@ -172,7 +169,7 @@ public class LuceneServiceImpl implements LuceneService {
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents,
                     documents.size() > MAX_NUM_HITS);
-            log.info("doSearch() Duration: " + ((System.currentTimeMillis() - start) / 1000));
+            log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
@@ -417,10 +414,10 @@ public class LuceneServiceImpl implements LuceneService {
      * Flush the IndexWriter. Will optimise and commit the index and take a snapshot if appropriate.
      */
     public void flush() {
-        log.info("flush()");
         wLock.lock();
         try {
             if (indexWriter != null) {
+                log.info("flush() Starting.");
                 // Optimize and commit the IndexWriter.
                 indexWriter.optimize();
                 indexWriter.commit();
@@ -428,9 +425,10 @@ public class LuceneServiceImpl implements LuceneService {
                 if (isSnapshotDue()) {
                     takeSnapshot();
                 }
+                log.info("flush() Done.");
             }
         } catch (IOException e) {
-            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+            log.error("flush() Caught IOException: " + e.getMessage());
         } finally {
             wLock.unlock();
         }
@@ -457,17 +455,45 @@ public class LuceneServiceImpl implements LuceneService {
      * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
      */
     private synchronized void takeSnapshot() {
+        Process p = null;
+        Timer timer = new Timer(true);
         String command = getSnapShooterPath() + " -d " + getIndexDirPath();
-        log.info("takeSnapshot() executing " + command);
         try {
-            // Invoke the Snapshooter and wait for it to complete.
-            Process p = Runtime.getRuntime().exec(command);
+            log.info("takeSnapshot() Executing: " + command);
+            // Invoke the Snapshooter.
+            p = Runtime.getRuntime().exec(command);
+            // Use a Timer to interrupt later on timeout.
+            InterruptTimerTask interrupter = new InterruptTimerTask(Thread.currentThread());
+            timer.schedule(interrupter, 30 * 1000); // 30 second timeout.
+            // Wait for process to complete (or until timeout is reached).
             p.waitFor();
+            // If we get here then the snapshot completed.
+            log.info("takeSnapshot() Done.");
         } catch (IOException e) {
-            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+            log.error("takeSnapshot() Caught IOException: " + e.getMessage());
         } catch (InterruptedException e) {
-            throw new RuntimeException("Caught InterruptedException: " + e.getMessage(), e);
+            p.destroy();
+            log.warn("takeSnapshot() Timed out.");
+        } finally {
+            // Tidy up.
+            timer.cancel();
+            Thread.interrupted();
         }
+    }
+
+    class InterruptTimerTask
+            extends TimerTask {
+
+        private Thread thread;
+
+        public InterruptTimerTask(Thread t) {
+            this.thread = t;
+        }
+
+        public void run() {
+            thread.interrupt();
+        }
+
     }
 
     /**
