@@ -26,14 +26,8 @@ public class SearchQueryService {
 
     protected ResultsWrapper<Document> doSearch(SearchFilter filter) {
         Query primaryQuery;
-        // Obtain Query - Do we need to query with types?
-        if (!filter.getTypes().isEmpty()) {
-            // Only search specified types.
-            primaryQuery = getQueryFilteredByEntityType(filter.getQ(), filter.getTypes());
-        } else {
-            // Search all entities with filter query.
-            primaryQuery = filter.getQ();
-        }
+        // Obtain Query.
+        primaryQuery = getQuery(filter.getQ(), filter.getTags(), filter.getTypes());
         // Get Lucene Documents matching query within page range.
         ResultsWrapper<Document> pagedPrimaryResults = luceneService.doSearch(primaryQuery, filter.getResultStart(), filter.getResultLimit());
         // Would we like more results (not truncated)? Are we only searching for Data Categories?
@@ -43,7 +37,7 @@ public class SearchQueryService {
             // Search for Data Items.
             ResultsWrapper<Document> allSecondaryResults =
                     luceneService.doSearch(
-                            getQueryFilteredByEntityType(filter.getQ(), ObjectType.DI));
+                            getQuery(filter.getQ(), filter.getTags(), ObjectType.DI));
             // Only handle secondary results if some where found.
             if (!allSecondaryResults.getResults().isEmpty()) {
                 // Get all Documents matching primary query (this is a duplicate of the search above).
@@ -107,21 +101,34 @@ public class SearchQueryService {
         return pagedPrimaryResults;
     }
 
-    private Query getQueryFilteredByEntityType(Query q, ObjectType type) {
-        return getQueryFilteredByEntityType(q, new HashSet<ObjectType>(Arrays.asList(type)));
+    private Query getQuery(Query q, Query tags, ObjectType type) {
+        return getQuery(q, tags, new HashSet<ObjectType>(Arrays.asList(type)));
     }
 
-    private Query getQueryFilteredByEntityType(Query q, Set<ObjectType> types) {
-        // First - add entityType queries.
-        BooleanQuery typesQuery = new BooleanQuery();
-        for (ObjectType objectType : types) {
-            typesQuery.add(new TermQuery(new Term("entityType", objectType.getName())), BooleanClause.Occur.SHOULD);
+    private Query getQuery(Query q, Query tags, Set<ObjectType> types) {
+        // Do we need to create a combined query?
+        if ((tags != null) || (types != null) && !types.isEmpty()) {
+            // Create a combined query.
+            BooleanQuery combinedQuery = new BooleanQuery();
+            // First - add entityType queries.
+            if ((types != null) && !types.isEmpty()) {
+                BooleanQuery typesQuery = new BooleanQuery();
+                for (ObjectType objectType : types) {
+                    typesQuery.add(new TermQuery(new Term("entityType", objectType.getName())), BooleanClause.Occur.SHOULD);
+                }
+                combinedQuery.add(typesQuery, BooleanClause.Occur.MUST);
+            }
+            // Second - add tags query.
+            if (tags != null) {
+                combinedQuery.add(tags, BooleanClause.Occur.MUST);
+            }
+            // Third - add plain query.
+            combinedQuery.add(q, BooleanClause.Occur.MUST);
+            return combinedQuery;
+        } else {
+            // Just return the simple query.
+            return q;
         }
-        // Second - combine filter query and types query.
-        BooleanQuery combinedQuery = new BooleanQuery();
-        combinedQuery.add(typesQuery, BooleanClause.Occur.MUST);
-        combinedQuery.add(q, BooleanClause.Occur.MUST);
-        return combinedQuery;
     }
 
     /**

@@ -18,8 +18,16 @@ public class SearchFilter extends QueryFilter {
         return getQueries().get("q");
     }
 
-    public void setQ(Query uid) {
-        getQueries().put("q", uid);
+    public void setQ(Query query) {
+        getQueries().put("q", query);
+    }
+
+    public Query getTags() {
+        return getQueries().get("tags");
+    }
+
+    public void setTags(Query tags) {
+        getQueries().put("tags", tags);
     }
 
     public Set<ObjectType> getTypes() {
@@ -31,7 +39,7 @@ public class SearchFilter extends QueryFilter {
             this.types = types;
         }
     }
-    
+
     public int getResultLimitDefault() {
         return 25;
     }
