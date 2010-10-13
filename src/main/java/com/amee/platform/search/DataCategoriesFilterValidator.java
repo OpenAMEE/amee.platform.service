@@ -9,10 +9,6 @@ import org.springframework.validation.Validator;
 @Scope("prototype")
 public class DataCategoriesFilterValidator implements Validator {
 
-    public DataCategoriesFilterValidator() {
-        super();
-    }
-
     public boolean supports(Class clazz) {
         return DataCategoriesFilter.class.isAssignableFrom(clazz);
     }

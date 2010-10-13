@@ -23,6 +23,7 @@ import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
 import com.amee.domain.AMEEEntityReference;
+import com.amee.domain.AMEEStatus;
 import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.*;
@@ -81,7 +82,7 @@ public class DataService extends BaseService implements ApplicationListener {
         if ((invalidationMessage.isLocal() || invalidationMessage.isFromOtherInstance()) &&
                 invalidationMessage.getObjectType().equals(ObjectType.DC)) {
             log.debug("onInvalidationMessage() Handling InvalidationMessage.");
-            DataCategory dataCategory = getDataCategoryByUid(invalidationMessage.getEntityUid(), true);
+            DataCategory dataCategory = getDataCategoryByUid(invalidationMessage.getEntityUid());
             if (dataCategory != null) {
                 clearCaches(dataCategory);
             }
@@ -99,44 +100,34 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public DataCategory getDataCategoryByIdentifier(String identifier) {
-        return getDataCategoryByIdentifier(identifier, false);
+        return getDataCategoryByIdentifier(identifier, AMEEStatus.ACTIVE);
     }
 
-    public DataCategory getDataCategoryByIdentifier(String identifier, boolean includeTrash) {
+    public DataCategory getDataCategoryByIdentifier(String identifier, AMEEStatus status) {
         DataCategory dataCategory = null;
         if (UidGen.INSTANCE_12.isValid(identifier)) {
-            dataCategory = getDataCategoryByUid(identifier, includeTrash);
+            dataCategory = getDataCategoryByUid(identifier, status);
         }
         if (dataCategory == null) {
-            dataCategory = getDataCategoryByWikiName(identifier, includeTrash);
+            dataCategory = getDataCategoryByWikiName(identifier, status);
         }
         return dataCategory;
     }
 
     public DataCategory getDataCategoryByWikiName(String wikiName) {
-        return getDataCategoryByWikiName(wikiName, false);
+        return getDataCategoryByWikiName(wikiName, AMEEStatus.ACTIVE);
     }
 
-    public DataCategory getDataCategoryByWikiName(String wikiName, boolean includeTrash) {
-        DataCategory dataCategory = dao.getDataCategoryByWikiName(wikiName, includeTrash);
-        if ((dataCategory != null) && (includeTrash || !dataCategory.isTrash())) {
-            return dataCategory;
-        } else {
-            return null;
-        }
+    public DataCategory getDataCategoryByWikiName(String wikiName, AMEEStatus status) {
+        return dao.getDataCategoryByWikiName(wikiName, status);
     }
 
     public DataCategory getDataCategoryByUid(String uid) {
-        return getDataCategoryByUid(uid, false);
+        return getDataCategoryByUid(uid, null);
     }
 
-    public DataCategory getDataCategoryByUid(String uid, boolean includeTrash) {
-        DataCategory dataCategory = dao.getDataCategoryByUid(uid, includeTrash);
-        if ((dataCategory != null) && (includeTrash || !dataCategory.isTrash())) {
-            return dataCategory;
-        } else {
-            return null;
-        }
+    public DataCategory getDataCategoryByUid(String uid, AMEEStatus status) {
+        return dao.getDataCategoryByUid(uid, status);
     }
 
     public DataCategory getDataCategoryByFullPath(String path) {

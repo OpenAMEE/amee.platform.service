@@ -9,10 +9,6 @@ import org.springframework.validation.Validator;
 @Scope("prototype")
 public class DataItemsFilterValidator implements Validator {
 
-    public DataItemsFilterValidator() {
-        super();
-    }
-
     public boolean supports(Class clazz) {
         return QueryFilter.class.isAssignableFrom(clazz);
     }

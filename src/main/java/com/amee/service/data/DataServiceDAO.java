@@ -92,14 +92,14 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected DataCategory getDataCategoryByUid(String uid, boolean includeTrash) {
+    protected DataCategory getDataCategoryByUid(String uid, AMEEStatus status) {
         DataCategory dataCategory = null;
         if (!StringUtils.isBlank(uid)) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(DataCategory.class);
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
-            if (!includeTrash) {
-                criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            if (status != null) {
+                criteria.add(Restrictions.eq("status", status));
             }
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
@@ -107,9 +107,6 @@ public class DataServiceDAO implements Serializable {
             if (dataCategories.size() == 0) {
                 log.debug("getDataCategoryByUid() NOT found: " + uid);
             } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("getDataCategoryByUid() found: " + uid);
-                }
                 dataCategory = dataCategories.get(0);
             }
         }
@@ -117,24 +114,33 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected DataCategory getDataCategoryByWikiName(String wikiName, boolean includeTrash) {
+    protected DataCategory getDataCategoryByWikiName(String wikiName, AMEEStatus status) {
         DataCategory dataCategory = null;
-        if (!StringUtils.isBlank(wikiName)) {
+        if (!StringUtils.isBlank(wikiName) && (status != null)) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(DataCategory.class);
             criteria.add(Restrictions.eq("wikiName", wikiName));
-            if (!includeTrash) {
-                criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-            }
+            criteria.add(Restrictions.eq("status", status));
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
             List<DataCategory> dataCategories = criteria.list();
             if (dataCategories.size() == 0) {
                 log.debug("getDataCategoryByWikiName() NOT found: " + wikiName);
             } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("getDataCategoryByWikiName() found: " + wikiName);
+                // Special handling required when more than one DataCategory is found.
+                if (dataCategories.size() > 1) {
+                    log.warn("getDataCategoryByWikiName() More than one DataCategory found: " + wikiName);
+                    // Sort the DataCategories by modification date (descending).
+                    Collections.sort(dataCategories,
+                            Collections.reverseOrder(
+                                    new Comparator<DataCategory>() {
+                                        @Override
+                                        public int compare(DataCategory o1, DataCategory o2) {
+                                            return (o1.getModified().compareTo(o2.getModified()));
+                                        }
+                                    }));
                 }
+                // Return the only (or most recently modified) DataCategory.
                 dataCategory = dataCategories.get(0);
             }
         }
@@ -303,9 +309,6 @@ public class DataServiceDAO implements Serializable {
             criteria.setCacheRegion(CACHE_REGION);
             List<ItemValue> itemValues = criteria.list();
             if (itemValues.size() == 1) {
-                if (log.isTraceEnabled()) {
-                    log.trace("getItemValueByUid() found: " + uid);
-                }
                 itemValue = itemValues.get(0);
             } else {
                 log.debug("getItemValueByUid() NOT found: " + uid);
@@ -336,9 +339,6 @@ public class DataServiceDAO implements Serializable {
             criteria.setCacheRegion(CACHE_REGION);
             List<LegacyDataItem> dataItems = criteria.list();
             if (dataItems.size() == 1) {
-                if (log.isTraceEnabled()) {
-                    log.trace("getDataItemByUid() found: " + uid);
-                }
                 dataItem = dataItems.get(0);
             } else {
                 log.debug("getDataItemByUid() NOT found: " + uid);
@@ -365,9 +365,6 @@ public class DataServiceDAO implements Serializable {
                     .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                     .getResultList();
             if (dataItems.size() == 1) {
-                if (log.isTraceEnabled()) {
-                    log.trace("getDataItemByPath() found: " + path);
-                }
                 dataItem = dataItems.get(0);
             } else {
                 log.debug("getDataItemByPath() NOT found: " + path);
