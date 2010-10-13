@@ -138,7 +138,7 @@ public class SearchService {
 
     // DataCategory Search.
 
-    public ResultsWrapper<DataCategory> getDataCategories(DataCategoryFilter filter) {
+    public ResultsWrapper<DataCategory> getDataCategories(DataCategoriesFilter filter) {
         ResultsWrapper<DataCategory> resultsWrapper;
         // Filter based on an allowed query parameter.
         if (!filter.getQueries().isEmpty()) {

@@ -7,14 +7,14 @@ import org.springframework.validation.Validator;
 
 @Service
 @Scope("prototype")
-public class DataCategoryFilterValidator implements Validator {
+public class DataCategoriesFilterValidator implements Validator {
 
-    public DataCategoryFilterValidator() {
+    public DataCategoriesFilterValidator() {
         super();
     }
 
     public boolean supports(Class clazz) {
-        return DataCategoryFilter.class.isAssignableFrom(clazz);
+        return DataCategoriesFilter.class.isAssignableFrom(clazz);
     }
 
     public void validate(Object o, Errors e) {

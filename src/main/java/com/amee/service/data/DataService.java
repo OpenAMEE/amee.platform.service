@@ -99,12 +99,16 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public DataCategory getDataCategoryByIdentifier(String identifier) {
+        return getDataCategoryByIdentifier(identifier, false);
+    }
+
+    public DataCategory getDataCategoryByIdentifier(String identifier, boolean includeTrash) {
         DataCategory dataCategory = null;
         if (UidGen.INSTANCE_12.isValid(identifier)) {
-            dataCategory = getDataCategoryByUid(identifier);
+            dataCategory = getDataCategoryByUid(identifier, includeTrash);
         }
         if (dataCategory == null) {
-            dataCategory = getDataCategoryByWikiName(identifier);
+            dataCategory = getDataCategoryByWikiName(identifier, includeTrash);
         }
         return dataCategory;
     }

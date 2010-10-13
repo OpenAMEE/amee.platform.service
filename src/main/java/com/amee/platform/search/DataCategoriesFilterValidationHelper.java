@@ -13,12 +13,12 @@ import java.util.Set;
 
 @Service
 @Scope("prototype")
-public class DataCategoryFilterValidationHelper extends ValidationHelper {
+public class DataCategoriesFilterValidationHelper extends ValidationHelper {
 
     @Autowired
-    private DataCategoryFilterValidator validator;
+    private DataCategoriesFilterValidator validator;
 
-    private DataCategoryFilter dataCategoryFilter;
+    private DataCategoriesFilter dataCategoryFilter;
     private Set<String> allowedFields;
 
     @Override
@@ -76,11 +76,11 @@ public class DataCategoryFilterValidationHelper extends ValidationHelper {
         return allowedFields.toArray(new String[]{});
     }
 
-    public DataCategoryFilter getDataCategoryFilter() {
+    public DataCategoriesFilter getDataCategoryFilter() {
         return dataCategoryFilter;
     }
 
-    public void setDataCategoryFilter(DataCategoryFilter dataCategoryFilter) {
+    public void setDataCategoryFilter(DataCategoriesFilter dataCategoryFilter) {
         this.dataCategoryFilter = dataCategoryFilter;
     }
 }

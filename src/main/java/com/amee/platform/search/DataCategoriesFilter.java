@@ -2,9 +2,9 @@ package com.amee.platform.search;
 
 import org.apache.lucene.search.Query;
 
-public class DataCategoryFilter extends QueryFilter {
+public class DataCategoriesFilter extends QueryFilter {
 
-    public DataCategoryFilter() {
+    public DataCategoriesFilter() {
         super();
     }
 
