@@ -70,7 +70,7 @@ public class DataSheetService extends BaseService implements ApplicationListener
         if ((invalidationMessage.isLocal() || invalidationMessage.isFromOtherInstance()) &&
                 invalidationMessage.getObjectType().equals(ObjectType.DC)) {
             log.debug("onInvalidationMessage() Handling InvalidationMessage.");
-            DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid());
+            DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid(), null);
             if (dataCategory != null) {
                 clearCaches(dataCategory);
             }

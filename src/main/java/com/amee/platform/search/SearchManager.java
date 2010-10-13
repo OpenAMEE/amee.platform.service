@@ -114,7 +114,7 @@ public class SearchManager implements Runnable, ApplicationListener {
         if (masterIndex && !invalidationMessage.isLocal() && invalidationMessage.getObjectType().equals(ObjectType.DC)) {
             log.debug("onInvalidationMessage() Handling InvalidationMessage.");
             transactionController.begin(false);
-            DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid());
+            DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid(), null);
             if (dataCategory != null) {
                 SearchIndexer.DocumentContext ctx = new SearchIndexer.DocumentContext();
                 ctx.dataCategoryUid = dataCategory.getUid();

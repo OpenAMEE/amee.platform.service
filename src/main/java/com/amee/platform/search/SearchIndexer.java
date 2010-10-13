@@ -95,7 +95,7 @@ public class SearchIndexer implements Runnable {
             // Start persistence session.
             transactionController.beforeHandle(false);
             // Get the DataCategory.
-            dataCategory = dataService.getDataCategoryByUid(ctx.dataCategoryUid);
+            dataCategory = dataService.getDataCategoryByUid(ctx.dataCategoryUid, null);
             if (dataCategory != null) {
                 // Update the DataCategory.
                 updateDataCategory();

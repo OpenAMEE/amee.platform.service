@@ -82,7 +82,7 @@ public class DataService extends BaseService implements ApplicationListener {
         if ((invalidationMessage.isLocal() || invalidationMessage.isFromOtherInstance()) &&
                 invalidationMessage.getObjectType().equals(ObjectType.DC)) {
             log.debug("onInvalidationMessage() Handling InvalidationMessage.");
-            DataCategory dataCategory = getDataCategoryByUid(invalidationMessage.getEntityUid());
+            DataCategory dataCategory = getDataCategoryByUid(invalidationMessage.getEntityUid(), null);
             if (dataCategory != null) {
                 clearCaches(dataCategory);
             }
@@ -123,7 +123,7 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public DataCategory getDataCategoryByUid(String uid) {
-        return getDataCategoryByUid(uid, null);
+        return getDataCategoryByUid(uid, AMEEStatus.ACTIVE);
     }
 
     public DataCategory getDataCategoryByUid(String uid, AMEEStatus status) {
