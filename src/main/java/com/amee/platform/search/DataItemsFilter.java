@@ -3,15 +3,15 @@ package com.amee.platform.search;
 import com.amee.domain.data.ItemDefinition;
 import org.apache.lucene.search.Query;
 
-public class DataItemFilter extends QueryFilter {
+public class DataItemsFilter extends QueryFilter {
 
     private ItemDefinition itemDefinition;
 
-    public DataItemFilter() {
+    public DataItemsFilter() {
         super();
     }
 
-    public DataItemFilter(ItemDefinition itemDefinition) {
+    public DataItemsFilter(ItemDefinition itemDefinition) {
         this();
         setItemDefinition(itemDefinition);
     }

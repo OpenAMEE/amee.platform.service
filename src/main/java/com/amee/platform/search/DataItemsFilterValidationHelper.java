@@ -15,12 +15,12 @@ import java.util.Set;
 
 @Service
 @Scope("prototype")
-public class DataItemFilterValidationHelper extends ValidationHelper {
+public class DataItemsFilterValidationHelper extends ValidationHelper {
 
     @Autowired
-    private DataItemFilterValidator validator;
+    private DataItemsFilterValidator validator;
 
-    private DataItemFilter dataItemFilter;
+    private DataItemsFilter dataItemFilter;
     private Set<String> allowedFields;
 
     @Override
@@ -108,11 +108,11 @@ public class DataItemFilterValidationHelper extends ValidationHelper {
         }
     }
 
-    public DataItemFilter getDataItemFilter() {
+    public DataItemsFilter getDataItemFilter() {
         return dataItemFilter;
     }
 
-    public void setDataItemFilter(DataItemFilter dataItemFilter) {
+    public void setDataItemFilter(DataItemsFilter dataItemFilter) {
         this.dataItemFilter = dataItemFilter;
     }
 }

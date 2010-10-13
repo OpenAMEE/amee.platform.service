@@ -186,7 +186,7 @@ public class SearchService {
 
     // DataItem search.
 
-    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemFilter filter) {
+    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
         BooleanQuery query = null;
         if (!filter.getQueries().isEmpty()) {
             query = new BooleanQuery();

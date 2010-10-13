@@ -7,9 +7,9 @@ import org.springframework.validation.Validator;
 
 @Service
 @Scope("prototype")
-public class DataItemFilterValidator implements Validator {
+public class DataItemsFilterValidator implements Validator {
 
-    public DataItemFilterValidator() {
+    public DataItemsFilterValidator() {
         super();
     }
 
