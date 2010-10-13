@@ -92,15 +92,12 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected DataCategory getDataCategoryByUid(String uid, AMEEStatus status) {
+    protected DataCategory getDataCategoryByUid(String uid) {
         DataCategory dataCategory = null;
         if (!StringUtils.isBlank(uid)) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(DataCategory.class);
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
-            if (status != null) {
-                criteria.add(Restrictions.eq("status", status));
-            }
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
             List<DataCategory> dataCategories = criteria.list();
@@ -120,10 +117,25 @@ public class DataServiceDAO implements Serializable {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(DataCategory.class);
             criteria.add(Restrictions.eq("wikiName", wikiName));
-            criteria.add(Restrictions.eq("status", status));
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
             List<DataCategory> dataCategories = criteria.list();
+            // Remove Data Categories that don't match the requested status.
+            Iterator<DataCategory> i = dataCategories.iterator();
+            while (i.hasNext()) {
+                DataCategory dc = i.next();
+                if (status.equals(AMEEStatus.TRASH) && !dc.isTrash()) {
+                    // Requested status IS TRASH but Data Category is not TRASHed, so remove it.
+                    i.remove();
+                } else if (!status.equals(AMEEStatus.TRASH) && dc.isTrash()) {
+                    // Requested status is NOT TRASH but DataCategory is TRASHed, so remove it.
+                    i.remove();
+                } else if (!dc.getStatus().equals(status)) {
+                    // Requested status does not match DataCategory status, so remove it.
+                    i.remove();
+                }
+            }
+            // Do we have any Data Categories?
             if (dataCategories.size() == 0) {
                 log.debug("getDataCategoryByWikiName() NOT found: " + wikiName);
             } else {

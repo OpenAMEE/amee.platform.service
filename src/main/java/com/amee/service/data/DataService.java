@@ -119,7 +119,7 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public DataCategory getDataCategoryByWikiName(String wikiName, AMEEStatus status) {
-        return dao.getDataCategoryByWikiName(wikiName, status);
+        return getDataCategoryWithStatus(dao.getDataCategoryByWikiName(wikiName, status), status);
     }
 
     public DataCategory getDataCategoryByUid(String uid) {
@@ -127,7 +127,31 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public DataCategory getDataCategoryByUid(String uid, AMEEStatus status) {
-        return dao.getDataCategoryByUid(uid, status);
+        return getDataCategoryWithStatus(dao.getDataCategoryByUid(uid), status);
+    }
+
+    public DataCategory getDataCategoryWithStatus(DataCategory dataCategory, AMEEStatus status) {
+        if (dataCategory != null) {
+            // Was a specific status requested?
+            if (status != null) {
+                // Specific status requested.
+                if (status.equals(AMEEStatus.TRASH) && dataCategory.isTrash()) {
+                    // TRASHed status requested and DataCategory IS trashed.
+                    return dataCategory;
+                } else if (!dataCategory.isTrash()) {
+                    // ACTIVE or DEPRECATED status requested and DataCategory is NOT trashed.
+                    return dataCategory;
+                } else {
+                    // Not found.
+                    return null;
+                }
+            } else {
+                // Allow any status.
+                return dataCategory;
+            }
+        } else {
+            return null;
+        }
     }
 
     public DataCategory getDataCategoryByFullPath(String path) {
