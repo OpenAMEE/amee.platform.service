@@ -15,6 +15,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.StopWatch;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -93,23 +94,34 @@ public class LuceneServiceImpl implements LuceneService {
         try {
             log.info("doSearch() query='" + query.toString() + "', resultStart=" + resultStart + ", resultLimit=" + resultLimit);
             long start = System.currentTimeMillis();
+            StopWatch sw = new StopWatch("LuceneServiceImpl.doSearch");
             // Cannot go above MAX_NUM_HITS.
             int numHits = resultStart + resultLimit;
             if (numHits > MAX_NUM_HITS) {
                 numHits = MAX_NUM_HITS;
             }
             // Get Collector limited to numHits + 1, so we can detect truncations.
+            sw.start("Getting TopScoreDocCollector.");
             TopScoreDocCollector collector = TopScoreDocCollector.create(numHits + 1, true);
+            sw.stop();
             // Get the IndexSearcher and do the search.
+            sw.start("Getting IndexSearcher.");
             IndexSearcher searcher = new IndexSearcher(getDirectory(), true);
+            sw.stop();
+            sw.start("Calling IndexSearcher.search.");
             searcher.search(query, collector);
+            sw.stop();
             // Get hits within our start and limit range.
+            sw.start("Getting hits.");
             ScoreDoc[] hits = collector.topDocs(resultStart, resultLimit + 1).scoreDocs;
+            sw.stop();
             // Assemble List of Documents.
+            sw.start("Assemble List of Documents.");
             List<Document> documents = new ArrayList<Document>();
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
             }
+            sw.stop();
             // Safe to close the IndexSearcher now.
             searcher.close();
             // Trim resultLimit if we're close to MAX_NUM_HITS.
@@ -122,12 +134,15 @@ public class LuceneServiceImpl implements LuceneService {
                 resultLimitWithCeiling = MAX_NUM_HITS - resultStart;
             }
             // Create ResultsWrapper appropriate for our limit.
+            sw.start("Create ResultsWrapper.");
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents.size() > resultLimitWithCeiling ? documents.subList(0, resultLimitWithCeiling) : documents,
                     (documents.size() > resultLimitWithCeiling) && !((resultStart + resultLimitWithCeiling) >= MAX_NUM_HITS),
                     resultStart,
                     resultLimit,
                     collector.getTotalHits() > MAX_NUM_HITS ? MAX_NUM_HITS : collector.getTotalHits());
+            sw.stop();
+            log.debug("doSearch() StopWatch:\n\n" + sw.prettyPrint());
             log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
         } catch (IOException e) {

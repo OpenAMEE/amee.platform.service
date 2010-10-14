@@ -124,10 +124,11 @@ public class DataServiceDAO implements Serializable {
             Iterator<DataCategory> i = dataCategories.iterator();
             while (i.hasNext()) {
                 DataCategory dc = i.next();
-                if (status.equals(AMEEStatus.TRASH) && !dc.isTrash()) {
+                boolean trashed = dc.isTrash();
+                if (status.equals(AMEEStatus.TRASH) && !trashed) {
                     // Requested status IS TRASH but Data Category is not TRASHed, so remove it.
                     i.remove();
-                } else if (!status.equals(AMEEStatus.TRASH) && dc.isTrash()) {
+                } else if (!status.equals(AMEEStatus.TRASH) && trashed) {
                     // Requested status is NOT TRASH but DataCategory is TRASHed, so remove it.
                     i.remove();
                 } else if (!dc.getStatus().equals(status)) {
