@@ -92,6 +92,16 @@ public class LuceneServiceMock implements LuceneService {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void checkSearcher() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void flush() {
+        throw new UnsupportedOperationException();
+    }
+
     public ResultsWrapper<Document> getAllResults() {
         return allResults;
     }

@@ -15,7 +15,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.util.StopWatch;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -44,6 +43,17 @@ public class LuceneServiceImpl implements LuceneService {
      * Path to the dir containing lucene index
      */
     private String indexDirPath = "";
+
+    /**
+     * The primary Lucene Searcher.
+     */
+    private IndexSearcher searcher;
+
+    /**
+     * A Lucene Searcher used recently. A reference is kept to this when the primary Searcher
+     * is re-opened.
+     */
+    private IndexSearcher lastSearcher;
 
     /**
      * The shared Lucene Analyzer.
@@ -94,36 +104,23 @@ public class LuceneServiceImpl implements LuceneService {
         try {
             log.info("doSearch() query='" + query.toString() + "', resultStart=" + resultStart + ", resultLimit=" + resultLimit);
             long start = System.currentTimeMillis();
-            StopWatch sw = new StopWatch("LuceneServiceImpl.doSearch");
             // Cannot go above MAX_NUM_HITS.
             int numHits = resultStart + resultLimit;
             if (numHits > MAX_NUM_HITS) {
                 numHits = MAX_NUM_HITS;
             }
             // Get Collector limited to numHits + 1, so we can detect truncations.
-            sw.start("Getting TopScoreDocCollector.");
             TopScoreDocCollector collector = TopScoreDocCollector.create(numHits + 1, true);
-            sw.stop();
             // Get the IndexSearcher and do the search.
-            sw.start("Getting IndexSearcher.");
-            IndexSearcher searcher = new IndexSearcher(getDirectory(), true);
-            sw.stop();
-            sw.start("Calling IndexSearcher.search.");
+            Searcher searcher = getSearcher();
             searcher.search(query, collector);
-            sw.stop();
             // Get hits within our start and limit range.
-            sw.start("Getting hits.");
             ScoreDoc[] hits = collector.topDocs(resultStart, resultLimit + 1).scoreDocs;
-            sw.stop();
             // Assemble List of Documents.
-            sw.start("Assemble List of Documents.");
             List<Document> documents = new ArrayList<Document>();
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
             }
-            sw.stop();
-            // Safe to close the IndexSearcher now.
-            searcher.close();
             // Trim resultLimit if we're close to MAX_NUM_HITS.
             int resultLimitWithCeiling = resultLimit;
             if (resultStart >= MAX_NUM_HITS) {
@@ -134,15 +131,12 @@ public class LuceneServiceImpl implements LuceneService {
                 resultLimitWithCeiling = MAX_NUM_HITS - resultStart;
             }
             // Create ResultsWrapper appropriate for our limit.
-            sw.start("Create ResultsWrapper.");
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents.size() > resultLimitWithCeiling ? documents.subList(0, resultLimitWithCeiling) : documents,
                     (documents.size() > resultLimitWithCeiling) && !((resultStart + resultLimitWithCeiling) >= MAX_NUM_HITS),
                     resultStart,
                     resultLimit,
                     collector.getTotalHits() > MAX_NUM_HITS ? MAX_NUM_HITS : collector.getTotalHits());
-            sw.stop();
-            log.debug("doSearch() StopWatch:\n\n" + sw.prettyPrint());
             log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
         } catch (IOException e) {
@@ -169,7 +163,7 @@ public class LuceneServiceImpl implements LuceneService {
             // Get Collector limited to numHits + 1, so we can detect truncations.
             TopScoreDocCollector collector = TopScoreDocCollector.create(MAX_NUM_HITS + 1, true);
             // Get the IndexSearcher and do the search.
-            IndexSearcher searcher = new IndexSearcher(getDirectory(), true);
+            Searcher searcher = getSearcher();
             searcher.search(query, collector);
             // Get all hits.
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
@@ -178,8 +172,6 @@ public class LuceneServiceImpl implements LuceneService {
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
             }
-            // Safe to close the IndexSearcher now.
-            searcher.close();
             // Create ResultsWrapper containing all Documents.
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents,
@@ -266,6 +258,7 @@ public class LuceneServiceImpl implements LuceneService {
         try {
             getIndexWriter().deleteDocuments(q);
             getIndexWriter().commit();
+            getSearcher().close();
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -279,6 +272,7 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public void clearIndex() {
+        if (!masterIndex) return;
         wLock.lock();
         try {
             // First ensure index is not locked (perhaps from a crash).
@@ -327,10 +321,81 @@ public class LuceneServiceImpl implements LuceneService {
         wLock.lock();
         try {
             super.finalize();
+            closeLastSearcher();
+            closeSearcher();
             closeIndexWriter();
             closeDirectory();
         } finally {
             wLock.unlock();
+        }
+    }
+
+    /**
+     * Get the Searcher.
+     *
+     * @return the Searcher
+     */
+    private Searcher getSearcher() {
+        if (searcher == null) {
+            synchronized (this) {
+                if (searcher == null) {
+                    try {
+                        searcher = new IndexSearcher(getDirectory(), true);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+                    }
+                }
+            }
+        }
+        return searcher;
+    }
+
+    /**
+     * Check the Searcher to see if it needs re-opening.
+     * <p/>
+     * This method is called via cron.
+     */
+    @Override
+    public void checkSearcher() {
+        try {
+            // Close the last Searcher.
+            closeLastSearcher();
+            // Should the current Searcher be re-opened?
+            if ((searcher != null) && !searcher.getIndexReader().isCurrent()) {
+                // Store the current Searcher so it can be closed later.
+                // This allows other threads using the Searcher to finish their work.
+                lastSearcher = searcher;
+                // Set the Searcher to null means a new instance will be created later in getSearcher().
+                searcher = null;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Close the Searcher.
+     */
+    private void closeSearcher() {
+        if (searcher == null) return;
+        try {
+            searcher.close();
+            searcher = null;
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Close the last Searcher.
+     */
+    private void closeLastSearcher() {
+        if (lastSearcher == null) return;
+        try {
+            lastSearcher.close();
+            lastSearcher = null;
+        } catch (IOException e) {
+            throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
     }
 
@@ -375,11 +440,10 @@ public class LuceneServiceImpl implements LuceneService {
      * Closes the Lucene directory.
      */
     private synchronized void closeDirectory() {
+        if (directory == null) return;
         try {
-            if (directory != null) {
-                directory.close();
-                directory = null;
-            }
+            directory.close();
+            directory = null;
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
@@ -428,20 +492,20 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * Flush the IndexWriter. Will optimise and commit the index and take a snapshot if appropriate.
      */
+    @Override
     public void flush() {
+        if (!masterIndex || (indexWriter == null)) return;
         wLock.lock();
         try {
-            if (indexWriter != null) {
-                log.info("flush() Starting.");
-                // Optimize and commit the IndexWriter.
-                indexWriter.optimize();
-                indexWriter.commit();
-                // Take a snapshot if it is due.
-                if (isSnapshotDue()) {
-                    takeSnapshot();
-                }
-                log.info("flush() Done.");
+            log.info("flush() Starting.");
+            // Optimize and commit the IndexWriter.
+            indexWriter.optimize();
+            indexWriter.commit();
+            // Take a snapshot if it is due.
+            if (isSnapshotDue()) {
+                takeSnapshot();
             }
+            log.info("flush() Done.");
         } catch (IOException e) {
             log.error("flush() Caught IOException: " + e.getMessage());
         } finally {
@@ -453,13 +517,12 @@ public class LuceneServiceImpl implements LuceneService {
      * Closes the IndexWriter. Will flush the index prior to closing.
      */
     private synchronized void closeIndexWriter() {
+        if (indexWriter == null) return;
         log.info("closeIndexWriter()");
         try {
-            if (indexWriter != null) {
-                flush();
-                indexWriter.close();
-                indexWriter = null;
-            }
+            flush();
+            indexWriter.close();
+            indexWriter = null;
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
@@ -496,8 +559,10 @@ public class LuceneServiceImpl implements LuceneService {
         }
     }
 
-    class InterruptTimerTask
-            extends TimerTask {
+    /**
+     * A TimerTask used by takeSnapshot().
+     */
+    private class InterruptTimerTask extends TimerTask {
 
         private Thread thread;
 
@@ -508,7 +573,6 @@ public class LuceneServiceImpl implements LuceneService {
         public void run() {
             thread.interrupt();
         }
-
     }
 
     /**
