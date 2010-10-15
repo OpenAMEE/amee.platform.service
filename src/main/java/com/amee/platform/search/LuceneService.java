@@ -24,4 +24,8 @@ public interface LuceneService {
     void clearIndex();
 
     void addDocument(Document document);
+
+    public void checkSearcher();
+
+    public void flush();
 }

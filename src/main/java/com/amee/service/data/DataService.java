@@ -135,10 +135,11 @@ public class DataService extends BaseService implements ApplicationListener {
             // Was a specific status requested?
             if (status != null) {
                 // Specific status requested.
-                if (status.equals(AMEEStatus.TRASH) && dataCategory.isTrash()) {
+                boolean trashed = dataCategory.isTrash();
+                if (status.equals(AMEEStatus.TRASH) && trashed) {
                     // TRASHed status requested and DataCategory IS trashed.
                     return dataCategory;
-                } else if (!dataCategory.isTrash()) {
+                } else if (!trashed) {
                     // ACTIVE or DEPRECATED status requested and DataCategory is NOT trashed.
                     return dataCategory;
                 } else {
