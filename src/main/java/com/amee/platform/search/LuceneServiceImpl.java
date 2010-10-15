@@ -258,7 +258,6 @@ public class LuceneServiceImpl implements LuceneService {
         try {
             getIndexWriter().deleteDocuments(q);
             getIndexWriter().commit();
-            getSearcher().close();
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
