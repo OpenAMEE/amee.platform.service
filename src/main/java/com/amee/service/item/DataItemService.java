@@ -19,4 +19,9 @@ public class DataItemService extends ItemService implements IDataItemService {
             return null;
         }
     }
+
+    public String getLabel(NuDataItem dataItem) {
+        // TODO: See com.amee.domain.data.LegacyDataItem#getLabel.
+        throw new UnsupportedOperationException();
+    }
 }
