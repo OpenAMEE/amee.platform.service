@@ -52,6 +52,7 @@ public class SearchIndexer implements Runnable {
     }
 
     private final Log log = LogFactory.getLog(getClass());
+    private final Log searchLog = LogFactory.getLog("search");
 
     public final static DateTimeFormatter DATE_TO_SECOND = DateTimeFormat.forPattern("yyyyMMddHHmmss");
 
@@ -92,22 +93,23 @@ public class SearchIndexer implements Runnable {
     @Override
     public void run() {
         try {
+            searchLog.info(ctx.dataCategoryUid + "|Started processing DataCategory.");
             // Start persistence session.
             transactionController.beforeHandle(false);
-            // Get the DataCategory.
+            // Get the DataCategory and handle.
             dataCategory = dataService.getDataCategoryByUid(ctx.dataCategoryUid, null);
             if (dataCategory != null) {
-                // Update the DataCategory.
                 updateDataCategory();
             } else {
-                log.warn("run() DataCategory not found: " + ctx.dataCategoryUid);
+                searchLog.warn(ctx.dataCategoryUid + "|DataCategory not found.");
             }
-        } catch (Exception e) {
-            log.warn("run() Caught Exception: " + e.getMessage(), e);
         } catch (Throwable t) {
-            log.warn("run() Caught Throwable: " + t.getMessage(), t);
+            transactionController.setRollbackOnly();
+            searchLog.error(ctx.dataCategoryUid + "|Error processing DataCategory.");
+            log.error("run() Caught Throwable: " + t.getMessage(), t);
         } finally {
             transactionController.end();
+            searchLog.info(ctx.dataCategoryUid + "|Completed processing DataCategory.");
         }
     }
 
@@ -115,7 +117,6 @@ public class SearchIndexer implements Runnable {
      * Update or remove Data Category & Data Items from the search index.
      */
     public void updateDataCategory() {
-        log.info("updateDataCategory() Handling update for DataCategory: " + dataCategory.toString());
         if (!dataCategory.isTrash()) {
             Document document = searchQueryService.getDocument(dataCategory);
             if (document != null) {
@@ -126,27 +127,26 @@ public class SearchIndexer implements Runnable {
                     DateTime modifiedInDatabase =
                             new DateTime(dataCategory.getModified()).withMillisOfSecond(0);
                     if (ctx.handleDataCategories || ctx.handleDataItems || modifiedInDatabase.isAfter(modifiedInIndex)) {
-                        log.info("updateDataCategory() DataCategory has been modified or re-index requested, updating.");
+                        searchLog.info(ctx.dataCategoryUid + "|DataCategory has been modified or re-index requested, updating.");
                         handleDataCategory();
                     } else {
-                        log.info("updateDataCategory() DataCategory is up-to-date, skipping.");
+                        searchLog.info(ctx.dataCategoryUid + "|DataCategory is up-to-date, skipping.");
                     }
                 } else {
-                    log.warn("updateDataCategory() The modified field was missing, updating");
+                    searchLog.info(ctx.dataCategoryUid + "|The DataCategory modified field was missing, updating");
                     handleDataCategory();
                 }
             } else {
-                log.info("updateDataCategory() DataCategory not in index, adding for the first time.");
+                searchLog.info(ctx.dataCategoryUid + "|DataCategory not in index, adding for the first time.");
                 newCategory = true;
                 ctx.handleDataItems = true;
                 handleDataCategory();
             }
         } else {
-            log.info("updateDataCategory() DataCategory needs to be removed.");
+            searchLog.info(ctx.dataCategoryUid + "|DataCategory needs to be removed.");
             searchQueryService.removeDataCategory(dataCategory);
             searchQueryService.removeDataItems(dataCategory);
         }
-        log.info("updateDataCategory() Done handling update for DataCategory: " + dataCategory.toString());
     }
 
     /**
