@@ -3,7 +3,6 @@ package com.amee.service.item;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValue;
-import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.BaseDataItemTextValue;
 import com.amee.domain.item.data.NuDataItem;
 import com.amee.domain.sheet.Choice;
@@ -53,5 +52,4 @@ public class DataItemService extends ItemService implements IDataItemService {
     private ItemValue getItemValue(String choiceName) {
         throw new UnsupportedOperationException();
     }
-
 }
