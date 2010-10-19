@@ -42,4 +42,8 @@
 
     <bean class="com.amee.service.item.DataItemService"/>
 
+    <bean id="profileItemServiceDAO" class="com.amee.service.item.ProfileItemServiceDAOMock"/>
+
+    <bean class="com.amee.service.item.ProfileItemService"/>
+
 </beans>
