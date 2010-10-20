@@ -4,6 +4,7 @@ import com.amee.domain.IDataItemService;
 import com.amee.domain.TimeZoneHolder;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValue;
+import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.data.LegacyItemValue;
 import com.amee.domain.data.builder.v2.ItemValueBuilder;
 import com.amee.domain.environment.Environment;
@@ -18,7 +19,10 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class DataItemService extends ItemService implements IDataItemService {
@@ -98,27 +102,18 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     private void buildJSONItemValues(NuDataItem dataItem, JSONArray itemValues) throws JSONException {
-        for (BaseItemValue itemValue : itemService.getItemValues(dataItem))  {
+        for (BaseItemValue baseItemValue : itemService.getItemValues(dataItem))  {
+            ItemValue itemValue = new ItemValue(baseItemValue);
             itemValue.setBuilder(new ItemValueBuilder(itemValue));
             itemValues.put(itemValue.getJSONObject(false));
         }
     }
 
     private void buildJSONItemValuesWithHistory(NuDataItem dataItem, JSONArray itemValues) throws JSONException {
-        for (Object o1 : getItemValuesMap().keySet()) {
-            String path = (String) o1;
-            JSONObject values = new JSONObject();
-            JSONArray valueSet = new JSONArray();
-            for (Object o2 : getAllItemValues(path)) {
-                LegacyItemValue itemValue = (LegacyItemValue) o2;
-                itemValue.setBuilder(new ItemValueBuilder(itemValue));
-                valueSet.put(itemValue.getJSONObject(false));
-            }
-            values.put(path, valueSet);
-            itemValues.put(values);
-        }
+        // TODO: See LegacyDataItem#buildJSONItemValuesWithHistory
+        // The following requires an ItemValueMap that supports non-legacy item values        
+        throw new UnsupportedOperationException();
     }
 
     
-
 }
