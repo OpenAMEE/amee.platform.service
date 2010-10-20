@@ -63,13 +63,9 @@ public class DataItemService extends ItemService implements IDataItemService {
         buildJSON(dataItem, obj, detailed, showHistory);
         obj.put("path", dataItem.getPath());
         obj.put("label", getLabel(dataItem));
-        obj.put("startDate", StartEndDate.getLocalStartEndDate(dataItem.getStartDate(), TimeZoneHolder.getTimeZone()).toString());
-
-        // TODO: Confirm correct - the ternary condition looks dubious given that DataItem#getEndDate always returns null.
-        obj.put("endDate",
-                (dataItem.getEndDate() != null) ? StartEndDate.getLocalStartEndDate(dataItem.getEndDate(), TimeZoneHolder.getTimeZone()).toString() : "");
+        obj.put("startDate", StartEndDate.getLocalStartEndDate(new StartEndDate(EPOCH), TimeZoneHolder.getTimeZone()).toString());
+        obj.put("endDate", "");
         return obj;
-
     }
 
     private void buildJSON(NuDataItem dataItem, JSONObject obj, boolean detailed, boolean showHistory) throws JSONException {
