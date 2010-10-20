@@ -88,7 +88,7 @@ public abstract class ItemService implements IItemService {
      * @return the matched {@link com.amee.domain.data.LegacyItemValue} or NULL if no match is found.
      */
     public BaseItemValue getItemValue(BaseItem item, String identifier) {
-        return getItemValue(identifier, getEffectiveStartDate(item));
+        return getItemValue(item, identifier, getEffectiveStartDate(item));
     }
 
     /**
