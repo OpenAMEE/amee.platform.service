@@ -19,10 +19,14 @@
  */
 package com.amee.service.item;
 
+import com.amee.domain.item.BaseItem;
+import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.stereotype.Repository;
+
+import java.util.Set;
 
 @Repository
 public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements ProfileItemServiceDAO {
@@ -41,5 +45,10 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
      */
     public NuProfileItem getItemByUid(String uid) {
         return (NuProfileItem) super.getItemByUid(uid);
+    }
+
+    @Override
+    public Set<BaseItemValue> getAllItemValues(BaseItem item) {
+        throw new UnsupportedOperationException();
     }
 }

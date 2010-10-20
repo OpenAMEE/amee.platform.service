@@ -6,9 +6,7 @@ import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.platform.science.StartEndDate;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public abstract class ItemService implements IItemService {
 
@@ -21,8 +19,11 @@ public abstract class ItemService implements IItemService {
      * @return Set of ItemValueDefinitions currently in use
      */
     public Set<ItemValueDefinition> getItemValueDefinitionsInUse(BaseItem item) {
-        // TODO: See com.amee.domain.data.LegacyItem.getItemValueDefinitions.
-        throw new UnsupportedOperationException();
+        Set<ItemValueDefinition> itemValueDefinitions = new HashSet<ItemValueDefinition>();
+        for (BaseItemValue itemValue : getActiveItemValues(item)) {
+            itemValueDefinitions.add(itemValue.getItemValueDefinition());
+        }
+        return itemValueDefinitions;
     }
 
     /**
@@ -41,6 +42,23 @@ public abstract class ItemService implements IItemService {
         throw new UnsupportedOperationException();
     }
 
+    public Set<BaseItemValue> getActiveItemValues(BaseItem item) {
+        Set<BaseItemValue> activeItemValues = null;
+        if (activeItemValues == null) {
+            activeItemValues = new HashSet<BaseItemValue>();
+            for (BaseItemValue iv : getAllItemValues(item)) {
+                if (!iv.isTrash()) {
+                    activeItemValues.add(iv);
+                }
+            }
+        }
+        return Collections.unmodifiableSet(activeItemValues);
+    }
+
+    public Set<BaseItemValue> getAllItemValues(BaseItem item) {
+        return getDao().getAllItemValues(item);
+    }
+
     public BaseItemValue getItemValue(BaseItem item, String identifier, Date startDate) {
         // TODO: See com.amee.domain.data.LegacyItem#getItemValue.
         throw new UnsupportedOperationException();
@@ -55,4 +73,6 @@ public abstract class ItemService implements IItemService {
         // TODO: com.amee.domain.data.LegacyItem#isUnique.
         throw new UnsupportedOperationException();
     }
+
+    protected abstract ItemServiceDAO getDao();
 }

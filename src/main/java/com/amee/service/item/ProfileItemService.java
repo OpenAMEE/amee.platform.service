@@ -34,7 +34,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     public double getAmount(NuProfileItem profileItem) {
         return getAmounts(profileItem).defaultValueAsDouble();
     }
-    
+
     public boolean hasNonZeroPerTimeValues(NuProfileItem profileItem) {
         // TODO: See com.amee.domain.profile.LegacyProfileItem#hasNonZeroPerTimeValues.
         throw new UnsupportedOperationException();
@@ -43,6 +43,11 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     public boolean isSingleFlight(NuProfileItem profileItem) {
         // TODO: See com.amee.domain.profile.LegacyProfileItem#isSingleFlight.
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected ProfileItemServiceDAO getDao() {
+        return dao;
     }
 }
 

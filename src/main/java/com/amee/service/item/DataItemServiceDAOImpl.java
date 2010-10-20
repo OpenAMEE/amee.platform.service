@@ -19,10 +19,21 @@
  */
 package com.amee.service.item;
 
+import com.amee.domain.item.BaseItem;
+import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.DataItemNumberValue;
+import com.amee.domain.item.data.DataItemTextValue;
 import com.amee.domain.item.data.NuDataItem;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.Criteria;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Repository
 public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataItemServiceDAO {
@@ -41,5 +52,33 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      */
     public NuDataItem getItemByUid(String uid) {
         return (NuDataItem) super.getItemByUid(uid);
+    }
+
+    @Override
+    public Set<BaseItemValue> getAllItemValues(BaseItem item) {
+        if (NuDataItem.class.isAssignableFrom(item.getClass())) throw new IllegalStateException();
+        return getDataItemValues((NuDataItem) item);
+    }
+
+    @Override
+    public Set<BaseItemValue> getDataItemValues(NuDataItem dataItem) {
+        Set<BaseItemValue> rawItemValues = new HashSet<BaseItemValue>();
+        rawItemValues.addAll(getDataItemNumberValues(dataItem));
+        rawItemValues.addAll(getDataItemTextValues(dataItem));
+        return rawItemValues;
+    }
+
+    public List<DataItemNumberValue> getDataItemNumberValues(NuDataItem dataItem) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataItemNumberValue.class);
+        criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
+        return criteria.list();
+    }
+
+    public List<DataItemTextValue> getDataItemTextValues(NuDataItem dataItem) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataItemTextValue.class);
+        criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
+        return criteria.list();
     }
 }

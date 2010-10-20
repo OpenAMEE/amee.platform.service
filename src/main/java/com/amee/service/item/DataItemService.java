@@ -15,9 +15,6 @@ public class DataItemService extends ItemService implements IDataItemService {
     @Autowired
     private DataItemServiceDAO dao;
 
-    @Autowired
-    private ItemService itemService;
-
     public NuDataItem getItemByUid(String uid) {
         NuDataItem dataItem = dao.getItemByUid(uid);
         if ((dataItem != null) && (!dataItem.isTrash())) {
@@ -33,7 +30,7 @@ public class DataItemService extends ItemService implements IDataItemService {
 
         ItemDefinition itemDefinition = dataItem.getItemDefinition();
         for (Choice choice : itemDefinition.getDrillDownChoices()) {
-            itemValue = (BaseDataItemTextValue) itemService.getItemValue(dataItem, choice.getName());
+            itemValue = (BaseDataItemTextValue) getItemValue(dataItem, choice.getName());
             if ((itemValue != null) &&
                     (itemValue.getValue().length() > 0) &&
                     !itemValue.getValue().equals("-")) {
@@ -51,5 +48,10 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     private ItemValue getItemValue(String choiceName) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected DataItemServiceDAO getDao() {
+        return dao;
     }
 }
