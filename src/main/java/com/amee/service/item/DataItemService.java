@@ -1,9 +1,11 @@
 package com.amee.service.item;
 
+import com.amee.base.utils.XMLUtils;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.TimeZoneHolder;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValue;
+import com.amee.domain.data.LegacyItemValue;
 import com.amee.domain.data.builder.v2.ItemValueBuilder;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.item.BaseItem;
@@ -16,6 +18,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.util.Date;
 
@@ -70,6 +74,10 @@ public class DataItemService extends ItemService implements IDataItemService {
         return obj;
     }
 
+    public JSONObject getJSONObject(NuDataItem dataItem, boolean detailed) throws JSONException {
+        return getJSONObject(dataItem, detailed, false);        
+    }
+
     private void buildJSON(NuDataItem dataItem, JSONObject obj, boolean detailed, boolean showHistory) throws JSONException {
         obj.put("uid", dataItem.getUid());
         obj.put("name", dataItem.getDisplayName());
@@ -98,10 +106,82 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     private void buildJSONItemValuesWithHistory(NuDataItem dataItem, JSONArray itemValues) throws JSONException {
-        // TODO: See LegacyDataItem#buildJSONItemValuesWithHistory
-        // The following requires an ItemValueMap that supports non-legacy item values        
-        throw new UnsupportedOperationException();
+        for (Object o1 : getItemValuesMap(dataItem).keySet()) {
+            String path = (String) o1;
+            JSONObject values = new JSONObject();
+            JSONArray valueSet = new JSONArray();
+            for (Object o2 : getAllItemValues(dataItem, path)) {
+                LegacyItemValue itemValue = (LegacyItemValue) o2;
+                itemValue.setBuilder(new ItemValueBuilder(itemValue));
+                valueSet.put(itemValue.getJSONObject(false));
+            }
+            values.put(path, valueSet);
+            itemValues.put(values);
+        }
     }
+
+    public Element getElement(NuDataItem dataItem, Document document, boolean detailed, boolean showHistory) {
+        Element dataItemElement = document.createElement("DataItem");
+        buildElement(dataItem, document, dataItemElement, detailed, showHistory);
+        dataItemElement.appendChild(XMLUtils.getElement(document, "Path", dataItem.getDisplayPath()));
+        dataItemElement.appendChild(XMLUtils.getElement(document, "Label", getLabel(dataItem)));
+        dataItemElement.appendChild(XMLUtils.getElement(document, "StartDate",
+                StartEndDate.getLocalStartEndDate(
+                        dataItem.getAdapter().getStartDate(), TimeZoneHolder.getTimeZone()).toString()));
+
+        Date endDate = dataItem.getAdapter().getEndDate();
+        dataItemElement.appendChild(XMLUtils.getElement(document, "EndDate",
+                (endDate != null) ? StartEndDate.getLocalStartEndDate(endDate, TimeZoneHolder.getTimeZone()).toString() : ""));
+        return dataItemElement;
+    }
+
+    public Element getElement(NuDataItem dataItem, Document document,
+                              boolean detailed) {
+        return getElement(dataItem, document, detailed, false);        
+    }
+
+
+    private void buildElement(NuDataItem dataItem, Document document, Element element, boolean detailed, boolean showHistory) {
+        element.setAttribute("uid", dataItem.getUid());
+        element.appendChild(XMLUtils.getElement(document, "Name", dataItem.getDisplayName()));
+        Element itemValuesElem = document.createElement("ItemValues");
+        if (showHistory) {
+            buildElementItemValuesWithHistory(dataItem, document, itemValuesElem);
+        } else {
+            buildElementItemValues(dataItem, document, itemValuesElem);
+        }
+        element.appendChild(itemValuesElem);
+        if (detailed) {
+            element.setAttribute("created", dataItem.getCreated().toString());
+            element.setAttribute("modified", dataItem.getModified().toString());
+            element.appendChild(Environment.ENVIRONMENT.getIdentityElement(document));
+            element.appendChild(dataItem.getItemDefinition().getIdentityElement(document));
+            element.appendChild(dataItem.getDataCategory().getIdentityElement(document));
+        }
+    }
+
+    private void buildElementItemValues(NuDataItem dataItem, Document document, Element itemValuesElem) {
+        for (BaseItemValue baseItemValue : getItemValues(dataItem)) {
+            ItemValue itemValue = new ItemValue(baseItemValue);
+            itemValue.setBuilder(new ItemValueBuilder(itemValue));
+            itemValuesElem.appendChild(itemValue.getElement(document, false));
+        }
+    }
+
+    private void buildElementItemValuesWithHistory(NuDataItem dataItem, Document document, Element itemValuesElem) {
+        for (Object o1 : getItemValuesMap(dataItem).keySet()) {
+            String path = (String) o1;
+            Element itemValueSeries = document.createElement("ItemValueSeries");
+            itemValueSeries.setAttribute("path", path);
+            for (Object o2 : getAllItemValues(dataItem, path)) {
+                LegacyItemValue itemValue = (LegacyItemValue) o2;
+                itemValue.setBuilder(new ItemValueBuilder(itemValue));
+                itemValueSeries.appendChild(itemValue.getElement(document, false));
+            }
+            itemValuesElem.appendChild(itemValueSeries);
+        }
+    }
+
 
     // TODO: Implement 'effective' parameter support.
     public Date getEffectiveStartDate(BaseItem item) {
