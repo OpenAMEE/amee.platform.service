@@ -3,8 +3,8 @@ package com.amee.service.item;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.IItemService;
 import com.amee.domain.data.ItemValueDefinition;
-import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.data.LegacyItemValue;
+import com.amee.domain.data.NuItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.platform.science.StartEndDate;
@@ -102,8 +102,8 @@ public abstract class ItemService implements IItemService {
      * @param uid  - the {@link com.amee.domain.data.LegacyItemValue} UID
      * @return the {@link com.amee.domain.data.LegacyItemValue} if found or NULL
      */
-    private LegacyItemValue getByUid(BaseItem item, final String uid) {
-        return (LegacyItemValue) CollectionUtils.find(getActiveItemValues(item), new Predicate() {
+    private BaseItemValue getByUid(BaseItem item, final String uid) {
+        return (BaseItemValue) CollectionUtils.find(getActiveItemValues(item), new Predicate() {
             public boolean evaluate(Object o) {
                 LegacyItemValue iv = (LegacyItemValue) o;
                 return iv.getUid().equals(uid);
@@ -118,11 +118,11 @@ public abstract class ItemService implements IItemService {
      * @param item
      * @return {@link com.amee.domain.data.ItemValueMap}
      */
-    public ItemValueMap getItemValuesMap(BaseItem item) {
+    public NuItemValueMap getItemValuesMap(BaseItem item) {
         // TODO: This should be cached.
-        ItemValueMap itemValuesMap = null;
+        NuItemValueMap itemValuesMap = null;
         if (itemValuesMap == null) {
-            itemValuesMap = new ItemValueMap();
+            itemValuesMap = new NuItemValueMap();
             for (BaseItemValue itemValue : getActiveItemValues(item)) {
                 itemValuesMap.put(itemValue.getDisplayPath(), itemValue);
             }
