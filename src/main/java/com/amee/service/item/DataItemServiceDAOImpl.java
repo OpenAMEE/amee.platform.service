@@ -19,6 +19,7 @@
  */
 package com.amee.service.item;
 
+import com.amee.domain.AMEEStatus;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItemNumberValue;
@@ -78,6 +79,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemNumberValue.class);
         criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
     }
 
@@ -91,6 +93,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemTextValue.class);
         criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
     }
 }
