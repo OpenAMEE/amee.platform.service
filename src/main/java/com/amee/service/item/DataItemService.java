@@ -8,7 +8,6 @@ import com.amee.domain.data.builder.v2.ItemValueBuilder;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.BaseDataItemTextValue;
 import com.amee.domain.item.data.NuDataItem;
 import com.amee.domain.sheet.Choice;
 import com.amee.platform.science.StartEndDate;
@@ -37,18 +36,18 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     public String getLabel(NuDataItem dataItem) {
         String label = "";
-        BaseDataItemTextValue itemValue = null;
+        BaseItemValue itemValue = null;
 
         ItemDefinition itemDefinition = dataItem.getItemDefinition();
         for (Choice choice : itemDefinition.getDrillDownChoices()) {
-            itemValue = (BaseDataItemTextValue) getItemValue(dataItem, choice.getName());
+            itemValue = getItemValue(dataItem, choice.getName());
             if ((itemValue != null) &&
-                    (itemValue.getValue().length() > 0) &&
-                    !itemValue.getValue().equals("-")) {
+                    (itemValue.getValueAsString().length() > 0) &&
+                    !itemValue.getValueAsString().equals("-")) {
                 if (label.length() > 0) {
                     label = label.concat(", ");
                 }
-                label = label.concat(itemValue.getValue());
+                label = label.concat(itemValue.getValueAsString());
             }
         }
         if (label.length() == 0) {
