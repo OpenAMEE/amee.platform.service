@@ -6,6 +6,7 @@ import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValue;
 import com.amee.domain.data.builder.v2.ItemValueBuilder;
 import com.amee.domain.environment.Environment;
+import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.BaseDataItemTextValue;
 import com.amee.domain.item.data.NuDataItem;
@@ -16,6 +17,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
 
 @Service
 public class DataItemService extends ItemService implements IDataItemService {
@@ -99,6 +102,11 @@ public class DataItemService extends ItemService implements IDataItemService {
         // TODO: See LegacyDataItem#buildJSONItemValuesWithHistory
         // The following requires an ItemValueMap that supports non-legacy item values        
         throw new UnsupportedOperationException();
+    }
+
+    // TODO: Implement 'effective' parameter support.
+    public Date getEffectiveStartDate(BaseItem item) {
+        return new StartEndDate(IDataItemService.EPOCH);
     }
 
     @Override

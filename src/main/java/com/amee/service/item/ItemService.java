@@ -1,6 +1,5 @@
 package com.amee.service.item;
 
-import com.amee.domain.IDataItemService;
 import com.amee.domain.IItemService;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.LegacyItemValue;
@@ -38,8 +37,7 @@ public abstract class ItemService implements IItemService {
      * @return List of BaseItemValues
      */
     public List<BaseItemValue> getItemValues(BaseItem item) {
-        // TODO: See com.amee.domain.data.LegacyItem.getItemValues.
-        throw new UnsupportedOperationException();
+        return Collections.unmodifiableList(getItemValuesMap(item).getAll(getEffectiveStartDate(item)));
     }
 
     public List<BaseItemValue> getAllItemValues(BaseItem item, String itemValuePath) {
@@ -90,9 +88,7 @@ public abstract class ItemService implements IItemService {
      * @return the matched {@link com.amee.domain.data.LegacyItemValue} or NULL if no match is found.
      */
     public BaseItemValue getItemValue(BaseItem item, String identifier) {
-        // TODO: Use correct EffectiveStartDate. 
-        return getItemValue(item, identifier, new StartEndDate(IDataItemService.EPOCH));
-        // return getItemValue(identifier, getEffectiveStartDate());
+        return getItemValue(identifier, getEffectiveStartDate(item));
     }
 
     /**
@@ -134,6 +130,8 @@ public abstract class ItemService implements IItemService {
         // TODO: com.amee.domain.data.LegacyItem#isUnique.
         throw new UnsupportedOperationException();
     }
+
+    public abstract Date getEffectiveStartDate(BaseItem item);
 
     protected abstract ItemServiceDAO getDao();
 }

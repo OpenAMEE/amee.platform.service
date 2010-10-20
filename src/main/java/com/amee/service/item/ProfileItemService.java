@@ -1,10 +1,13 @@
 package com.amee.service.item;
 
 import com.amee.domain.IProfileItemService;
+import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.profile.NuProfileItem;
 import com.amee.platform.science.ReturnValues;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
 
 @Service
 public class ProfileItemService extends ItemService implements IProfileItemService {
@@ -42,6 +45,10 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
     public boolean isSingleFlight(NuProfileItem profileItem) {
         // TODO: See com.amee.domain.profile.LegacyProfileItem#isSingleFlight.
+        throw new UnsupportedOperationException();
+    }
+
+    public Date getEffectiveStartDate(BaseItem item) {
         throw new UnsupportedOperationException();
     }
 
