@@ -56,7 +56,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
 
     @Override
     public Set<BaseItemValue> getAllItemValues(BaseItem item) {
-        if (NuDataItem.class.isAssignableFrom(item.getClass())) throw new IllegalStateException();
+        if (!NuDataItem.class.isAssignableFrom(item.getClass())) throw new IllegalStateException();
         return getDataItemValues((NuDataItem) item);
     }
 
@@ -68,6 +68,12 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         return rawItemValues;
     }
 
+    /**
+     * TODO: Would caching here be useful?
+     *
+     * @param dataItem
+     * @return
+     */
     public List<DataItemNumberValue> getDataItemNumberValues(NuDataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemNumberValue.class);
@@ -75,6 +81,12 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         return criteria.list();
     }
 
+    /**
+     * TODO: Would caching here be useful?
+     *
+     * @param dataItem
+     * @return
+     */
     public List<DataItemTextValue> getDataItemTextValues(NuDataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemTextValue.class);

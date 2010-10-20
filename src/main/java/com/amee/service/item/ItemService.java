@@ -1,10 +1,15 @@
 package com.amee.service.item;
 
+import com.amee.domain.IDataItemService;
 import com.amee.domain.IItemService;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.ItemValueMap;
+import com.amee.domain.data.LegacyItemValue;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.platform.science.StartEndDate;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Predicate;
 
 import java.util.*;
 
@@ -43,6 +48,7 @@ public abstract class ItemService implements IItemService {
     }
 
     public Set<BaseItemValue> getActiveItemValues(BaseItem item) {
+        // TODO: This should be cached.
         Set<BaseItemValue> activeItemValues = null;
         if (activeItemValues == null) {
             activeItemValues = new HashSet<BaseItemValue>();
@@ -59,14 +65,69 @@ public abstract class ItemService implements IItemService {
         return getDao().getAllItemValues(item);
     }
 
+    /**
+     * Attempt to match an {@link com.amee.domain.data.LegacyItemValue} belonging to this Item using some identifier. The identifier may be a path
+     * or UID.
+     *
+     * @param identifier - a value to be compared to the path and then the uid of the {@link com.amee.domain.data.LegacyItemValue}s belonging
+     *                   to this Item.
+     * @param startDate  - the startDate to use in the {@link com.amee.domain.data.LegacyItemValue} lookup
+     * @return the matched {@link com.amee.domain.data.LegacyItemValue} or NULL if no match is found.
+     */
     public BaseItemValue getItemValue(BaseItem item, String identifier, Date startDate) {
-        // TODO: See com.amee.domain.data.LegacyItem#getItemValue.
-        throw new UnsupportedOperationException();
+        BaseItemValue iv = getItemValuesMap(item).get(identifier, startDate);
+        if (iv == null) {
+            iv = getByUid(item, identifier);
+        }
+        return iv;
     }
 
+    /**
+     * Get an {@link com.amee.domain.data.LegacyItemValue} belonging to this Item using some identifier and prevailing datetime context.
+     *
+     * @param identifier - a value to be compared to the path and then the uid of the {@link com.amee.domain.data.LegacyItemValue}s belonging
+     *                   to this Item.
+     * @return the matched {@link com.amee.domain.data.LegacyItemValue} or NULL if no match is found.
+     */
     public BaseItemValue getItemValue(BaseItem item, String identifier) {
-        // TODO: See com.amee.domain.data.LegacyItem#getItemValue.
-        throw new UnsupportedOperationException();
+        // TODO: Use correct EffectiveStartDate. 
+        return getItemValue(item, identifier, new StartEndDate(IDataItemService.EPOCH));
+        // return getItemValue(identifier, getEffectiveStartDate());
+    }
+
+    /**
+     * Get an {@link com.amee.domain.data.LegacyItemValue} by UID
+     *
+     * @param item
+     * @param uid  - the {@link com.amee.domain.data.LegacyItemValue} UID
+     * @return the {@link com.amee.domain.data.LegacyItemValue} if found or NULL
+     */
+    private LegacyItemValue getByUid(BaseItem item, final String uid) {
+        return (LegacyItemValue) CollectionUtils.find(getActiveItemValues(item), new Predicate() {
+            public boolean evaluate(Object o) {
+                LegacyItemValue iv = (LegacyItemValue) o;
+                return iv.getUid().equals(uid);
+            }
+        });
+    }
+
+    /**
+     * Return an {@link com.amee.domain.data.ItemValueMap} of {@link com.amee.domain.data.LegacyItemValue}s belonging to this Item.
+     * The key is the value returned by {@link LegacyItemValue#getDisplayPath()}.
+     *
+     * @param item
+     * @return {@link com.amee.domain.data.ItemValueMap}
+     */
+    public ItemValueMap getItemValuesMap(BaseItem item) {
+        // TODO: This should be cached.
+        ItemValueMap itemValuesMap = null;
+        if (itemValuesMap == null) {
+            itemValuesMap = new ItemValueMap();
+            for (BaseItemValue itemValue : getActiveItemValues(item)) {
+                itemValuesMap.put(itemValue.getDisplayPath(), itemValue);
+            }
+        }
+        return itemValuesMap;
     }
 
     public boolean isUnique(BaseItem item, ItemValueDefinition itemValueDefinition, StartEndDate startDate) {
