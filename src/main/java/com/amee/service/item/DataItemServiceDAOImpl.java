@@ -45,6 +45,8 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         return NuDataItem.class;
     }
 
+    // NuDataItems.
+
     /**
      * Returns the DataItem matching the specified UID.
      *
@@ -54,6 +56,12 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
     public NuDataItem getItemByUid(String uid) {
         return (NuDataItem) super.getItemByUid(uid);
     }
+
+    public void persist(NuDataItem dataItem) {
+        entityManager.persist(dataItem);
+    }
+
+    // ItemValues.
 
     @Override
     public Set<BaseItemValue> getAllItemValues(BaseItem item) {

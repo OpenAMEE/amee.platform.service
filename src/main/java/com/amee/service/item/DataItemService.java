@@ -40,8 +40,7 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     public String getLabel(NuDataItem dataItem) {
         String label = "";
-        BaseItemValue itemValue = null;
-
+        BaseItemValue itemValue;
         ItemDefinition itemDefinition = dataItem.getItemDefinition();
         for (Choice choice : itemDefinition.getDrillDownChoices()) {
             itemValue = getItemValue(dataItem, choice.getName());
@@ -135,11 +134,9 @@ public class DataItemService extends ItemService implements IDataItemService {
         return dataItemElement;
     }
 
-    public Element getElement(NuDataItem dataItem, Document document,
-                              boolean detailed) {
+    public Element getElement(NuDataItem dataItem, Document document, boolean detailed) {
         return getElement(dataItem, document, detailed, false);
     }
-
 
     private void buildElement(NuDataItem dataItem, Document document, Element element, boolean detailed, boolean showHistory) {
         element.setAttribute("uid", dataItem.getUid());
@@ -185,6 +182,16 @@ public class DataItemService extends ItemService implements IDataItemService {
     // TODO: Implement 'effective' parameter support.
     public Date getEffectiveStartDate(BaseItem item) {
         return new StartEndDate(IDataItemService.EPOCH);
+    }
+
+    public void persist(NuDataItem dataItem) {
+        dao.persist(dataItem);
+    }
+
+    // ItemValues.
+
+    public void persist(BaseItemValue itemValue) {
+        dao.persist(itemValue);
     }
 
     @Override

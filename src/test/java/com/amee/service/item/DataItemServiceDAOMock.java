@@ -24,6 +24,11 @@ public class DataItemServiceDAOMock implements DataItemServiceDAO {
     }
 
     @Override
+    public void persist(BaseItemValue itemValue) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Set<BaseItemValue> getDataItemValues(NuDataItem dataItem) {
         throw new UnsupportedOperationException();
     }
@@ -33,6 +38,11 @@ public class DataItemServiceDAOMock implements DataItemServiceDAO {
     }
 
     public List<DataItemTextValue> getDataItemTextValues(NuDataItem dataItem) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void persist(NuDataItem dataItem) {
         throw new UnsupportedOperationException();
     }
 }

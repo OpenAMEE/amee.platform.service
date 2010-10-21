@@ -447,7 +447,11 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public void persist(DataItem dataItem) {
-        dao.persist(dataItem);
+        if (dataItem.isLegacy()) {
+            dao.persist(dataItem);
+        } else {
+            dataItemService.persist(dataItem.getNuEntity());
+        }
         checkDataItem(dataItem);
     }
 
@@ -455,8 +459,16 @@ public class DataService extends BaseService implements ApplicationListener {
         dao.remove(dataItem);
     }
 
-    public void remove(ItemValue dataItemValue) {
-        dao.remove(dataItemValue);
+    // ItemValues.
+
+    public void persist(ItemValue itemValue) {
+        if (!itemValue.isLegacy()) {
+            dataItemService.persist(itemValue.getNuEntity());
+        }
+    }
+
+    public void remove(ItemValue itemValue) {
+        dao.remove(itemValue);
     }
 
     // API Versions

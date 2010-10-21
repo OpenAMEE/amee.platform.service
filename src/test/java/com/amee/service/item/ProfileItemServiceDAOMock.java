@@ -19,4 +19,9 @@ public class ProfileItemServiceDAOMock implements ProfileItemServiceDAO {
     public Set<BaseItemValue> getAllItemValues(BaseItem item) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public void persist(BaseItemValue itemValue) {
+        throw new UnsupportedOperationException();
+    }
 }

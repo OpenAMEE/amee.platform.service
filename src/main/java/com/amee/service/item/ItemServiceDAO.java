@@ -10,4 +10,6 @@ public interface ItemServiceDAO {
     public BaseItem getItemByUid(String uid);
 
     public Set<BaseItemValue> getAllItemValues(BaseItem item);
+
+    public void persist(BaseItemValue itemValue);
 }

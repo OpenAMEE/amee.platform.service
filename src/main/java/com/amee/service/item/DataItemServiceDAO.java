@@ -17,4 +17,6 @@ public interface DataItemServiceDAO extends ItemServiceDAO {
     public List<DataItemNumberValue> getDataItemNumberValues(NuDataItem dataItem);
 
     public List<DataItemTextValue> getDataItemTextValues(NuDataItem dataItem);
+
+    public void persist(NuDataItem dataItem);
 }

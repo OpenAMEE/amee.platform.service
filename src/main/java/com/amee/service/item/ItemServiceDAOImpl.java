@@ -20,6 +20,7 @@
 package com.amee.service.item;
 
 import com.amee.domain.item.BaseItem;
+import com.amee.domain.item.BaseItemValue;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -72,5 +73,9 @@ public abstract class ItemServiceDAOImpl implements ItemServiceDAO {
             }
         }
         return item;
+    }
+
+    public void persist(BaseItemValue itemValue) {
+        entityManager.persist(itemValue);
     }
 }
