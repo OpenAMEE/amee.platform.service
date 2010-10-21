@@ -75,7 +75,7 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     public JSONObject getJSONObject(NuDataItem dataItem, boolean detailed) throws JSONException {
-        return getJSONObject(dataItem, detailed, false);        
+        return getJSONObject(dataItem, detailed, false);
     }
 
     private void buildJSON(NuDataItem dataItem, JSONObject obj, boolean detailed, boolean showHistory) throws JSONException {
@@ -137,7 +137,7 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     public Element getElement(NuDataItem dataItem, Document document,
                               boolean detailed) {
-        return getElement(dataItem, document, detailed, false);        
+        return getElement(dataItem, document, detailed, false);
     }
 
 
@@ -181,7 +181,6 @@ public class DataItemService extends ItemService implements IDataItemService {
             itemValuesElem.appendChild(itemValueSeries);
         }
     }
-
 
     // TODO: Implement 'effective' parameter support.
     public Date getEffectiveStartDate(BaseItem item) {

@@ -1,11 +1,13 @@
 package com.amee.service.item;
 
+import com.amee.domain.IDataItemService;
 import com.amee.domain.IItemService;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.LegacyItemValue;
 import com.amee.domain.data.NuItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
@@ -40,9 +42,14 @@ public abstract class ItemService implements IItemService {
         return Collections.unmodifiableList(getItemValuesMap(item).getAll(getEffectiveStartDate(item)));
     }
 
+    /**
+     * Get an unmodifiable List of ALL {@link com.amee.domain.data.LegacyItemValue}s owned by this Item for a particular {@link com.amee.domain.data.ItemValueDefinition}
+     *
+     * @param itemValuePath - the {@link com.amee.domain.data.ItemValueDefinition} path
+     * @return - the List of {@link com.amee.domain.data.LegacyItemValue}
+     */
     public List<BaseItemValue> getAllItemValues(BaseItem item, String itemValuePath) {
-        // TODO: See com.amee.domain.data.LegacyItem#getAllItemValues.
-        throw new UnsupportedOperationException();
+        return Collections.unmodifiableList(getItemValuesMap(item).getAll(itemValuePath));
     }
 
     public Set<BaseItemValue> getActiveItemValues(BaseItem item) {
@@ -108,8 +115,9 @@ public abstract class ItemService implements IItemService {
     }
 
     /**
-     * Return an {@link com.amee.domain.data.ItemValueMap} of {@link com.amee.domain.data.LegacyItemValue}s belonging to this Item.
-     * The key is the value returned by {@link LegacyItemValue#getDisplayPath()}.
+     * Return an {@link com.amee.domain.data.NuItemValueMap} of {@link com.amee.domain.item.BaseItemValue}s belonging
+     * to the supplied item.
+     * The key is the value returned by {@link BaseItemValue#getDisplayPath()}.
      *
      * @param item
      * @return {@link com.amee.domain.data.ItemValueMap}
@@ -126,9 +134,26 @@ public abstract class ItemService implements IItemService {
         return itemValuesMap;
     }
 
+    /**
+     * Check if there exists amongst the current set of BaseItemValues, an entry with the given
+     * itemValueDefinition and startDate.
+     *
+     * @param itemValueDefinition - an {@link com.amee.domain.data.ItemValueDefinition}
+     * @param startDate           - an {@link com.amee.platform.science.StartEndDate} startDate
+     * @return - true if the newItemValue is unique, otherwise false
+     */
     public boolean isUnique(BaseItem item, ItemValueDefinition itemValueDefinition, StartEndDate startDate) {
-        // TODO: com.amee.domain.data.LegacyItem#isUnique.
-        throw new UnsupportedOperationException();
+        String uniqueId = itemValueDefinition.getUid() + startDate.getTime();
+        for (BaseItemValue iv : getActiveItemValues(item)) {
+            long time = ExternalHistoryValue.class.isAssignableFrom(iv.getClass()) ?
+                    ((ExternalHistoryValue) iv).getStartDate().getTime() :
+                    IDataItemService.EPOCH.getTime();
+            String checkId = iv.getItemValueDefinition().getUid() + time;
+            if (uniqueId.equals(checkId)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public abstract Date getEffectiveStartDate(BaseItem item);
