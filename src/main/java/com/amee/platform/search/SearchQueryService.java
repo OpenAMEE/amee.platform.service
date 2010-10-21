@@ -37,7 +37,7 @@ public class SearchQueryService {
             // Search for Data Items.
             ResultsWrapper<Document> allSecondaryResults =
                     luceneService.doSearch(
-                            getQuery(filter.getQ(), filter.getTags(), ObjectType.DI));
+                            getQuery(filter.getQ(), filter.getTags(), ObjectType.DI, ObjectType.NDI));
             // Only handle secondary results if some where found.
             if (!allSecondaryResults.getResults().isEmpty()) {
                 // Get all Documents matching primary query (this is a duplicate of the search above).
@@ -103,6 +103,10 @@ public class SearchQueryService {
 
     private Query getQuery(Query q, Query tags, ObjectType type) {
         return getQuery(q, tags, new HashSet<ObjectType>(Arrays.asList(type)));
+    }
+
+    private Query getQuery(Query q, Query tags, ObjectType type1, ObjectType type2) {
+        return getQuery(q, tags, new HashSet<ObjectType>(Arrays.asList(type1, type2)));
     }
 
     private Query getQuery(Query q, Query tags, Set<ObjectType> types) {
@@ -203,8 +207,13 @@ public class SearchQueryService {
      */
     protected void removeDataItems(DataCategory dataCategory) {
         log.debug("removeDataItems() " + dataCategory.toString());
-        luceneService.deleteDocuments(
-                new Term("entityType", ObjectType.DI.getName()),
-                new Term("categoryUid", dataCategory.getUid()));
+        // Prepare Query to search for all LegacyDataItems OR NuDataItems matching the specified category.
+        BooleanQuery typesQuery = new BooleanQuery();
+        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
+        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.SHOULD);
+        BooleanQuery combinedQuery = new BooleanQuery();
+        combinedQuery.add(typesQuery, BooleanClause.Occur.MUST);
+        combinedQuery.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);
+        luceneService.deleteDocuments(combinedQuery);
     }
 }

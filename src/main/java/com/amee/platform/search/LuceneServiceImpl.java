@@ -254,6 +254,11 @@ public class LuceneServiceImpl implements LuceneService {
                 q.add(new TermQuery(t), BooleanClause.Occur.MUST);
             }
         }
+    }
+
+    @Override
+    public void deleteDocuments(Query q) {
+        if (!masterIndex) return;
         rLock.lock();
         try {
             getIndexWriter().deleteDocuments(q);

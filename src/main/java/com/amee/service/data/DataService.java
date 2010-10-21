@@ -365,6 +365,9 @@ public class DataService extends BaseService implements ApplicationListener {
         for (DataItem dataItem : dao.getDataItems(dataItemIds, values)) {
             dataItemMap.put(dataItem.getEntityId(), dataItem);
         }
+        for (NuDataItem nuDataItem : dataItemService.getDataItems(dataItemIds)) {
+            dataItemMap.put(nuDataItem.getEntityId(), DataItem.getDataItem(nuDataItem));
+        }
         return dataItemMap;
     }
 

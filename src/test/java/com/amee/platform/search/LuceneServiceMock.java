@@ -68,6 +68,11 @@ public class LuceneServiceMock implements LuceneService {
     }
 
     @Override
+    public void deleteDocuments(Query q) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void updateDocument(Document document, Term... terms) {
         throw new UnsupportedOperationException();
     }
