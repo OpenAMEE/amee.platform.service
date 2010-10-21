@@ -3,6 +3,7 @@ package com.amee.service.item;
 import com.amee.base.utils.XMLUtils;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.TimeZoneHolder;
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValue;
 import com.amee.domain.data.LegacyItemValue;
@@ -22,12 +23,22 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class DataItemService extends ItemService implements IDataItemService {
 
     @Autowired
     private DataItemServiceDAO dao;
+
+    public List<NuDataItem> getDataItems(DataCategory dataCategory) {
+        return dao.getDataItems(dataCategory);
+    }
+
+    public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
+        return dao.getDataItems(dataItemIds);
+    }
 
     public NuDataItem getItemByUid(String uid) {
         NuDataItem dataItem = dao.getItemByUid(uid);

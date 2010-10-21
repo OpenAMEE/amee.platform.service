@@ -1,5 +1,6 @@
 package com.amee.service.item;
 
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItemNumberValue;
 import com.amee.domain.item.data.DataItemTextValue;
@@ -9,6 +10,10 @@ import java.util.List;
 import java.util.Set;
 
 public interface DataItemServiceDAO extends ItemServiceDAO {
+
+    public List<NuDataItem> getDataItems(DataCategory dataCategory);
+
+    public List<NuDataItem> getDataItems(Set<Long> dataItemIds);
 
     public NuDataItem getItemByUid(String uid);
 

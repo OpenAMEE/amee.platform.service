@@ -20,6 +20,7 @@
 package com.amee.service.item;
 
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItemNumberValue;
@@ -46,6 +47,22 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
     }
 
     // NuDataItems.
+
+    public List<NuDataItem> getDataItems(DataCategory dataCategory) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuDataItem.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return criteria.list();
+    }
+
+    public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuDataItem.class);
+        criteria.add(Restrictions.in("id", dataItemIds));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return criteria.list();
+    }
 
     /**
      * Returns the DataItem matching the specified UID.

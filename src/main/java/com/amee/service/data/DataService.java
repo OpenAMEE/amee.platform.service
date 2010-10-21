@@ -27,6 +27,7 @@ import com.amee.domain.AMEEStatus;
 import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.*;
+import com.amee.domain.item.data.NuDataItem;
 import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
@@ -372,7 +373,11 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public List<DataItem> getDataItems(Set<Long> dataItemIds, boolean values) {
-        return dao.getDataItems(dataItemIds, values);
+        List<DataItem> dataItems = dao.getDataItems(dataItemIds, values);
+        for (NuDataItem nuDataItem : dataItemService.getDataItems(dataItemIds)) {
+            dataItems.add(DataItem.getDataItem(nuDataItem));
+        }
+        return dataItems;
     }
 
     public List<DataItem> getDataItems(DataCategory dataCategory) {
@@ -380,7 +385,12 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public List<DataItem> getDataItems(DataCategory dataCategory, boolean checkDataItems) {
-        return activeDataItems(dao.getDataItems(dataCategory), checkDataItems);
+        // TODO: Remove duplicates.
+        List<DataItem> dataItems = dao.getDataItems(dataCategory);
+        for (NuDataItem nuDataItem : dataItemService.getDataItems(dataCategory)) {
+            dataItems.add(DataItem.getDataItem(nuDataItem));
+        }
+        return activeDataItems(dataItems, checkDataItems);
     }
 
     private List<DataItem> activeDataItems(List<DataItem> dataItems) {
