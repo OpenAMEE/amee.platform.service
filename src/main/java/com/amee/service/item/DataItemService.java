@@ -9,8 +9,11 @@ import com.amee.domain.data.builder.v2.ItemValueBuilder;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.*;
+import com.amee.domain.profile.ProfileItem;
+import com.amee.domain.profile.builder.v2.ProfileItemBuilder;
 import com.amee.domain.sheet.Choice;
+import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -88,6 +91,42 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     public JSONObject getJSONObject(NuDataItem dataItem, boolean detailed) throws JSONException {
         return getJSONObject(dataItem, detailed, false);
+    }
+
+    public JSONObject getJSONObject(BaseDataItemValue itemValue, boolean detailed) throws JSONException {
+        JSONObject obj = new JSONObject();
+        obj.put("uid", itemValue.getUid());
+        obj.put("path", itemValue.getPath());
+        obj.put("name", itemValue.getName());
+        obj.put("value", itemValue.getValueAsString());
+
+        if (itemValue instanceof BaseDataItemNumberValue) {
+            obj.put("unit", ((BaseDataItemNumberValue) itemValue).getUnit());
+            obj.put("perUnit", ((BaseDataItemNumberValue) itemValue).getPerUnit());
+        } else {
+            obj.put("unit", "");
+            obj.put("perUnit", "");
+        }
+
+        if (itemValue instanceof ExternalHistoryValue) {
+            obj.put("startDate", StartEndDate.getLocalStartEndDate(
+                ((ExternalHistoryValue) itemValue).getStartDate(), TimeZoneHolder.getTimeZone()).toString());  
+        } else {
+
+            // Should this be the epoch?
+            obj.put("startDate", "");
+        }
+
+        obj.put("itemValueDefinition", itemValue.getItemValueDefinition().getJSONObject(false));
+        obj.put("displayName", itemValue.getDisplayName());
+        obj.put("displayPath", itemValue.getDisplayPath());
+        if (detailed) {
+            obj.put("created", itemValue.getCreated());
+            obj.put("modified", itemValue.getModified());
+            NuDataItem item = itemValue.getItem();
+            obj.put("item", getJSONObject(item, true));
+        }
+        return obj;
     }
 
     private void buildJSON(NuDataItem dataItem, JSONObject obj, boolean detailed, boolean showHistory) throws JSONException {
