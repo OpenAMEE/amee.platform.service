@@ -9,6 +9,7 @@ import com.amee.domain.data.builder.v2.ItemValueBuilder;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.NumberValue;
 import com.amee.domain.item.data.BaseDataItemNumberValue;
 import com.amee.domain.item.data.BaseDataItemValue;
 import com.amee.domain.item.data.NuDataItem;
@@ -128,21 +129,19 @@ public class DataItemService extends ItemService implements IDataItemService {
         obj.put("name", itemValue.getName());
         obj.put("value", itemValue.getValueAsString());
 
-        if (itemValue instanceof BaseDataItemNumberValue) {
-            obj.put("unit", ((BaseDataItemNumberValue) itemValue).getUnit());
-            obj.put("perUnit", ((BaseDataItemNumberValue) itemValue).getPerUnit());
+        if (NumberValue.class.isAssignableFrom(itemValue.getClass())) {
+            obj.put("unit", ((NumberValue) itemValue).getUnit());
+            obj.put("perUnit", ((NumberValue) itemValue).getPerUnit());
         } else {
             obj.put("unit", "");
             obj.put("perUnit", "");
         }
 
-        if (itemValue instanceof ExternalHistoryValue) {
+        if (ExternalHistoryValue.class.isAssignableFrom(itemValue.getClass())) {
             obj.put("startDate", StartEndDate.getLocalStartEndDate(
                     ((ExternalHistoryValue) itemValue).getStartDate(), TimeZoneHolder.getTimeZone()).toString());
         } else {
-
-            // Should this be the epoch?
-            obj.put("startDate", "");
+            obj.put("startDate", StartEndDate.getLocalStartEndDate(new StartEndDate(EPOCH), TimeZoneHolder.getTimeZone()).toString());
         }
 
         obj.put("itemValueDefinition", itemValue.getItemValueDefinition().getJSONObject(false));
@@ -178,9 +177,10 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     private void buildJSONItemValues(NuDataItem dataItem, JSONArray itemValues) throws JSONException {
         for (BaseItemValue baseItemValue : getItemValues(dataItem)) {
-            ItemValue itemValue = new ItemValue(baseItemValue);
-            itemValue.setBuilder(new ItemValueBuilder(itemValue));
-            itemValues.put(itemValue.getJSONObject(false));
+//            ItemValue itemValue = new ItemValue(baseItemValue);
+//            itemValue.setBuilder(new ItemValueBuilder(itemValue));
+//            itemValues.put(itemValue.getJSONObject(false));
+            itemValues.put(getJSONObject(dataItem, false));
         }
     }
 
@@ -190,9 +190,10 @@ public class DataItemService extends ItemService implements IDataItemService {
             JSONObject values = new JSONObject();
             JSONArray valueSet = new JSONArray();
             for (Object o2 : getAllItemValues(dataItem, path)) {
-                LegacyItemValue itemValue = (LegacyItemValue) o2;
-                itemValue.setBuilder(new ItemValueBuilder(itemValue));
-                valueSet.put(itemValue.getJSONObject(false));
+                BaseItemValue itemValue = (BaseItemValue) o2;
+//                itemValue.setBuilder(new ItemValueBuilder(itemValue));
+//                valueSet.put(itemValue.getJSONObject(false));
+                valueSet.put(getJSONObject(itemValue, false));
             }
             values.put(path, valueSet);
             itemValues.put(values);
