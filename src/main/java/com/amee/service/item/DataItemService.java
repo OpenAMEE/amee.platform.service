@@ -9,6 +9,7 @@ import com.amee.domain.data.builder.v2.ItemValueBuilder;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.NumberValue;
 import com.amee.domain.item.data.BaseDataItemNumberValue;
 import com.amee.domain.item.data.BaseDataItemValue;
 import com.amee.domain.item.data.NuDataItem;
@@ -112,21 +113,19 @@ public class DataItemService extends ItemService implements IDataItemService {
         obj.put("name", itemValue.getName());
         obj.put("value", itemValue.getValueAsString());
 
-        if (itemValue instanceof BaseDataItemNumberValue) {
-            obj.put("unit", ((BaseDataItemNumberValue) itemValue).getUnit());
-            obj.put("perUnit", ((BaseDataItemNumberValue) itemValue).getPerUnit());
+        if (NumberValue.class.isAssignableFrom(itemValue.getClass())) {
+            obj.put("unit", ((NumberValue) itemValue).getUnit());
+            obj.put("perUnit", ((NumberValue) itemValue).getPerUnit());
         } else {
             obj.put("unit", "");
             obj.put("perUnit", "");
         }
 
-        if (itemValue instanceof ExternalHistoryValue) {
+        if (ExternalHistoryValue.class.isAssignableFrom(itemValue.getClass())) {
             obj.put("startDate", StartEndDate.getLocalStartEndDate(
                     ((ExternalHistoryValue) itemValue).getStartDate(), TimeZoneHolder.getTimeZone()).toString());
         } else {
-
-            // Should this be the epoch?
-            obj.put("startDate", "");
+            obj.put("startDate", StartEndDate.getLocalStartEndDate(new StartEndDate(EPOCH), TimeZoneHolder.getTimeZone()).toString());
         }
 
         obj.put("itemValueDefinition", itemValue.getItemValueDefinition().getJSONObject(false));
