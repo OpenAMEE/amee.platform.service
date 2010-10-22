@@ -9,9 +9,9 @@ import com.amee.domain.data.builder.v2.ItemValueBuilder;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.*;
-import com.amee.domain.profile.ProfileItem;
-import com.amee.domain.profile.builder.v2.ProfileItemBuilder;
+import com.amee.domain.item.data.BaseDataItemNumberValue;
+import com.amee.domain.item.data.BaseDataItemValue;
+import com.amee.domain.item.data.NuDataItem;
 import com.amee.domain.sheet.Choice;
 import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
@@ -70,7 +70,7 @@ public class DataItemService extends ItemService implements IDataItemService {
         }
         return label;
     }
-    
+
     public void remove(DataItem dataItem) {
         dataItem.getNuEntity().setStatus(AMEEStatus.TRASH);
     }
@@ -89,8 +89,20 @@ public class DataItemService extends ItemService implements IDataItemService {
         return obj;
     }
 
+    public JSONObject getJSONObject(BaseItem item, boolean detailed) throws JSONException {
+        if (!NuDataItem.class.isAssignableFrom(item.getClass()))
+            throw new IllegalStateException("A NuDataItem instance was expected.");
+        return getJSONObject((NuDataItem) item, detailed);
+    }
+
     public JSONObject getJSONObject(NuDataItem dataItem, boolean detailed) throws JSONException {
         return getJSONObject(dataItem, detailed, false);
+    }
+
+    public JSONObject getJSONObject(BaseItemValue itemValue, boolean detailed) throws JSONException {
+        if (!BaseDataItemValue.class.isAssignableFrom(itemValue.getClass()))
+            throw new IllegalStateException("A BaseDataItemValue instance was expected.");
+        return getJSONObject((BaseDataItemValue) itemValue, detailed);
     }
 
     public JSONObject getJSONObject(BaseDataItemValue itemValue, boolean detailed) throws JSONException {
@@ -110,7 +122,7 @@ public class DataItemService extends ItemService implements IDataItemService {
 
         if (itemValue instanceof ExternalHistoryValue) {
             obj.put("startDate", StartEndDate.getLocalStartEndDate(
-                ((ExternalHistoryValue) itemValue).getStartDate(), TimeZoneHolder.getTimeZone()).toString());  
+                    ((ExternalHistoryValue) itemValue).getStartDate(), TimeZoneHolder.getTimeZone()).toString());
         } else {
 
             // Should this be the epoch?

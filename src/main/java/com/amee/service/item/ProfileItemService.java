@@ -2,8 +2,12 @@ package com.amee.service.item;
 
 import com.amee.domain.IProfileItemService;
 import com.amee.domain.item.BaseItem;
+import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.profile.BaseProfileItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
 import com.amee.platform.science.ReturnValues;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -49,6 +53,28 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     public Date getEffectiveStartDate(BaseItem item) {
+        throw new UnsupportedOperationException();
+    }
+
+    // Representations.
+
+    public JSONObject getJSONObject(BaseItem item, boolean detailed) throws JSONException {
+        if (!NuProfileItem.class.isAssignableFrom(item.getClass()))
+            throw new IllegalStateException("A NuProfileItem instance was expected.");
+        return getJSONObject((NuProfileItem) item, detailed);
+    }
+
+    public JSONObject getJSONObject(NuProfileItem profileItem, boolean detailed) throws JSONException {
+        throw new UnsupportedOperationException();
+    }
+
+    public JSONObject getJSONObject(BaseItemValue itemValue, boolean detailed) throws JSONException {
+        if (!BaseProfileItemValue.class.isAssignableFrom(itemValue.getClass()))
+            throw new IllegalStateException("A BaseProfileItemValue instance was expected.");
+        return getJSONObject((BaseProfileItemValue) itemValue, detailed);
+    }
+
+    public JSONObject getJSONObject(BaseProfileItemValue itemValue, boolean detailed) throws JSONException {
         throw new UnsupportedOperationException();
     }
 
