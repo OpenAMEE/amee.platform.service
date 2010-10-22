@@ -16,6 +16,7 @@ import com.amee.domain.sheet.Sheet;
 import com.amee.platform.science.StartEndDate;
 import com.amee.service.BaseService;
 import com.amee.service.auth.PermissionService;
+import com.amee.service.item.ProfileItemService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -64,6 +65,9 @@ public class ProfileService extends BaseService {
 
     @Autowired
     private OnlyActiveProfileService onlyActiveProfileService;
+
+    @Autowired
+    private ProfileItemService profileItemService;
 
     @Autowired
     private AMEEStatistics ameeStatistics;
@@ -258,9 +262,13 @@ public class ProfileService extends BaseService {
         return !dao.equivalentProfileItemExists(pi);
     }
 
-    public void persist(ProfileItem pi) {
-        dao.persist(pi);
-        checkProfileItem(pi);
+    public void persist(ProfileItem profileItem) {
+        if (profileItem.isLegacy()) {
+            dao.persist(profileItem);
+        } else {
+            profileItemService.persist(profileItem.getNuEntity());
+        }
+        checkProfileItem(profileItem);
     }
 
     public void remove(ProfileItem pi) {

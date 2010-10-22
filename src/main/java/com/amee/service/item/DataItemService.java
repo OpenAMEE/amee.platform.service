@@ -75,9 +75,25 @@ public class DataItemService extends ItemService implements IDataItemService {
         dataItem.getNuEntity().setStatus(AMEEStatus.TRASH);
     }
 
+    /**
+     * Get an {@link com.amee.domain.data.LegacyItemValue} belonging to this Item using some identifier and prevailing datetime context.
+     *
+     * @param identifier - a value to be compared to the path and then the uid of the {@link com.amee.domain.data.LegacyItemValue}s belonging
+     *                   to this Item.
+     * @return the matched {@link com.amee.domain.data.LegacyItemValue} or NULL if no match is found.
+     */
+    @Override
+    public BaseItemValue getItemValue(BaseItem item, String identifier) {
+        if (!NuDataItem.class.isAssignableFrom(item.getClass()))
+            throw new IllegalStateException("A NuDataItem instance was expected.");
+        return getItemValue(item, identifier, item.getEffectiveStartDate());
+    }
+
     private ItemValue getItemValue(String choiceName) {
         throw new UnsupportedOperationException();
     }
+
+    // Representations.
 
     public JSONObject getJSONObject(NuDataItem dataItem, boolean detailed, boolean showHistory) throws JSONException {
         JSONObject obj = new JSONObject();
@@ -244,6 +260,7 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     // TODO: Implement 'effective' parameter support.
+
     public Date getEffectiveStartDate(BaseItem item) {
         return new StartEndDate(IDataItemService.EPOCH);
     }

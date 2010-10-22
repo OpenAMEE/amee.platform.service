@@ -1,10 +1,8 @@
 package com.amee.service.item;
 
-import com.amee.domain.AMEEEntity;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.IItemService;
 import com.amee.domain.data.ItemValueDefinition;
-import com.amee.domain.data.LegacyItemValue;
 import com.amee.domain.data.NuItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
@@ -26,6 +24,7 @@ public abstract class ItemService implements IItemService {
      * @param item BaseItem to fetch ItemValueDefinitions for
      * @return Set of ItemValueDefinitions currently in use
      */
+    @Override
     public Set<ItemValueDefinition> getItemValueDefinitionsInUse(BaseItem item) {
         Set<ItemValueDefinition> itemValueDefinitions = new HashSet<ItemValueDefinition>();
         for (BaseItemValue itemValue : getActiveItemValues(item)) {
@@ -40,8 +39,9 @@ public abstract class ItemService implements IItemService {
      * @param item BaseItem to fetch BaseItemValues for
      * @return List of BaseItemValues
      */
+    @Override
     public List<BaseItemValue> getItemValues(BaseItem item) {
-        return Collections.unmodifiableList(getItemValuesMap(item).getAll(getEffectiveStartDate(item)));
+        return Collections.unmodifiableList(getItemValuesMap(item).getAll(item.getEffectiveStartDate()));
     }
 
     /**
@@ -50,10 +50,12 @@ public abstract class ItemService implements IItemService {
      * @param itemValuePath - the {@link com.amee.domain.data.ItemValueDefinition} path
      * @return - the List of {@link com.amee.domain.data.LegacyItemValue}
      */
+    @Override
     public List<BaseItemValue> getAllItemValues(BaseItem item, String itemValuePath) {
         return Collections.unmodifiableList(getItemValuesMap(item).getAll(itemValuePath));
     }
 
+    @Override
     public Set<BaseItemValue> getActiveItemValues(BaseItem item) {
         // TODO: This should be cached.
         Set<BaseItemValue> activeItemValues = null;
@@ -81,23 +83,13 @@ public abstract class ItemService implements IItemService {
      * @param startDate  - the startDate to use in the {@link com.amee.domain.data.LegacyItemValue} lookup
      * @return the matched {@link com.amee.domain.data.LegacyItemValue} or NULL if no match is found.
      */
+    @Override
     public BaseItemValue getItemValue(BaseItem item, String identifier, Date startDate) {
         BaseItemValue iv = getItemValuesMap(item).get(identifier, startDate);
         if (iv == null) {
             iv = getByUid(item, identifier);
         }
         return iv;
-    }
-
-    /**
-     * Get an {@link com.amee.domain.data.LegacyItemValue} belonging to this Item using some identifier and prevailing datetime context.
-     *
-     * @param identifier - a value to be compared to the path and then the uid of the {@link com.amee.domain.data.LegacyItemValue}s belonging
-     *                   to this Item.
-     * @return the matched {@link com.amee.domain.data.LegacyItemValue} or NULL if no match is found.
-     */
-    public BaseItemValue getItemValue(BaseItem item, String identifier) {
-        return getItemValue(item, identifier, getEffectiveStartDate(item));
     }
 
     /**
@@ -144,6 +136,7 @@ public abstract class ItemService implements IItemService {
      * @param startDate           - an {@link com.amee.platform.science.StartEndDate} startDate
      * @return - true if the newItemValue is unique, otherwise false
      */
+    @Override
     public boolean isUnique(BaseItem item, ItemValueDefinition itemValueDefinition, StartEndDate startDate) {
         String uniqueId = itemValueDefinition.getUid() + startDate.getTime();
         for (BaseItemValue iv : getActiveItemValues(item)) {
@@ -157,8 +150,6 @@ public abstract class ItemService implements IItemService {
         }
         return true;
     }
-
-    public abstract Date getEffectiveStartDate(BaseItem item);
 
     protected abstract ItemServiceDAO getDao();
 }
