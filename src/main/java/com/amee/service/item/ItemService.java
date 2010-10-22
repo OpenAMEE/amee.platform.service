@@ -1,5 +1,6 @@
 package com.amee.service.item;
 
+import com.amee.domain.AMEEEntity;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.IItemService;
 import com.amee.domain.data.ItemValueDefinition;
@@ -7,6 +8,7 @@ import com.amee.domain.data.LegacyItemValue;
 import com.amee.domain.data.NuItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.persist.BaseEntity;
 import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
 import org.apache.commons.collections.CollectionUtils;
@@ -108,7 +110,7 @@ public abstract class ItemService implements IItemService {
     private BaseItemValue getByUid(BaseItem item, final String uid) {
         return (BaseItemValue) CollectionUtils.find(getActiveItemValues(item), new Predicate() {
             public boolean evaluate(Object o) {
-                LegacyItemValue iv = (LegacyItemValue) o;
+                BaseEntity iv = (BaseEntity) o;
                 return iv.getUid().equals(uid);
             }
         });

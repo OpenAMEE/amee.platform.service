@@ -1,12 +1,10 @@
 package com.amee.service.item;
 
 import com.amee.base.utils.XMLUtils;
+import com.amee.domain.AMEEStatus;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.TimeZoneHolder;
-import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.ItemDefinition;
-import com.amee.domain.data.ItemValue;
-import com.amee.domain.data.LegacyItemValue;
+import com.amee.domain.data.*;
 import com.amee.domain.data.builder.v2.ItemValueBuilder;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.item.BaseItem;
@@ -68,6 +66,10 @@ public class DataItemService extends ItemService implements IDataItemService {
             label = dataItem.getDisplayPath();
         }
         return label;
+    }
+    
+    public void remove(DataItem dataItem) {
+        dataItem.getNuEntity().setStatus(AMEEStatus.TRASH);
     }
 
     private ItemValue getItemValue(String choiceName) {

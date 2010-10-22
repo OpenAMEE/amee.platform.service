@@ -469,7 +469,11 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public void remove(DataItem dataItem) {
-        dao.remove(dataItem);
+        if (dataItem.isLegacy()) {
+            dao.remove(dataItem);
+        } else {
+            dataItemService.remove(dataItem);
+        }
     }
 
     // ItemValues.
