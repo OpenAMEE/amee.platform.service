@@ -161,9 +161,10 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     private void buildJSONItemValues(NuDataItem dataItem, JSONArray itemValues) throws JSONException {
         for (BaseItemValue baseItemValue : getItemValues(dataItem)) {
-            ItemValue itemValue = new ItemValue(baseItemValue);
-            itemValue.setBuilder(new ItemValueBuilder(itemValue));
-            itemValues.put(itemValue.getJSONObject(false));
+//            ItemValue itemValue = new ItemValue(baseItemValue);
+//            itemValue.setBuilder(new ItemValueBuilder(itemValue));
+//            itemValues.put(itemValue.getJSONObject(false));
+            itemValues.put(getJSONObject(dataItem, false));
         }
     }
 
@@ -173,9 +174,10 @@ public class DataItemService extends ItemService implements IDataItemService {
             JSONObject values = new JSONObject();
             JSONArray valueSet = new JSONArray();
             for (Object o2 : getAllItemValues(dataItem, path)) {
-                LegacyItemValue itemValue = (LegacyItemValue) o2;
-                itemValue.setBuilder(new ItemValueBuilder(itemValue));
-                valueSet.put(itemValue.getJSONObject(false));
+                BaseItemValue itemValue = (BaseItemValue) o2;
+//                itemValue.setBuilder(new ItemValueBuilder(itemValue));
+//                valueSet.put(itemValue.getJSONObject(false));
+                valueSet.put(getJSONObject(itemValue, false));
             }
             values.put(path, valueSet);
             itemValues.put(values);
