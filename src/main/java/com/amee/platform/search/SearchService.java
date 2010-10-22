@@ -62,6 +62,10 @@ public class SearchService {
     public ResultsWrapper<IAMEEEntity> getEntities(SearchFilter filter) {
         Long entityId;
         ObjectType entityType;
+        // Ensure filter.types contains NDI if DI is present.
+        if (filter.getTypes().contains(ObjectType.DI)) {
+            filter.getTypes().add(ObjectType.NDI);
+        }
         // Do search and fetch Lucene documents.
         ResultsWrapper<Document> resultsWrapper = searchQueryService.doSearch(filter);
         // Collate entityIds against entityTypes.
@@ -91,13 +95,21 @@ public class SearchService {
             }
             localeService.loadLocaleNamesForDataCategories(dataCategoriesMap.values());
         }
-        // Load DataItems.
-        if (entityIds.containsKey(ObjectType.DI)) {
-            Map<Long, DataItem> dataItemsMap = dataService.getDataItemMap(
-                    entityIds.get(ObjectType.DI),
-                    filter.isLoadDataItemValues());
+        // Load DataItems (LegacyDataItem & NuDataItem).
+        if (entityIds.containsKey(ObjectType.DI) || entityIds.containsKey(ObjectType.NDI)) {
+            // Collate LegacyDataItem & NuDataItem IDs.
+            Set<Long> dataItemIds = new HashSet<Long>();
+            if (entityIds.containsKey(ObjectType.DI)) {
+                dataItemIds.addAll(entityIds.get(ObjectType.DI));
+            }
+            if (entityIds.containsKey(ObjectType.NDI)) {
+                dataItemIds.addAll(entityIds.get(ObjectType.NDI));
+            }
+            // Load the items.
+            Map<Long, DataItem> dataItemsMap =
+                    dataService.getDataItemMap(dataItemIds, filter.isLoadDataItemValues());
             addDataItems(entities, dataItemsMap);
-            // Pre-loading of LocaleNames & DataCategories.
+            // Pre-loading of LocaleNames & Metadatas.
             if (filter.isLoadMetadatas()) {
                 metadataService.loadMetadatasForDataItems(dataItemsMap.values());
             }
@@ -129,11 +141,18 @@ public class SearchService {
     }
 
     protected void addDataItems(Map<ObjectType, Map<Long, IAMEEEntity>> entities, Map<Long, DataItem> dataItemsMap) {
-        Map<Long, IAMEEEntity> e = new HashMap<Long, IAMEEEntity>();
+        Map<Long, IAMEEEntity> legacyDataItems = new HashMap<Long, IAMEEEntity>();
+        Map<Long, IAMEEEntity> nuDataItems = new HashMap<Long, IAMEEEntity>();
         for (Long id : dataItemsMap.keySet()) {
-            e.put(id, dataItemsMap.get(id));
+            IAMEEEntity entity = dataItemsMap.get(id);
+            if (entity.getObjectType().equals(ObjectType.DI)) {
+                legacyDataItems.put(id, dataItemsMap.get(id));
+            } else if (entity.getObjectType().equals(ObjectType.NDI)) {
+                nuDataItems.put(id, dataItemsMap.get(id));
+            }
         }
-        entities.put(ObjectType.DI, e);
+        entities.put(ObjectType.DI, legacyDataItems);
+        entities.put(ObjectType.NDI, nuDataItems);
     }
 
     // DataCategory Search.
@@ -206,7 +225,10 @@ public class SearchService {
 
     public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, Query query, int resultStart, int resultLimit) {
         BooleanQuery q = new BooleanQuery();
-        q.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.MUST);
+        BooleanQuery typesQuery = new BooleanQuery();
+        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
+        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.SHOULD);
+        q.add(typesQuery, BooleanClause.Occur.MUST);
         q.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);
         if (query != null) {
             q.add(query, BooleanClause.Occur.MUST);

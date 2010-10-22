@@ -15,6 +15,8 @@ public interface LuceneService {
 
     void deleteDocuments(Term... terms);
 
+    public void deleteDocuments(Query q);
+
     void updateDocument(Document document, Term... terms);
 
     void addDocuments(Collection<Document> documents);
