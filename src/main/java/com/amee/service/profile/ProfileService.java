@@ -123,7 +123,11 @@ public class ProfileService extends BaseService {
     // ProfileItems
 
     public ProfileItem getProfileItem(String uid) {
-        ProfileItem pi = checkProfileItem(dao.getProfileItem(uid));
+        ProfileItem pi = ProfileItem.getProfileItem(profileItemService.getItemByUid(uid));
+        if (pi == null) {
+            pi = dao.getProfileItem(uid);
+        }
+        pi = checkProfileItem(pi);
         // If this ProfileItem is trashed then return null. A ProfileItem may be trash if it itself has been
         // trashed or an owning entity has been trashed.
         if (pi != null && !pi.isTrash()) {

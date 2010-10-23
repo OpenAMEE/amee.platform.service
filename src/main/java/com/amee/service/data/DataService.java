@@ -334,9 +334,9 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public DataItem getDataItemByUid(String uid) {
-        DataItem dataItem = dao.getDataItemByUid(uid);
+        DataItem dataItem = DataItem.getDataItem(dataItemService.getItemByUid(uid));
         if (dataItem == null) {
-            dataItem = DataItem.getDataItem(dataItemService.getItemByUid(uid));
+            dataItem = dao.getDataItemByUid(uid);
         }
         if ((dataItem != null) && !dataItem.isTrash()) {
             checkDataItem(dataItem);
