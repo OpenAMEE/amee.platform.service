@@ -24,11 +24,9 @@ import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.profile.LegacyProfileItem;
-import com.amee.domain.profile.LegacyProfileItemToProfileItemTransformer;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.platform.science.StartEndDate;
-import org.apache.commons.collections.list.TransformedList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -344,11 +342,11 @@ public class ProfileServiceDAO implements Serializable {
     }
 
     protected void persist(ProfileItem profileItem) {
-        entityManager.persist(profileItem.getLegacyEntity());
+        entityManager.persist(profileItem.getAdaptedEntity());
     }
 
     protected void remove(ProfileItem profileItem) {
-        profileItem.getLegacyEntity().setStatus(AMEEStatus.TRASH);
+        profileItem.getAdaptedEntity().setStatus(AMEEStatus.TRASH);
     }
 
     // Profile DataCategories
