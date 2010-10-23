@@ -83,6 +83,12 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
         throw new UnsupportedOperationException();
     }
 
+    // ItemValues.
+
+    public void persist(BaseItemValue itemValue) {
+        dao.persist(itemValue);
+    }
+
     @Override
     protected ProfileItemServiceDAO getDao() {
         return dao;

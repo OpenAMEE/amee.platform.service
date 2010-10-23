@@ -250,7 +250,7 @@ public class ProfileService extends BaseService {
                     }
                 }
                 // create missing ItemValue
-                new ItemValue(ivd, profileItem, defaultValue);
+                persist(new ItemValue(ivd, profileItem, defaultValue));
                 ameeStatistics.createProfileItemValue();
             }
         }
@@ -273,6 +273,14 @@ public class ProfileService extends BaseService {
 
     public void remove(ProfileItem pi) {
         dao.remove(pi);
+    }
+
+    // Item Values.
+
+    public void persist(ItemValue itemValue) {
+        if (!itemValue.isLegacy()) {
+            profileItemService.persist(itemValue.getNuEntity());
+        }
     }
 
     // Profile DataCategories

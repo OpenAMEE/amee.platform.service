@@ -10,7 +10,6 @@ import com.amee.domain.environment.Environment;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.NumberValue;
-import com.amee.domain.item.data.BaseDataItemNumberValue;
 import com.amee.domain.item.data.BaseDataItemValue;
 import com.amee.domain.item.data.NuDataItem;
 import com.amee.domain.sheet.Choice;

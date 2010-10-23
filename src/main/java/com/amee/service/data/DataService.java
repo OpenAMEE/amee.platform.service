@@ -451,7 +451,7 @@ public class DataService extends BaseService implements ApplicationListener {
 
             // create missing ItemValues
             for (ItemValueDefinition ivd : missingItemValueDefinitions) {
-                new ItemValue(ivd, dataItem, "");
+                persist(new ItemValue(ivd, dataItem, ""));
             }
 
             // clear caches
