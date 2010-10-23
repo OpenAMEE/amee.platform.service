@@ -54,32 +54,6 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
         dao.persist(profileItem);
     }
 
-    // Representations.
-
-//    @Override
-//    public JSONObject getJSONObject(BaseItem item, boolean detailed) throws JSONException {
-//        if (!NuProfileItem.class.isAssignableFrom(item.getClass()))
-//            throw new IllegalStateException("A NuProfileItem instance was expected.");
-//        return getJSONObject((NuProfileItem) item, detailed);
-//    }
-//
-//    @Override
-//    public JSONObject getJSONObject(NuProfileItem profileItem, boolean detailed) throws JSONException {
-//        throw new UnsupportedOperationException();
-//    }
-//
-//    @Override
-//    public JSONObject getJSONObject(BaseItemValue itemValue, boolean detailed) throws JSONException {
-//        if (!BaseProfileItemValue.class.isAssignableFrom(itemValue.getClass()))
-//            throw new IllegalStateException("A BaseProfileItemValue instance was expected.");
-//        return getJSONObject((BaseProfileItemValue) itemValue, detailed);
-//    }
-//
-//    @Override
-//    public JSONObject getJSONObject(BaseProfileItemValue itemValue, boolean detailed) throws JSONException {
-//        throw new UnsupportedOperationException();
-//    }
-
     // ItemValues.
 
     public void persist(BaseItemValue itemValue) {
