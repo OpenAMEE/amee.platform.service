@@ -36,6 +36,7 @@ public class DataCategoriesFilterValidationHelper extends ValidationHelper {
         dataBinder.registerCustomEditor(Query.class, "itemDefinitionUid", new QueryParserEditor("itemDefinitionUid", SearchService.KEYWORD_ANALYZER));
         dataBinder.registerCustomEditor(Query.class, "itemDefinitionName", new QueryParserEditor("itemDefinitionName"));
         dataBinder.registerCustomEditor(Query.class, "tags", new QueryParserEditor("tags"));
+        dataBinder.registerCustomEditor(Query.class, "excTags", new QueryParserEditor("excTags"));
     }
 
     @Override
@@ -70,6 +71,7 @@ public class DataCategoriesFilterValidationHelper extends ValidationHelper {
             allowedFields.add("itemDefinitionUid");
             allowedFields.add("itemDefinitionName");
             allowedFields.add("tags");
+            allowedFields.add("excTags");
             allowedFields.add("resultStart");
             allowedFields.add("resultLimit");
         }

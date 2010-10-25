@@ -108,6 +108,14 @@ public class DataCategoriesFilter extends QueryFilter {
         getQueries().put("tags", tags);
     }
 
+    public Query removeExcTags() {
+        return getQueries().remove("excTags");
+    }
+
+    public void setExcTags(Query tags) {
+        getQueries().put("excTags", tags);
+    }    
+
     public int getResultLimitDefault() {
         return 50;
     }

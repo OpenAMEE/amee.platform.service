@@ -162,6 +162,12 @@ public class SearchService {
         // Filter based on an allowed query parameter.
         if (!filter.getQueries().isEmpty()) {
             BooleanQuery query = new BooleanQuery();
+
+            Query excTags = filter.removeExcTags();
+            if (excTags != null){
+                query.add(excTags, BooleanClause.Occur.MUST_NOT);    
+            }
+
             for (Query q : filter.getQueries().values()) {
                 query.add(q, BooleanClause.Occur.MUST);
             }
