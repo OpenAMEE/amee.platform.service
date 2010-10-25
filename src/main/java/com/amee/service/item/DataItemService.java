@@ -70,6 +70,10 @@ public class DataItemService extends ItemService implements IDataItemService {
         dataItem.getNuEntity().setStatus(AMEEStatus.TRASH);
     }
 
+    public void remove(BaseItemValue itemValue) {
+        itemValue.setStatus(AMEEStatus.TRASH);
+    }
+
     /**
      * Get an {@link com.amee.domain.data.LegacyItemValue} belonging to this Item using some identifier and prevailing datetime context.
      *

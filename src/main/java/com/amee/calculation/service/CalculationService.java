@@ -279,7 +279,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
                         itemValueDefinition.isValidInAPIVersion(version)) {
                     // Create transient ProfileItem & ItemValue.
                     ProfileItem profileItem = new ProfileItem();
-                    ItemValue itemValue = new ItemValue(itemValueDefinition, profileItem);
+                    ItemValue itemValue = new ItemValue(itemValueDefinition, profileItem, false);
                     itemValue.setValue(userValueChoices.get(itemValueDefinition.getPath()).getValue());
                     if (version.isNotVersionOne()) {
                         if (itemValue.hasUnit() && userValueChoices.containsKey(itemValueDefinition.getPath() + "Unit")) {
