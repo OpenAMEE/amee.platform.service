@@ -25,11 +25,15 @@ public class DataItemService extends ItemService implements IDataItemService {
     private DataItemServiceDAO dao;
 
     public List<NuDataItem> getDataItems(DataCategory dataCategory) {
-        return dao.getDataItems(dataCategory);
+        List<NuDataItem> dataItems = dao.getDataItems(dataCategory);
+        loadItemValuesForItems((List) dataItems);
+        return dataItems;
     }
 
     public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
-        return dao.getDataItems(dataItemIds);
+        List<NuDataItem> dataItems = dao.getDataItems(dataItemIds);
+        loadItemValuesForItems((List) dataItems);
+        return dataItems;
     }
 
     public NuDataItem getItemByUid(String uid) {

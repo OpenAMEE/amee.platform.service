@@ -460,12 +460,18 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public void persist(DataItem dataItem) {
+        persist(dataItem, true);
+    }
+
+    public void persist(DataItem dataItem, boolean checkDataItem) {
         if (dataItem.isLegacy()) {
             dao.persist(dataItem);
         } else {
             dataItemService.persist(dataItem.getNuEntity());
         }
-        checkDataItem(dataItem);
+        if (checkDataItem) {
+            checkDataItem(dataItem);
+        }
     }
 
     public void remove(DataItem dataItem) {

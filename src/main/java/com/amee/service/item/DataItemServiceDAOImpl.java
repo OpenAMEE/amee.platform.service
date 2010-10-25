@@ -20,6 +20,7 @@
 package com.amee.service.item;
 
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
@@ -33,6 +34,7 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -100,6 +102,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      * @param dataItem
      * @return
      */
+    @SuppressWarnings(value = "unchecked")
     public List<DataItemNumberValue> getDataItemNumberValues(NuDataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemNumberValue.class);
@@ -114,10 +117,59 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      * @param dataItem
      * @return
      */
+    @SuppressWarnings(value = "unchecked")
     public List<DataItemTextValue> getDataItemTextValues(NuDataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemTextValue.class);
         criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return criteria.list();
+    }
+
+    @Override
+    public Set<BaseItemValue> getItemValuesForItems(Collection<BaseItem> items) {
+        Set<BaseItemValue> itemValues = new HashSet<BaseItemValue>();
+        itemValues.addAll(getDataItemNumberValuesForDataItems(items));
+        itemValues.addAll(getDataItemTextValuesForDataItems(items));
+        return itemValues;
+    }
+
+    /**
+     * TODO: Would caching here be useful?
+     *
+     * @param items
+     * @return
+     */
+    @SuppressWarnings(value = "unchecked")
+    public List<DataItemTextValue> getDataItemNumberValuesForDataItems(Collection<BaseItem> items) {
+        Set<Long> entityIds = new HashSet<Long>();
+        entityIds.add(0L);
+        for (IAMEEEntityReference entity : items) {
+            entityIds.add(entity.getEntityId());
+        }
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataItemNumberValue.class);
+        criteria.add(Restrictions.in("dataItem.id", entityIds));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return criteria.list();
+    }
+
+    /**
+     * TODO: Would caching here be useful?
+     *
+     * @param items
+     * @return
+     */
+    @SuppressWarnings(value = "unchecked")
+    public List<DataItemTextValue> getDataItemTextValuesForDataItems(Collection<BaseItem> items) {
+        Set<Long> entityIds = new HashSet<Long>();
+        entityIds.add(0L);
+        for (IAMEEEntityReference entity : items) {
+            entityIds.add(entity.getEntityId());
+        }
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataItemTextValue.class);
+        criteria.add(Restrictions.in("dataItem.id", entityIds));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
     }
