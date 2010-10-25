@@ -8,6 +8,7 @@ import com.amee.domain.item.data.DataItemTextValue;
 import com.amee.domain.item.data.NuDataItem;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -29,6 +30,11 @@ public class DataItemServiceDAOMock implements DataItemServiceDAO {
 
     @Override
     public Set<BaseItemValue> getAllItemValues(BaseItem item) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Set<BaseItemValue> getItemValuesForItems(Collection<BaseItem> items) {
         throw new UnsupportedOperationException();
     }
 

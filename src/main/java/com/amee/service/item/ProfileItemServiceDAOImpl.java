@@ -32,6 +32,7 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -100,6 +101,12 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
     }
+
+    @Override
+    public Set<BaseItemValue> getItemValuesForItems(Collection<BaseItem> items) {
+        throw new UnsupportedOperationException();
+    }
+
 
     @Override
     public void persist(NuProfileItem profileItem) {

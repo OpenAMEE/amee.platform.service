@@ -7,6 +7,8 @@ import com.amee.domain.item.profile.NuProfileItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+
 @Service
 public class ProfileItemService extends ItemService implements IProfileItemService {
 
@@ -58,6 +60,10 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
     public void persist(BaseItemValue itemValue) {
         dao.persist(itemValue);
+    }
+
+    public void loadItemValuesForItems(Collection<BaseItem> items) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
