@@ -23,9 +23,7 @@ import com.amee.domain.AMEEStatus;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.DataItemNumberValue;
-import com.amee.domain.item.data.DataItemTextValue;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
@@ -90,8 +88,38 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
     public Set<BaseItemValue> getDataItemValues(NuDataItem dataItem) {
         Set<BaseItemValue> rawItemValues = new HashSet<BaseItemValue>();
         rawItemValues.addAll(getDataItemNumberValues(dataItem));
+        rawItemValues.addAll(getDataItemNumberValueHistories(dataItem));
         rawItemValues.addAll(getDataItemTextValues(dataItem));
+        rawItemValues.addAll(getDataItemTextValueHistories(dataItem));
         return rawItemValues;
+    }
+
+    /**
+     * TODO: Would caching here be useful?
+     *
+     * @param dataItem
+     * @return
+     */
+    private List<DataItemNumberValueHistory> getDataItemNumberValueHistories(NuDataItem dataItem) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataItemNumberValueHistory.class);
+        criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return criteria.list();
+    }
+
+    /**
+     * TODO: Would caching here be useful?
+     *
+     * @param dataItem
+     * @return
+     */
+    private List<DataItemTextValueHistory> getDataItemTextValueHistories(NuDataItem dataItem) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataItemTextValueHistory.class);
+        criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return criteria.list();
     }
 
     /**

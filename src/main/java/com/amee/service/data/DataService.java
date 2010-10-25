@@ -27,6 +27,7 @@ import com.amee.domain.AMEEStatus;
 import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.*;
+import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.NuDataItem;
 import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
@@ -485,7 +486,11 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public void remove(ItemValue itemValue) {
-        dao.remove(itemValue);
+        if (itemValue.isLegacy()) {
+            dao.remove(itemValue);
+        } else {
+            dataItemService.remove(itemValue.getNuEntity());
+        }
     }
 
     // API Versions
