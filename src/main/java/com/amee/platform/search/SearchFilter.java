@@ -62,12 +62,11 @@ public class SearchFilter extends QueryFilter {
     }
 
     public Query getQuery(Set<ObjectType> types) {
-        Query q = getQuery(),
+        Query q = getQ(),
               tags = getTags(),
               excTags = getExcTags();
 
-        // Do we need to create a combined query?
-        if ((tags != null) || (types != null) && !types.isEmpty()) {
+        if (tags != null || excTags != null || (types != null && !types.isEmpty())) {
             // Create a combined query.
             BooleanQuery combinedQuery = new BooleanQuery();
             // First - add entityType queries.
