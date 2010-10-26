@@ -211,6 +211,13 @@ public abstract class ItemService implements IItemService, ApplicationListener {
         }
     }
 
+    @Override
+    public void addItemValue(BaseItemValue itemValue) {
+        getDao().persist(itemValue);
+        clearItemValues();
+    }
+
+    @Override
     public void clearItemValues() {
         ITEM_VALUES.get().clear();
     }
