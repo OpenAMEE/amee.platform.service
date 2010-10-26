@@ -150,7 +150,21 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
 
     @Override
     public Collection<Long> getProfileDataCategoryIds(Profile profile) {
-        throw new UnsupportedOperationException();
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuProfileItem.class);
+
+        criteria.add(Restrictions.eq("type", "PI"));
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+
+        List<NuProfileItem> profileItems = criteria.list();
+        List<Long> ids = new ArrayList<Long>();
+        for(NuProfileItem item : profileItems) {
+            ids.add(item.getDataCategory().getId());
+        }
+
+        return ids;
     }
 
     @Override
