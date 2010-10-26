@@ -26,6 +26,7 @@ import com.amee.domain.data.*;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.NuUsableValuePredicate;
+import com.amee.domain.item.UsableValuePredicate;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.domain.sheet.Choices;
@@ -238,7 +239,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         ItemValueDefinition ivd = itemValues.get(0).getItemValueDefinition();
 
         // Add all BaseItemValues with usable values
-        List<ExternalValue> usableSet = (List<ExternalValue>) CollectionUtils.select(itemValues, new NuUsableValuePredicate());
+        List<ExternalValue> usableSet = (List<ExternalValue>) CollectionUtils.select(itemValues, new UsableValuePredicate());
 
         if (!usableSet.isEmpty()) {
             values.put(ivd, new InternalValue(usableSet, item.getEffectiveStartDate(), item.getEffectiveEndDate()));
