@@ -48,7 +48,7 @@ public class OnlyActiveProfileService {
         // The profileItems collection is in name, dataItem, startDate DESC order for we can
         // just select the first entry in the collection for each name/dataItem combination.
         for (ProfileItem pi : profileItems) {
-            if (!name.equals(pi.getName()) || pi.getDataItem().getId() != di.getId()) {
+            if (!name.equals(pi.getName()) || !pi.getDataItem().getId().equals(di.getId())) {
                 activeProfileItems.add(pi);
                 di = pi.getDataItem();
                 name = pi.getName();

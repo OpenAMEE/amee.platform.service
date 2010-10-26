@@ -69,6 +69,7 @@ public abstract class ItemServiceDAOImpl implements ItemServiceDAO {
             Criteria criteria = session.createCriteria(getEntityClass());
             criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
             List<BaseItem> items = criteria.list();

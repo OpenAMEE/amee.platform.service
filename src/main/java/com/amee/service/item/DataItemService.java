@@ -21,18 +21,21 @@ public class DataItemService extends ItemService implements IDataItemService {
     @Autowired
     private DataItemServiceDAO dao;
 
+    @Override
     public List<NuDataItem> getDataItems(DataCategory dataCategory) {
         List<NuDataItem> dataItems = dao.getDataItems(dataCategory);
         loadItemValuesForItems((List) dataItems);
         return dataItems;
     }
 
+    @Override
     public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
         List<NuDataItem> dataItems = dao.getDataItems(dataItemIds);
         loadItemValuesForItems((List) dataItems);
         return dataItems;
     }
 
+    @Override
     public NuDataItem getItemByUid(String uid) {
         NuDataItem dataItem = dao.getItemByUid(uid);
         if ((dataItem != null) && (!dataItem.isTrash())) {
@@ -42,6 +45,12 @@ public class DataItemService extends ItemService implements IDataItemService {
         }
     }
 
+    @Override
+    public DataItem getDataItemByPath(DataCategory parent, String path) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String getLabel(NuDataItem dataItem) {
         String label = "";
         BaseItemValue itemValue;
@@ -63,6 +72,7 @@ public class DataItemService extends ItemService implements IDataItemService {
         return label;
     }
 
+    @Override
     public void remove(DataItem dataItem) {
         dataItem.getNuEntity().setStatus(AMEEStatus.TRASH);
     }

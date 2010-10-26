@@ -40,7 +40,10 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Encapsulates all persistence operations for Profiles and Profile Items.
@@ -228,20 +231,6 @@ public class ProfileServiceDAO implements Serializable {
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
 
-
-        // Order the returned collection by pi.name, di.name and pi.startDate DESC
-        Collections.sort(legacyProfileItems, new Comparator<LegacyProfileItem>() {
-            public int compare(LegacyProfileItem p1, LegacyProfileItem p2) {
-                int nd = p1.getName().compareTo(p2.getName());
-                int dnd = p1.getDataItem().getName().compareTo(p2.getDataItem().getName());
-                int sdd = p2.getStartDate().compareTo(p1.getStartDate());
-                if (nd != 0) return nd;
-                if (dnd != 0) return dnd;
-                if (sdd != 0) return sdd;
-                return 0;
-            }
-        });
-
         if (log.isDebugEnabled()) {
             log.debug("getProfileItems() done (" + legacyProfileItems.size() + ")");
         }
@@ -281,8 +270,7 @@ public class ProfileServiceDAO implements Serializable {
         } else {
             queryBuilder.append("(pi.startDate < :endDate) AND (pi.endDate IS NULL OR pi.endDate > :startDate) ");
         }
-        queryBuilder.append("AND pi.status != :trash ");
-        queryBuilder.append("ORDER BY pi.startDate DESC");
+        queryBuilder.append("AND pi.status != :trash");
 
         // Create Query.
         Query query = entityManager.createQuery(queryBuilder.toString());

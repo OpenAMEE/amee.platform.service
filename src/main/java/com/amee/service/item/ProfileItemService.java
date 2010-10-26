@@ -1,12 +1,19 @@
 package com.amee.service.item;
 
 import com.amee.domain.IProfileItemService;
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemValue;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.domain.profile.Profile;
+import com.amee.platform.science.StartEndDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 @Service
 public class ProfileItemService extends ItemService implements IProfileItemService {
@@ -65,6 +72,34 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     @Override
+    public int getProfileItemCount(Profile profile, DataCategory dataCategory) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<NuProfileItem> getProfileItems(
+            Profile profile,
+            DataCategory dataCategory,
+            StartEndDate startDate,
+            StartEndDate endDate) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean equivalentProfileItemExists(NuProfileItem profileItem) {
+        return dao.equivalentProfileItemExists(profileItem);
+    }
+
+    @Override
+    public Collection<Long> getProfileDataCategoryIds(Profile profile) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void persist(NuProfileItem profileItem) {
         dao.persist(profileItem);
     }
@@ -81,4 +116,3 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
         return dao;
     }
 }
-
