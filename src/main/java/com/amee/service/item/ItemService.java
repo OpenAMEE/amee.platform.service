@@ -5,6 +5,7 @@ import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.IItemService;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.data.NuItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
@@ -194,7 +195,8 @@ public abstract class ItemService implements IItemService, ApplicationListener {
      */
     @SuppressWarnings("unchecked")
     public void appendInternalValues(BaseItem item, Map<ItemValueDefinition, InternalValue> values) {
-        NuItemValueMap itemValueMap = getItemValuesMap(item);
+//        NuItemValueMap itemValueMap = getItemValuesMap(item);
+        ItemValueMap itemValueMap = item.getAdapter().getItemValuesMap();
         for (Object path : itemValueMap.keySet()) {
             // Get all BaseItemValues with this ItemValueDefinition path.
             List<BaseItemValue> itemValues = getAllItemValues(item, (String) path);
