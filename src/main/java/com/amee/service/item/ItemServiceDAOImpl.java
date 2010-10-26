@@ -19,8 +19,11 @@
  */
 package com.amee.service.item;
 
+import com.amee.domain.AMEEStatus;
+import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.DataItemTextValue;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,7 +33,10 @@ import org.hibernate.criterion.Restrictions;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public abstract class ItemServiceDAOImpl implements ItemServiceDAO {
 
@@ -77,5 +83,26 @@ public abstract class ItemServiceDAOImpl implements ItemServiceDAO {
 
     public void persist(BaseItemValue itemValue) {
         entityManager.persist(itemValue);
+    }
+
+    /**
+     * TODO: Would caching here be useful?
+     *
+     * @param items
+     * @param kls
+     * @return
+     */
+    @SuppressWarnings(value = "unchecked")
+    public List<DataItemTextValue> getValuesForDataItems(Collection<BaseItem> items, Class kls) {
+        Set<Long> entityIds = new HashSet<Long>();
+        entityIds.add(0L);
+        for (IAMEEEntityReference entity : items) {
+            entityIds.add(entity.getEntityId());
+        }
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(kls);
+        criteria.add(Restrictions.in("dataItem.id", entityIds));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return criteria.list();
     }
 }
