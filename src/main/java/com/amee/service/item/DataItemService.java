@@ -5,16 +5,13 @@ import com.amee.domain.IDataItemService;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemDefinition;
-import com.amee.domain.data.ItemValue;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.NuDataItem;
 import com.amee.domain.sheet.Choice;
-import com.amee.platform.science.StartEndDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -86,17 +83,6 @@ public class DataItemService extends ItemService implements IDataItemService {
         if (!NuDataItem.class.isAssignableFrom(item.getClass()))
             throw new IllegalStateException("A NuDataItem instance was expected.");
         return getItemValue(item, identifier, item.getEffectiveStartDate());
-    }
-
-    private ItemValue getItemValue(String choiceName) {
-        throw new UnsupportedOperationException();
-    }
-
-
-    // TODO: Implement 'effective' parameter support.
-
-    public Date getEffectiveStartDate(BaseItem item) {
-        return new StartEndDate(IDataItemService.EPOCH);
     }
 
     public void persist(NuDataItem dataItem) {

@@ -58,6 +58,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
     // ItemValues.
 
+    @Override
     public void persist(BaseItemValue itemValue) {
         dao.persist(itemValue);
     }

@@ -245,7 +245,7 @@ public abstract class ItemService implements IItemService, ApplicationListener {
             }
         }
         // Store BaseItemValues against BaseItems.
-        // If there are no LocaleNames for an entity the entry will remain null.
+        // If there are no BaseItemValues for a BaseItem the entry will remain null.
         for (BaseItemValue itemValue : getDao().getItemValuesForItems(items)) {
             Set<BaseItemValue> itemValues = ITEM_VALUES.get().get(itemValue.getItem().toString());
             if (itemValues == null) {
