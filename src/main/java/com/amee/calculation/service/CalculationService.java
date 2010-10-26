@@ -23,9 +23,6 @@ import com.amee.domain.AMEEStatistics;
 import com.amee.domain.APIVersion;
 import com.amee.domain.algorithm.Algorithm;
 import com.amee.domain.data.*;
-import com.amee.domain.item.BaseItem;
-import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.NuUsableValuePredicate;
 import com.amee.domain.item.UsableValuePredicate;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.profile.ProfileItem;
@@ -215,13 +212,13 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     /**
      * Add the Item's {@link com.amee.domain.item.BaseItemValue} collection to the passed {@link com.amee.platform.science.InternalValue} collection.
      *
+     * @param item
      * @param values - the {@link com.amee.platform.science.InternalValue} collection
      */
     @SuppressWarnings("unchecked")
     public void appendInternalValues(Item item, Map<ItemValueDefinition, InternalValue> values) {
         ItemValueMap itemValueMap = item.getItemValuesMap();
         for (Object path : itemValueMap.keySet()) {
-
             // Get all ItemValues with this ItemValueDefinition path.
             List<ItemValue> itemValues = item.getAllItemValues((String) path);
             if (itemValues.size() > 1 || itemValues.get(0).getItemValueDefinition().isForceTimeSeries()) {
