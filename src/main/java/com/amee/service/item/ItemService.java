@@ -5,15 +5,11 @@ import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.IItemService;
 import com.amee.domain.data.ItemValueDefinition;
-import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.data.NuItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.NuUsableValuePredicate;
 import com.amee.persist.BaseEntity;
 import com.amee.platform.science.ExternalHistoryValue;
-import com.amee.platform.science.ExternalValue;
-import com.amee.platform.science.InternalValue;
 import com.amee.platform.science.StartEndDate;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
@@ -157,6 +153,7 @@ public abstract class ItemService implements IItemService, ApplicationListener {
      * @param item
      * @return {@link com.amee.domain.data.ItemValueMap}
      */
+    @Override
     public NuItemValueMap getItemValuesMap(BaseItem item) {
         NuItemValueMap itemValuesMap = new NuItemValueMap();
         for (BaseItemValue itemValue : getActiveItemValues(item)) {
