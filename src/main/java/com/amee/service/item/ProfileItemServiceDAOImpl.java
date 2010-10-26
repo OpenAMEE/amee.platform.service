@@ -34,6 +34,8 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.joda.time.DateTime;
+import org.joda.time.Period;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
@@ -113,18 +115,86 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
 
     @Override
     public int getProfileItemCount(Profile profile, DataCategory dataCategory) {
-        throw new UnsupportedOperationException();
+
+        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+            return -1;
+        }
+
+        log.debug("getProfileItemCount() start");
+
+        // Get the NuProfileItems count
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuProfileItem.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        int count = criteria.list().size();
+
+        log.debug("getProfileItemCount() count: " + count);
+
+        return count;
     }
 
     @Override
     @SuppressWarnings(value = "unchecked")
     public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate) {
-        throw new UnsupportedOperationException();
+
+        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+            return null;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("getProfileItems() start");
+        }
+
+        // Need to roll the date forward.
+        DateTime nextMonth = new DateTime(profileDate).plus(Period.months(1));
+        profileDate = nextMonth.toDate();
+
+        // Get the NuProfileItems.
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuProfileItem.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        criteria.add(Restrictions.lt("startDate", profileDate));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        List<NuProfileItem> profileItems = criteria.list();
+
+        if (log.isDebugEnabled()) {
+            log.debug("getProfileItems() done (" + profileItems.size() + ")");
+        }
+
+        return profileItems;
     }
 
     @Override
     public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, StartEndDate startDate, StartEndDate endDate) {
-        throw new UnsupportedOperationException();
+
+        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+            return null;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("getProfileItems() start");
+        }
+
+        // Get the NuProfileItems.
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuProfileItem.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        if (endDate != null) {
+            criteria.add(Restrictions.lt("startDate", endDate.toDate()));
+        }
+        criteria.add(Restrictions.or(Restrictions.isNull("endDate"), Restrictions.gt("endDate", startDate.toDate())));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        List<NuProfileItem> profileItems = criteria.list();
+
+        if (log.isDebugEnabled()) {
+            log.debug("getProfileItems() done (" + profileItems.size() + ")");
+        }
+
+        return profileItems;
     }
 
     @SuppressWarnings(value = "unchecked")
