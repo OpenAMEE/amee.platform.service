@@ -10,6 +10,7 @@ import com.amee.domain.cache.CacheableFactory;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemValue;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.item.profile.NuProfileItem;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.domain.sheet.Sheet;
@@ -147,12 +148,27 @@ public class ProfileService extends BaseService {
      * @return the active {@link ProfileItem} collection
      */
     public List<ProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date date) {
-        return checkProfileItems(onlyActiveProfileService.getProfileItems(dao.getProfileItems(profile, dataCategory, date)));
+        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
+        profileItems.addAll(dao.getProfileItems(profile, dataCategory, date));
+        profileItems.addAll(getProfileItems(profileItemService.getProfileItems(profile, dataCategory, date)));
+        // Order the returned collection by pi.name, di.name and pi.startDate DESC
+        Collections.sort(profileItems, new Comparator<ProfileItem>() {
+            public int compare(ProfileItem p1, ProfileItem p2) {
+                int nd = p1.getName().compareTo(p2.getName());
+                int dnd = p1.getDataItem().getName().compareTo(p2.getDataItem().getName());
+                int sdd = p2.getStartDate().compareTo(p1.getStartDate());
+                if (nd != 0) return nd;
+                if (dnd != 0) return dnd;
+                if (sdd != 0) return sdd;
+                return 0;
+            }
+        });
+        return checkProfileItems(onlyActiveProfileService.getProfileItems(profileItems));
     }
 
     /**
      * Retrieve a list of {@link ProfileItem}s belonging to a {@link Profile} and {@link DataCategory}
-     * occuring between a given date context.
+     * occurring between a given date context.
      *
      * @param profile      - the {@link Profile} to which the {@link ProfileItem}s belong
      * @param dataCategory - the DataCategory containing the ProfileItems
@@ -165,7 +181,16 @@ public class ProfileService extends BaseService {
             DataCategory dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
-        return checkProfileItems(dao.getProfileItems(profile, dataCategory, startDate, endDate));
+        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
+        profileItems.addAll(dao.getProfileItems(profile, dataCategory, startDate, endDate));
+        profileItems.addAll(getProfileItems(profileItemService.getProfileItems(profile, dataCategory, startDate, endDate)));
+        // Order the returned collection by pi.startDate DESC
+        Collections.sort(profileItems, new Comparator<ProfileItem>() {
+            public int compare(ProfileItem p1, ProfileItem p2) {
+                return p2.getStartDate().compareTo(p1.getStartDate());
+            }
+        });
+        return checkProfileItems(profileItems);
     }
 
     /**
@@ -176,7 +201,8 @@ public class ProfileService extends BaseService {
      * @return the number of {@link ProfileItem}s
      */
     public int getProfileItemCount(Profile profile, DataCategory dataCategory) {
-        return dao.getProfileItemCount(profile, dataCategory);
+        return dao.getProfileItemCount(profile, dataCategory) +
+                profileItemService.getProfileItemCount(profile, dataCategory);
     }
 
     private List<ProfileItem> checkProfileItems(List<ProfileItem> profileItems) {
@@ -263,7 +289,11 @@ public class ProfileService extends BaseService {
     }
 
     public boolean isUnique(ProfileItem pi) {
-        return !dao.equivalentProfileItemExists(pi);
+        if (pi.isLegacy()) {
+            return !dao.equivalentProfileItemExists(pi);
+        } else {
+            return !profileItemService.equivalentProfileItemExists(pi.getNuEntity());
+        }
     }
 
     public void persist(ProfileItem profileItem) {
@@ -290,12 +320,31 @@ public class ProfileService extends BaseService {
     // Profile DataCategories
 
     public Collection<Long> getProfileDataCategoryIds(Profile profile) {
-        return dao.getProfileDataCategoryIds(profile);
+        Set<Long> dataCategoryIds = new HashSet<Long>();
+        dataCategoryIds.addAll(dao.getProfileDataCategoryIds(profile));
+        dataCategoryIds.addAll(profileItemService.getProfileDataCategoryIds(profile));
+        return dataCategoryIds;
     }
 
     // Sheets
 
     public Sheet getSheet(CacheableFactory sheetFactory) {
         return profileSheetService.getSheet(sheetFactory);
+    }
+
+    // Nu to Adapter.
+
+    /**
+     * Convert from legacy to adapter.
+     *
+     * @param profileItems
+     * @return
+     */
+    public List<ProfileItem> getProfileItems(List<NuProfileItem> profileItems) {
+        List<ProfileItem> adapters = new ArrayList<ProfileItem>();
+        for (NuProfileItem profileItem : profileItems) {
+            adapters.add(ProfileItem.getProfileItem(profileItem));
+        }
+        return adapters;
     }
 }

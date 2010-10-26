@@ -20,22 +20,25 @@
 package com.amee.service.item;
 
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
 import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
+import com.amee.domain.profile.LegacyProfileItem;
+import com.amee.domain.profile.Profile;
+import com.amee.platform.science.StartEndDate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.joda.time.DateTime;
+import org.joda.time.Period;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements ProfileItemServiceDAO {
@@ -108,6 +111,130 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         itemValues.addAll(getValuesForDataItems(items, ProfileItemNumberValue.class));
         itemValues.addAll(getValuesForDataItems(items, ProfileItemTextValue.class));
         return itemValues;
+    }
+
+    @Override
+    public int getProfileItemCount(Profile profile, DataCategory dataCategory) {
+
+        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+            return -1;
+        }
+
+        log.debug("getProfileItemCount() start");
+
+        // Get the NuProfileItems count
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuProfileItem.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        int count = criteria.list().size();
+
+        log.debug("getProfileItemCount() count: " + count);
+
+        return count;
+    }
+
+    @Override
+    @SuppressWarnings(value = "unchecked")
+    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate) {
+
+        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+            return null;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("getProfileItems() start");
+        }
+
+        // Need to roll the date forward.
+        DateTime nextMonth = new DateTime(profileDate).plus(Period.months(1));
+        profileDate = nextMonth.toDate();
+
+        // Get the NuProfileItems.
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuProfileItem.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        criteria.add(Restrictions.lt("startDate", profileDate));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        List<NuProfileItem> profileItems = criteria.list();
+
+        if (log.isDebugEnabled()) {
+            log.debug("getProfileItems() done (" + profileItems.size() + ")");
+        }
+
+        return profileItems;
+    }
+
+    @Override
+    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, StartEndDate startDate, StartEndDate endDate) {
+
+        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+            return null;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("getProfileItems() start");
+        }
+
+        // Get the NuProfileItems.
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuProfileItem.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        if (endDate != null) {
+            criteria.add(Restrictions.lt("startDate", endDate.toDate()));
+        }
+        criteria.add(Restrictions.or(Restrictions.isNull("endDate"), Restrictions.gt("endDate", startDate.toDate())));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        List<NuProfileItem> profileItems = criteria.list();
+
+        if (log.isDebugEnabled()) {
+            log.debug("getProfileItems() done (" + profileItems.size() + ")");
+        }
+
+        return profileItems;
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    public boolean equivalentProfileItemExists(NuProfileItem profileItem) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuProfileItem.class);
+        criteria.add(Restrictions.eq("profile.id", profileItem.getProfile().getId()));
+        criteria.add(Restrictions.ne("uid", profileItem.getUid()));
+        criteria.add(Restrictions.eq("dataCategory.id", profileItem.getDataCategory().getId()));
+        criteria.add(Restrictions.eq("dataItem.id", profileItem.getDataItem().getId()));
+        criteria.add(Restrictions.eq("startDate", profileItem.getStartDate()));
+        criteria.add(Restrictions.eq("name", profileItem.getName()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        List<LegacyProfileItem> profileItems = criteria.list();
+        if (profileItems.size() > 0) {
+            log.debug("equivalentProfileItemExists() - found ProfileItem(s)");
+            return true;
+        } else {
+            log.debug("equivalentProfileItemExists() - no ProfileItem(s) found");
+            return false;
+        }
+    }
+
+    @Override
+    public Collection<Long> getProfileDataCategoryIds(Profile profile) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuProfileItem.class);
+
+        criteria.add(Restrictions.eq("type", "PI"));
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+
+        List<NuProfileItem> profileItems = criteria.list();
+        List<Long> ids = new ArrayList<Long>();
+        for(NuProfileItem item : profileItems) {
+            ids.add(item.getDataCategory().getId());
+        }
+
+        return ids;
     }
 
     @Override

@@ -310,8 +310,11 @@ public class DataServiceDAO implements Serializable {
 
     // ItemValues
 
+    // TODO: Looks like this can be removed.
+
+    @Deprecated
     @SuppressWarnings(value = "unchecked")
-    protected ItemValue getItemValueByUid(String uid) {
+    private ItemValue getItemValueByUid(String uid) {
         ItemValue itemValue = null;
         if (!StringUtils.isBlank(uid)) {
             Session session = (Session) entityManager.getDelegate();
@@ -452,7 +455,6 @@ public class DataServiceDAO implements Serializable {
     }
 
     protected void remove(ItemValue dataItemValue) {
-        //TODO
         dataItemValue.getLegacyEntity().setStatus(AMEEStatus.TRASH);
     }
 
