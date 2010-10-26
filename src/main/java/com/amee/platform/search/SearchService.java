@@ -192,14 +192,15 @@ public class SearchService {
         return resultsWrapper;
     }
 
-    public ResultsWrapper<DataCategory> getDataCategories(Query query, int resultStart, int resultLimit) {
-        BooleanQuery q = new BooleanQuery();
-        q.add(new TermQuery(new Term("entityType", ObjectType.DC.getName())), BooleanClause.Occur.MUST);
-        if (query != null) {
-            q.add(query, BooleanClause.Occur.MUST);
+    private ResultsWrapper<DataCategory> getDataCategories(BooleanQuery query, int resultStart, int resultLimit) {
+        if (query == null) {
+            query = new BooleanQuery();
         }
+        Query entityQuery = new TermQuery(new Term("entityType", ObjectType.DC.getName()));
+        query.add(entityQuery, BooleanClause.Occur.MUST);
+        
         ResultsWrapper<Document> resultsWrapper =
-                luceneService.doSearch(q, resultStart, resultLimit);
+                luceneService.doSearch(query, resultStart, resultLimit);
         Set<Long> dataCategoryIds = new HashSet<Long>();
         for (Document document : resultsWrapper.getResults()) {
             dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
