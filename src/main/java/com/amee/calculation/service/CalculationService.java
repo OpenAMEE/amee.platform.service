@@ -22,16 +22,16 @@ package com.amee.calculation.service;
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.APIVersion;
 import com.amee.domain.algorithm.Algorithm;
-import com.amee.domain.data.DataItem;
-import com.amee.domain.data.ItemDefinition;
-import com.amee.domain.data.ItemValue;
-import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.*;
+import com.amee.domain.item.UsableValuePredicate;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.AlgorithmRunner;
+import com.amee.platform.science.ExternalValue;
 import com.amee.platform.science.InternalValue;
 import com.amee.platform.science.ReturnValues;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -44,6 +44,7 @@ import sun.org.mozilla.javascript.internal.JavaScriptException;
 import javax.script.ScriptException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -192,10 +193,10 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         DataItem dataItem = profileItem.getDataItem();
         dataItem.setEffectiveStartDate(profileItem.getEffectiveStartDate());
         dataItem.setEffectiveEndDate(profileItem.getEffectiveEndDate());
-        dataItem.appendInternalValues(values);
+        appendInternalValues(dataItem, values);
 
         // Add the ProfileItem values.
-        profileItem.appendInternalValues(values);
+        appendInternalValues(profileItem, values);
 
         // Add actual values to returnValues list based on InternalValues in values list.
         for (Map.Entry<ItemValueDefinition, InternalValue> entry : values.entrySet()) {
@@ -206,6 +207,50 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         initFinders(profileItem, returnValues);
 
         return returnValues;
+    }
+
+    /**
+     * Add the Item's {@link com.amee.domain.item.BaseItemValue} collection to the passed {@link com.amee.platform.science.InternalValue} collection.
+     *
+     * @param item
+     * @param values - the {@link com.amee.platform.science.InternalValue} collection
+     */
+    @SuppressWarnings("unchecked")
+    public void appendInternalValues(Item item, Map<ItemValueDefinition, InternalValue> values) {
+        ItemValueMap itemValueMap = item.getItemValuesMap();
+        for (Object path : itemValueMap.keySet()) {
+            // Get all ItemValues with this ItemValueDefinition path.
+            List<ItemValue> itemValues = item.getAllItemValues((String) path);
+            if (itemValues.size() > 1 || itemValues.get(0).getItemValueDefinition().isForceTimeSeries()) {
+                appendTimeSeriesItemValue(item, values, itemValues);
+            } else if (itemValues.size() == 1) {
+                appendSingleValuedItemValue(values, itemValues.get(0));
+            }
+        }
+    }
+
+    // Add a BaseItemValue timeseries to the InternalValue collection.
+
+    @SuppressWarnings("unchecked")
+    private void appendTimeSeriesItemValue(Item item, Map<ItemValueDefinition, InternalValue> values, List<ItemValue> itemValues) {
+        ItemValueDefinition ivd = itemValues.get(0).getItemValueDefinition();
+
+        // Add all BaseItemValues with usable values
+        List<ExternalValue> usableSet = (List<ExternalValue>) CollectionUtils.select(itemValues, new UsableValuePredicate());
+
+        if (!usableSet.isEmpty()) {
+            values.put(ivd, new InternalValue(usableSet, item.getEffectiveStartDate(), item.getEffectiveEndDate()));
+            log.debug("appendTimeSeriesItemValue() - added timeseries value " + ivd.getPath());
+        }
+    }
+
+    // Add a single-valued BaseItemValue to the InternalValue collection.
+
+    private void appendSingleValuedItemValue(Map<ItemValueDefinition, InternalValue> values, ItemValue itemValue) {
+        if (itemValue.isUsableValue()) {
+            values.put(itemValue.getItemValueDefinition(), new InternalValue(itemValue));
+            log.debug("appendSingleValuedItemValue() - added single value " + itemValue.getPath());
+        }
     }
 
     /**
@@ -241,7 +286,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
         Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
         dataItem.getItemDefinition().appendInternalValues(values, version);
-        dataItem.appendInternalValues(values);
+        appendInternalValues(dataItem, values);
         appendUserValueChoices(dataItem.getItemDefinition(), userValueChoices, values, version);
 
         Map<String, Object> returnValues = new HashMap<String, Object>();
