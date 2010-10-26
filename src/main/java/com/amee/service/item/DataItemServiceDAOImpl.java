@@ -63,6 +63,23 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         return criteria.list();
     }
 
+    public NuDataItem getDataItemByPath(DataCategory parent, String path) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(NuDataItem.class);
+
+        criteria.add(Restrictions.eq("dataCategory.id", parent.getId()));
+        criteria.add(Restrictions.eq("path", path));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+
+        List<NuDataItem> items = criteria.list();
+        if (items.isEmpty()) {
+            log.debug("getDataItemByPath() NOT found: " + path);
+            return null;
+        } else {
+            return items.get(0);
+        }
+    }
+
     /**
      * Returns the DataItem matching the specified UID.
      *

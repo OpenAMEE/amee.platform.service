@@ -1,6 +1,7 @@
 package com.amee.service.item;
 
 import com.amee.domain.data.DataCategory;
+import com.amee.domain.data.DataItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItemNumberValue;
 import com.amee.domain.item.data.DataItemTextValue;
@@ -24,4 +25,6 @@ public interface DataItemServiceDAO extends ItemServiceDAO {
     public List<DataItemTextValue> getDataItemTextValues(NuDataItem dataItem);
 
     public void persist(NuDataItem dataItem);
+
+    public NuDataItem getDataItemByPath(DataCategory parent, String path);
 }
