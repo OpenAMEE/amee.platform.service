@@ -69,6 +69,11 @@ public class ProfileItemServiceDAOMock implements ProfileItemServiceDAO {
     }
 
     @Override
+    public Collection<Long> getProfileDataCategoryIds(Profile profile) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void persist(BaseItemValue itemValue) {
         throw new UnsupportedOperationException();
     }

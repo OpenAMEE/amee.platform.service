@@ -73,12 +73,12 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
     @Override
     public int getProfileItemCount(Profile profile, DataCategory dataCategory) {
-        throw new UnsupportedOperationException();
+        return dao.getProfileItemCount(profile, dataCategory);
     }
 
     @Override
     public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate) {
-        throw new UnsupportedOperationException();
+        return dao.getProfileItems(profile, dataCategory, profileDate);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
             DataCategory dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
-        throw new UnsupportedOperationException();
+        return dao.getProfileItems(profile, dataCategory, startDate, endDate);
     }
 
     public boolean equivalentProfileItemExists(NuProfileItem profileItem) {

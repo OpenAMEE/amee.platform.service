@@ -149,6 +149,11 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
     }
 
     @Override
+    public Collection<Long> getProfileDataCategoryIds(Profile profile) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void persist(NuProfileItem profileItem) {
         entityManager.persist(profileItem);
     }
