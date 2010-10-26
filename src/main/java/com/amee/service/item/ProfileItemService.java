@@ -2,7 +2,6 @@ package com.amee.service.item;
 
 import com.amee.domain.IProfileItemService;
 import com.amee.domain.data.ItemValue;
-import com.amee.domain.data.LegacyItemValue;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
