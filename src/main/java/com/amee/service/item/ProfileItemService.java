@@ -96,7 +96,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
     @Override
     public Collection<Long> getProfileDataCategoryIds(Profile profile) {
-        throw new UnsupportedOperationException();
+        return dao.getProfileDataCategoryIds(profile);
     }
 
     @Override

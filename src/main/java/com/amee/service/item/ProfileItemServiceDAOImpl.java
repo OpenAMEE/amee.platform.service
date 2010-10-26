@@ -97,6 +97,8 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
      * @param profileItem
      * @return
      */
+    @Override
+    @SuppressWarnings(value = "unchecked")
     public List<ProfileItemTextValue> getProfileItemTextValues(NuProfileItem profileItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(ProfileItemTextValue.class);
@@ -197,6 +199,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         return profileItems;
     }
 
+    @Override
     @SuppressWarnings(value = "unchecked")
     public boolean equivalentProfileItemExists(NuProfileItem profileItem) {
         Session session = (Session) entityManager.getDelegate();
@@ -219,21 +222,18 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
     }
 
     @Override
+    @SuppressWarnings(value = "unchecked")
     public Collection<Long> getProfileDataCategoryIds(Profile profile) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(NuProfileItem.class);
-
-        criteria.add(Restrictions.eq("type", "PI"));
         criteria.add(Restrictions.eq("profile.id", profile.getId()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-
         List<NuProfileItem> profileItems = criteria.list();
         List<Long> ids = new ArrayList<Long>();
-        for(NuProfileItem item : profileItems) {
+        for (NuProfileItem item : profileItems) {
             ids.add(item.getDataCategory().getId());
         }
-
         return ids;
     }
 

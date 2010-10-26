@@ -60,4 +60,9 @@ public class DataItemServiceDAOMock implements DataItemServiceDAO {
     public void persist(NuDataItem dataItem) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public NuDataItem getDataItemByPath(DataCategory parent, String path) {
+        throw new UnsupportedOperationException();
+    }
 }

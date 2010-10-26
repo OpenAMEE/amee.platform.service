@@ -347,7 +347,7 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public DataItem getDataItemByPath(DataCategory parent, String path) {
-        DataItem dataItem = dataItemService.getDataItemByPath(parent, path);
+        DataItem dataItem = DataItem.getDataItem(dataItemService.getDataItemByPath(parent, path));
         if (dataItem == null) {
             dataItem = dao.getDataItemByPath(parent, path);
         }

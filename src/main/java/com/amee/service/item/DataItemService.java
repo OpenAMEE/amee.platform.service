@@ -46,9 +46,8 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     @Override
-    public DataItem getDataItemByPath(DataCategory parent, String path) {
-        NuDataItem dataItem = dao.getDataItemByPath(parent, path);
-        return DataItem.getDataItem(dataItem);
+    public NuDataItem getDataItemByPath(DataCategory parent, String path) {
+        return dao.getDataItemByPath(parent, path);
     }
 
     @Override

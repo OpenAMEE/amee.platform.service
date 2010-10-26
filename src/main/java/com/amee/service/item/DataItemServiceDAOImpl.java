@@ -24,6 +24,7 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.*;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
@@ -41,12 +42,15 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
 
     private final Log log = LogFactory.getLog(getClass());
 
+    @Override
     public Class getEntityClass() {
         return NuDataItem.class;
     }
 
     // NuDataItems.
 
+    @Override
+    @SuppressWarnings(value = "unchecked")
     public List<NuDataItem> getDataItems(DataCategory dataCategory) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(NuDataItem.class);
@@ -55,6 +59,8 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         return criteria.list();
     }
 
+    @Override
+    @SuppressWarnings(value = "unchecked")
     public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(NuDataItem.class);
@@ -63,21 +69,24 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         return criteria.list();
     }
 
+    @Override
+    @SuppressWarnings(value = "unchecked")
     public NuDataItem getDataItemByPath(DataCategory parent, String path) {
-        Session session = (Session) entityManager.getDelegate();
-        Criteria criteria = session.createCriteria(NuDataItem.class);
-
-        criteria.add(Restrictions.eq("dataCategory.id", parent.getId()));
-        criteria.add(Restrictions.eq("path", path));
-        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-
-        List<NuDataItem> items = criteria.list();
-        if (items.isEmpty()) {
-            log.debug("getDataItemByPath() NOT found: " + path);
-            return null;
-        } else {
-            return items.get(0);
+        NuDataItem dataItem = null;
+        if ((parent != null) && !StringUtils.isBlank(path)) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(NuDataItem.class);
+            criteria.add(Restrictions.eq("dataCategory.id", parent.getId()));
+            criteria.add(Restrictions.eq("path", path));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            List<NuDataItem> items = criteria.list();
+            if (items.size() == 1) {
+                dataItem = items.get(0);
+            } else {
+                log.debug("getDataItemByPath() NOT found: " + path);
+            }
         }
+        return dataItem;
     }
 
     /**
@@ -86,10 +95,12 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      * @param uid for the requested DataItem
      * @return the matching DataItem or null if not found
      */
+    @Override
     public NuDataItem getItemByUid(String uid) {
         return (NuDataItem) super.getItemByUid(uid);
     }
 
+    @Override
     public void persist(NuDataItem dataItem) {
         entityManager.persist(dataItem);
     }
@@ -148,6 +159,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      * @param dataItem
      * @return
      */
+    @Override
     @SuppressWarnings(value = "unchecked")
     public List<DataItemNumberValue> getDataItemNumberValues(NuDataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
@@ -163,6 +175,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      * @param dataItem
      * @return
      */
+    @Override
     @SuppressWarnings(value = "unchecked")
     public List<DataItemTextValue> getDataItemTextValues(NuDataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
@@ -179,5 +192,4 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         itemValues.addAll(getValuesForDataItems(items, DataItemTextValue.class));
         return itemValues;
     }
-
 }
