@@ -189,50 +189,6 @@ public abstract class ItemService implements IItemService, ApplicationListener {
     }
 
     /**
-     * Add the Item's {@link com.amee.domain.item.BaseItemValue} collection to the passed {@link com.amee.platform.science.InternalValue} collection.
-     *
-     * @param values - the {@link com.amee.platform.science.InternalValue} collection
-     */
-    @SuppressWarnings("unchecked")
-    public void appendInternalValues(BaseItem item, Map<ItemValueDefinition, InternalValue> values) {
-//        NuItemValueMap itemValueMap = getItemValuesMap(item);
-        ItemValueMap itemValueMap = item.getAdapter().getItemValuesMap();
-        for (Object path : itemValueMap.keySet()) {
-            // Get all BaseItemValues with this ItemValueDefinition path.
-            List<BaseItemValue> itemValues = getAllItemValues(item, (String) path);
-            if (itemValues.size() > 1 || itemValues.get(0).getItemValueDefinition().isForceTimeSeries()) {
-                appendTimeSeriesItemValue(item, values, itemValues);
-            } else if (itemValues.size() == 1) {
-                appendSingleValuedItemValue(values, itemValues.get(0));
-            }
-        }
-    }
-
-    // Add a BaseItemValue timeseries to the InternalValue collection.
-
-    @SuppressWarnings("unchecked")
-    private void appendTimeSeriesItemValue(BaseItem item, Map<ItemValueDefinition, InternalValue> values, List<BaseItemValue> itemValues) {
-        ItemValueDefinition ivd = itemValues.get(0).getItemValueDefinition();
-
-        // Add all BaseItemValues with usable values
-        List<ExternalValue> usableSet = (List<ExternalValue>) CollectionUtils.select(itemValues, new NuUsableValuePredicate());
-
-        if (!usableSet.isEmpty()) {
-            values.put(ivd, new InternalValue(usableSet, item.getEffectiveStartDate(), item.getEffectiveEndDate()));
-            log.debug("appendTimeSeriesItemValue() - added timeseries value " + ivd.getPath());
-        }
-    }
-
-    // Add a single-valued BaseItemValue to the InternalValue collection.
-
-    private void appendSingleValuedItemValue(Map<ItemValueDefinition, InternalValue> values, BaseItemValue itemValue) {
-        if (itemValue.isUsableValue()) {
-            values.put(itemValue.getItemValueDefinition(), new InternalValue(itemValue.getAdapter()));
-            log.debug("appendSingleValuedItemValue() - added single value " + itemValue.getPath());
-        }
-    }
-
-    /**
      * Get a List of all BaseItemValues associated with the supplied BaseItem.
      *
      * @param items BaseItems to fetch BaseItemValues for
