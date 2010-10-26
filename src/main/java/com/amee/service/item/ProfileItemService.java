@@ -1,13 +1,12 @@
 package com.amee.service.item;
 
 import com.amee.domain.IProfileItemService;
+import com.amee.domain.data.ItemValue;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Collection;
 
 @Service
 public class ProfileItemService extends ItemService implements IProfileItemService {
@@ -27,14 +26,28 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
     @Override
     public boolean hasNonZeroPerTimeValues(NuProfileItem profileItem) {
-        // TODO: See com.amee.domain.profile.LegacyProfileItem#hasNonZeroPerTimeValues.
-        throw new UnsupportedOperationException();
+        for (BaseItemValue biv : getItemValues(profileItem)) {
+            ItemValue iv = biv.getAdapter();
+            if (iv.hasPerTimeUnit() && iv.isNonZero()) {
+                return true;
+            }
+        }
+        return false;
     }
+
+    //TODO - TEMP HACK - will remove as soon we decide how to handle return units in V1 correctly.
 
     @Override
     public boolean isSingleFlight(NuProfileItem profileItem) {
-        // TODO: See com.amee.domain.profile.LegacyProfileItem#isSingleFlight.
-        throw new UnsupportedOperationException();
+        for (BaseItemValue biv : getItemValues(profileItem)) {
+            ItemValue iv = biv.getAdapter();
+            if ((iv.getName().startsWith("IATA") && iv.getValue().length() > 0) ||
+                    (iv.getName().startsWith("Lat") && !iv.getValue().equals("-999")) ||
+                    (iv.getName().startsWith("Lon") && !iv.getValue().equals("-999"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -61,10 +74,6 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     @Override
     public void persist(BaseItemValue itemValue) {
         dao.persist(itemValue);
-    }
-
-    public void loadItemValuesForItems(Collection<BaseItem> items) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

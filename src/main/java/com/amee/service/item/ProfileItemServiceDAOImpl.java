@@ -104,9 +104,11 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
 
     @Override
     public Set<BaseItemValue> getItemValuesForItems(Collection<BaseItem> items) {
-        throw new UnsupportedOperationException();
+        Set<BaseItemValue> itemValues = new HashSet<BaseItemValue>();
+        itemValues.addAll(getValuesForDataItems(items, ProfileItemNumberValue.class));
+        itemValues.addAll(getValuesForDataItems(items, ProfileItemTextValue.class));
+        return itemValues;
     }
-
 
     @Override
     public void persist(NuProfileItem profileItem) {
