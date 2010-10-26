@@ -88,11 +88,6 @@ public class DataItemService extends ItemService implements IDataItemService {
         return getItemValue(item, identifier, item.getEffectiveStartDate());
     }
 
-    private ItemValue getItemValue(String choiceName) {
-        throw new UnsupportedOperationException();
-    }
-
-
     // TODO: Implement 'effective' parameter support.
 
     public Date getEffectiveStartDate(BaseItem item) {
