@@ -164,8 +164,8 @@ public class SearchService {
             BooleanQuery query = new BooleanQuery();
 
             Query excTags = filter.removeExcTags();
-            if (excTags != null){
-                query.add(excTags, BooleanClause.Occur.MUST_NOT);    
+            if (excTags != null) {
+                query.add(excTags, BooleanClause.Occur.MUST_NOT);
             }
 
             for (Query q : filter.getQueries().values()) {
@@ -198,7 +198,7 @@ public class SearchService {
         }
         Query entityQuery = new TermQuery(new Term("entityType", ObjectType.DC.getName()));
         query.add(entityQuery, BooleanClause.Occur.MUST);
-        
+
         ResultsWrapper<Document> resultsWrapper =
                 luceneService.doSearch(query, resultStart, resultLimit);
         Set<Long> dataCategoryIds = new HashSet<Long>();

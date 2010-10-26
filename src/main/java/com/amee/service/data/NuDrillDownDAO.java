@@ -320,8 +320,8 @@ class NuDrillDownDAO implements Serializable {
 
         // check arguments
         if ((dataCategory == null) ||
-            (dataCategory.getItemDefinition() == null) ||
-            (selections == null)) {
+                (dataCategory.getItemDefinition() == null) ||
+                (selections == null)) {
             throw new IllegalArgumentException("A required argument is missing.");
         }
 
@@ -417,7 +417,7 @@ class NuDrillDownDAO implements Serializable {
         sql.append("AND di.STATUS != :trash ");
         sql.append("AND di.DATA_CATEGORY_ID = :dataCategoryId ");
         sql.append("AND dinv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("AND ln.ENTITY_TYPE='DINV' AND ln.ENTITY_ID = dinv.ID AND LOCALE = :locale AND ln.NAME = :value");
+        sql.append("AND ln.ENTITY_TYPE='DINV' AND ln.ENTITY_ID = dinv.ID AND LOCALE = :locale AND ln.NAME = :value ");
         sql.append("UNION ");
         sql.append("SELECT di.ID ID ");
         sql.append("FROM DATA_ITEM di, DATA_ITEM_TEXT_VALUE ditv, LOCALE_NAME ln ");

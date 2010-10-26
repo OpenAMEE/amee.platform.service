@@ -36,6 +36,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     //TODO - TEMP HACK - will remove as soon we decide how to handle return units in V1 correctly.
+
     @Override
     public boolean isSingleFlight(NuProfileItem profileItem) {
         for (BaseItemValue biv : getItemValues(profileItem)) {
@@ -70,10 +71,11 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
     // ItemValues.
 
+    @Override
     public void persist(BaseItemValue itemValue) {
         dao.persist(itemValue);
     }
-    
+
     @Override
     protected ProfileItemServiceDAO getDao() {
         return dao;
