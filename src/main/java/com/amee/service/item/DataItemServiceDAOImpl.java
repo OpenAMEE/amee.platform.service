@@ -62,6 +62,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
     @Override
     @SuppressWarnings(value = "unchecked")
     public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
+        dataItemIds.add(0L);
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(NuDataItem.class);
         criteria.add(Restrictions.in("id", dataItemIds));
