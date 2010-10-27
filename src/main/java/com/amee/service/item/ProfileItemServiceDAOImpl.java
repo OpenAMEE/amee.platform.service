@@ -110,8 +110,8 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
     @Override
     public Set<BaseItemValue> getItemValuesForItems(Collection<BaseItem> items) {
         Set<BaseItemValue> itemValues = new HashSet<BaseItemValue>();
-        itemValues.addAll(getValuesForDataItems(items, ProfileItemNumberValue.class));
-        itemValues.addAll(getValuesForDataItems(items, ProfileItemTextValue.class));
+        itemValues.addAll(getItemValuesForItems(items, ProfileItemNumberValue.class));
+        itemValues.addAll(getItemValuesForItems(items, ProfileItemTextValue.class));
         return itemValues;
     }
 

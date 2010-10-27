@@ -414,10 +414,6 @@ public class DataServiceDAO implements Serializable {
         return dataItems;
     }
 
-    protected List<DataItem> getDataItems(Set<Long> dataItemIds) {
-        return getDataItems(dataItemIds, false);
-    }
-
     @SuppressWarnings(value = "unchecked")
     protected List<DataItem> getDataItems(Set<Long> dataItemIds, boolean values) {
         // Don't fail with an empty Set.

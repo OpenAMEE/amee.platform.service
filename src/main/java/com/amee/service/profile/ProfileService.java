@@ -148,9 +148,17 @@ public class ProfileService extends BaseService {
      * @return the active {@link ProfileItem} collection
      */
     public List<ProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date date) {
+        Set<String> profileItemUids = new HashSet<String>();
         List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
-        profileItems.addAll(dao.getProfileItems(profile, dataCategory, date));
-        profileItems.addAll(getProfileItems(profileItemService.getProfileItems(profile, dataCategory, date)));
+        for (NuProfileItem profileItem : profileItemService.getProfileItems(profile, dataCategory, date)) {
+            profileItemUids.add(profileItem.getUid());
+            profileItems.add(ProfileItem.getProfileItem(profileItem));
+        }
+        for (ProfileItem profileItem : dao.getProfileItems(profile, dataCategory, date)) {
+            if (!profileItemUids.contains(profileItem.getUid())) {
+                profileItems.add(profileItem);
+            }
+        }
         // Order the returned collection by pi.name, di.name and pi.startDate DESC
         Collections.sort(profileItems, new Comparator<ProfileItem>() {
             public int compare(ProfileItem p1, ProfileItem p2) {
@@ -181,9 +189,17 @@ public class ProfileService extends BaseService {
             DataCategory dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
+        Set<String> profileItemUids = new HashSet<String>();
         List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
-        profileItems.addAll(dao.getProfileItems(profile, dataCategory, startDate, endDate));
-        profileItems.addAll(getProfileItems(profileItemService.getProfileItems(profile, dataCategory, startDate, endDate)));
+        for (NuProfileItem profileItem : profileItemService.getProfileItems(profile, dataCategory, startDate, endDate)) {
+            profileItemUids.add(profileItem.getUid());
+            profileItems.add(ProfileItem.getProfileItem(profileItem));
+        }
+        for (ProfileItem profileItem : dao.getProfileItems(profile, dataCategory, startDate, endDate)) {
+            if (!profileItemUids.contains(profileItem.getUid())) {
+                profileItems.add(profileItem);
+            }
+        }
         // Order the returned collection by pi.startDate DESC
         Collections.sort(profileItems, new Comparator<ProfileItem>() {
             public int compare(ProfileItem p1, ProfileItem p2) {
@@ -283,6 +299,9 @@ public class ProfileService extends BaseService {
                 persist(new ItemValue(ivd, profileItem, defaultValue));
                 ameeStatistics.createProfileItemValue();
             }
+
+            // Clear cache.
+            profileItemService.clearItemValues();
         }
 
         return profileItem;

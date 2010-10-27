@@ -188,8 +188,10 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
     @Override
     public Set<BaseItemValue> getItemValuesForItems(Collection<BaseItem> items) {
         Set<BaseItemValue> itemValues = new HashSet<BaseItemValue>();
-        itemValues.addAll(getValuesForDataItems(items, DataItemNumberValue.class));
-        itemValues.addAll(getValuesForDataItems(items, DataItemTextValue.class));
+        itemValues.addAll(getItemValuesForItems(items, DataItemNumberValue.class));
+        itemValues.addAll(getItemValuesForItems(items, DataItemNumberValueHistory.class));
+        itemValues.addAll(getItemValuesForItems(items, DataItemTextValue.class));
+        itemValues.addAll(getItemValuesForItems(items, DataItemTextValueHistory.class));
         return itemValues;
     }
 }

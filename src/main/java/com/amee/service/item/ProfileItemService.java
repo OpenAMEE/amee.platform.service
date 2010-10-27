@@ -78,7 +78,9 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
     @Override
     public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate) {
-        return dao.getProfileItems(profile, dataCategory, profileDate);
+        List<NuProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, profileDate);
+        loadItemValuesForItems((List) profileItems);
+        return profileItems;
     }
 
     @Override
@@ -87,7 +89,9 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
             DataCategory dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
-        return dao.getProfileItems(profile, dataCategory, startDate, endDate);
+        List<NuProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, startDate, endDate);
+        loadItemValuesForItems((List) profileItems);
+        return profileItems;
     }
 
     public boolean equivalentProfileItemExists(NuProfileItem profileItem) {

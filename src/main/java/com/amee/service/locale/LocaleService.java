@@ -1,11 +1,7 @@
 package com.amee.service.locale;
 
 import com.amee.base.transaction.TransactionEvent;
-import com.amee.domain.IAMEEEntityReference;
-import com.amee.domain.ILocaleService;
-import com.amee.domain.LocaleConstants;
-import com.amee.domain.LocaleHolder;
-import com.amee.domain.ObjectType;
+import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemValueDefinition;
@@ -17,13 +13,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class LocaleService implements ILocaleService, ApplicationListener {
@@ -140,12 +130,15 @@ public class LocaleService implements ILocaleService, ApplicationListener {
 
     public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems, boolean values) {
         loadLocaleNames(ObjectType.DI, new HashSet<IAMEEEntityReference>(dataItems));
+        loadLocaleNames(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
         if (values) {
             Set<IAMEEEntityReference> itemValueRefs = new HashSet<IAMEEEntityReference>();
             for (DataItem dataItem : dataItems) {
                 itemValueRefs.addAll(dataItem.getItemValues());
             }
             loadLocaleNames(ObjectType.IV, itemValueRefs);
+            loadLocaleNames(ObjectType.DITV, itemValueRefs);
+            loadLocaleNames(ObjectType.DITVH, itemValueRefs);
         }
     }
 

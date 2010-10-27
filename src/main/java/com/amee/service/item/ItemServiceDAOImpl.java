@@ -23,7 +23,9 @@ import com.amee.domain.AMEEStatus;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.BaseDataItemValue;
 import com.amee.domain.item.data.DataItemTextValue;
+import com.amee.domain.item.profile.BaseProfileItemValue;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -94,15 +96,24 @@ public abstract class ItemServiceDAOImpl implements ItemServiceDAO {
      * @return
      */
     @SuppressWarnings(value = "unchecked")
-    public List<DataItemTextValue> getValuesForDataItems(Collection<BaseItem> items, Class kls) {
+    public List<DataItemTextValue> getItemValuesForItems(Collection<BaseItem> items, Class kls) {
         Set<Long> entityIds = new HashSet<Long>();
         entityIds.add(0L);
         for (IAMEEEntityReference entity : items) {
+            // TODO: Could optimise here by excluding entities that don't match the supplied class.
             entityIds.add(entity.getEntityId());
+        }
+        String propertyName;
+        if (BaseDataItemValue.class.isAssignableFrom(kls)) {
+            propertyName = "dataItem.id";
+        } else if (BaseProfileItemValue.class.isAssignableFrom(kls)) {
+            propertyName = "profileItem.id";
+        } else {
+            throw new IllegalStateException("Instancs of BaseDataItemValue or BaseProfileItemValue were expected.");
         }
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(kls);
-        criteria.add(Restrictions.in("dataItem.id", entityIds));
+        criteria.add(Restrictions.in(propertyName, entityIds));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
     }

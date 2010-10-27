@@ -11,10 +11,12 @@ import com.amee.domain.item.BaseItemValue;
 import com.amee.persist.BaseEntity;
 import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
+import com.amee.service.locale.LocaleService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -23,6 +25,9 @@ import java.util.*;
 public abstract class ItemService implements IItemService, ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
+
+    @Autowired
+    protected LocaleService localeService;
 
     // A thread bound Map of BaseItemValues keyed by BaseItem entity identity.
     private final ThreadLocal<Map<String, Set<BaseItemValue>>> ITEM_VALUES =
