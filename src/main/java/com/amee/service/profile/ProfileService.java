@@ -308,11 +308,7 @@ public class ProfileService extends BaseService {
     }
 
     public boolean isUnique(ProfileItem pi) {
-        if (pi.isLegacy()) {
-            return !dao.equivalentProfileItemExists(pi);
-        } else {
-            return !profileItemService.equivalentProfileItemExists(pi.getNuEntity());
-        }
+        return !dao.equivalentProfileItemExists(pi) && !profileItemService.equivalentProfileItemExists(pi);
     }
 
     public void persist(ProfileItem profileItem) {

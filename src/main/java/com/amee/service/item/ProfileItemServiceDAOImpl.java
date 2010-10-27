@@ -28,6 +28,7 @@ import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.LegacyProfileItem;
 import com.amee.domain.profile.Profile;
+import com.amee.domain.profile.ProfileItem;
 import com.amee.platform.science.StartEndDate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -201,7 +202,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public boolean equivalentProfileItemExists(NuProfileItem profileItem) {
+    public boolean equivalentProfileItemExists(ProfileItem profileItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(NuProfileItem.class);
         criteria.add(Restrictions.eq("profile.id", profileItem.getProfile().getId()));

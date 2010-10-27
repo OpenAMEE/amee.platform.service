@@ -7,6 +7,7 @@ import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
 import com.amee.domain.profile.Profile;
+import com.amee.domain.profile.ProfileItem;
 import com.amee.platform.science.StartEndDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -94,7 +95,8 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
         return profileItems;
     }
 
-    public boolean equivalentProfileItemExists(NuProfileItem profileItem) {
+    @Override
+    public boolean equivalentProfileItemExists(ProfileItem profileItem) {
         return dao.equivalentProfileItemExists(profileItem);
     }
 
