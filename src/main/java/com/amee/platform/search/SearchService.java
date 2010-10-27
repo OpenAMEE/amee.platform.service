@@ -121,6 +121,9 @@ public class SearchService {
             entityId = new Long(document.getField("entityId").stringValue());
             entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
             IAMEEEntity result = entities.get(entityType).get(entityId);
+            if ((result == null) && (entityType.equals(ObjectType.DI))) {
+                result = entities.get(ObjectType.NDI).get(entityId);
+            }
             if (result != null) {
                 if (!results.contains(result)) {
                     results.add(result);
