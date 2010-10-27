@@ -34,7 +34,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     @Override
     public boolean hasNonZeroPerTimeValues(NuProfileItem profileItem) {
         for (BaseItemValue biv : getItemValues(profileItem)) {
-            ItemValue iv = biv.getAdapter();
+            ItemValue iv = ItemValue.getItemValue(biv);
             if (iv.hasPerTimeUnit() && iv.isNonZero()) {
                 return true;
             }
@@ -47,7 +47,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     @Override
     public boolean isSingleFlight(NuProfileItem profileItem) {
         for (BaseItemValue biv : getItemValues(profileItem)) {
-            ItemValue iv = biv.getAdapter();
+            ItemValue iv = ItemValue.getItemValue(biv);
             if ((iv.getName().startsWith("IATA") && iv.getValue().length() > 0) ||
                     (iv.getName().startsWith("Lat") && !iv.getValue().equals("-999")) ||
                     (iv.getName().startsWith("Lon") && !iv.getValue().equals("-999"))) {
