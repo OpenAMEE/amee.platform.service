@@ -8,6 +8,7 @@ import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemValue;
 import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
+import com.amee.service.invalidation.InvalidationService;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
 import com.amee.service.tag.TagService;
@@ -76,6 +77,9 @@ public class SearchIndexer implements Runnable {
 
     @Autowired
     private LuceneService luceneService;
+
+    @Autowired
+    private InvalidationService invalidationService;
 
     private DocumentContext ctx;
     private DataCategory dataCategory;
@@ -146,6 +150,8 @@ public class SearchIndexer implements Runnable {
             searchLog.info(ctx.dataCategoryUid + "|DataCategory needs to be removed.");
             searchQueryService.removeDataCategory(dataCategory);
             searchQueryService.removeDataItems(dataCategory);
+            // Send message stating that the DataCategory has been re-indexed.
+            invalidationService.add(dataCategory, "dataCategoryIndexed");
         }
     }
 
@@ -171,6 +177,8 @@ public class SearchIndexer implements Runnable {
             // Add the new Document.
             luceneService.addDocument(dataCategoryDoc);
         }
+        // Send message stating that the DataCategory has been re-indexed.
+        invalidationService.add(dataCategory, "dataCategoryIndexed");
     }
 
     /**
