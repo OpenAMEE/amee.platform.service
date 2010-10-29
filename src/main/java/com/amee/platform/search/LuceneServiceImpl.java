@@ -13,6 +13,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.LockReleaseFailedException;
 import org.apache.lucene.util.Version;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -279,12 +280,13 @@ public class LuceneServiceImpl implements LuceneService {
         if (!masterIndex) return;
         wLock.lock();
         try {
-            // First ensure index is not locked (perhaps from a crash).
+            // Ensure everything is closed.
+            closeEverything();
+            // Ensure index is not locked (perhaps from a crash).
             unlockIndex();
             // Create a new index.
             IndexWriter indexWriter = getNewIndexWriter(true);
             // Close the index.
-            indexWriter.optimize();
             indexWriter.commit();
             indexWriter.close();
         } catch (IOException e) {
@@ -303,11 +305,13 @@ public class LuceneServiceImpl implements LuceneService {
         wLock.lock();
         try {
             if (IndexReader.indexExists(getDirectory())) {
-                IndexReader.open(getDirectory());
                 if (IndexWriter.isLocked(getDirectory())) {
+                    log.info("unlockIndex() Unlocking index.");
                     IndexWriter.unlock(getDirectory());
                 }
             }
+        } catch (LockReleaseFailedException e) {
+            log.warn("unlockIndex() Caught LockReleaseFailedException: " + e.getMessage());
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -316,18 +320,27 @@ public class LuceneServiceImpl implements LuceneService {
     }
 
     /**
-     * Ensure Lucene objects are closed.
+     * On finalize, ensure Lucene objects are closed.
      *
      * @throws Throwable the <code>Exception</code> raised by this method
      */
     @Override
     protected void finalize() throws Throwable {
+        super.finalize();
+        closeEverything();
+    }
+
+    /**
+     * Ensure all Lucene objects are closed.
+     */
+    @Override
+    public void closeEverything() {
         wLock.lock();
         try {
-            super.finalize();
             closeLastSearcher();
             closeSearcher();
             closeIndexWriter();
+            unlockIndex();
             closeDirectory();
         } finally {
             wLock.unlock();

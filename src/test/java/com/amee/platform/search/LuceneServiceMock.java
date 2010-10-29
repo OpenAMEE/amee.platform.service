@@ -88,6 +88,11 @@ public class LuceneServiceMock implements LuceneService {
     }
 
     @Override
+    public void closeEverything() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void clearIndex() {
         throw new UnsupportedOperationException();
     }

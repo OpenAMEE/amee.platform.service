@@ -57,6 +57,9 @@ public class SearchIndexer implements Runnable {
 
     public final static DateTimeFormatter DATE_TO_SECOND = DateTimeFormat.forPattern("yyyyMMddHHmmss");
 
+    // Count of successfully indexed DataCategories.
+    private static long COUNT = 0L;
+
     @Autowired
     private TransactionController transactionController;
 
@@ -81,8 +84,13 @@ public class SearchIndexer implements Runnable {
     @Autowired
     private InvalidationService invalidationService;
 
+    // A wrapper object encapsulating the context of the current indexing operation.
     private DocumentContext ctx;
+
+    // The DataCategory currently being indexed.
     private DataCategory dataCategory;
+
+    // Flag indicating that the current DataCategory is new.
     private boolean newCategory = false;
 
     private SearchIndexer() {
@@ -179,6 +187,8 @@ public class SearchIndexer implements Runnable {
         }
         // Send message stating that the DataCategory has been re-indexed.
         invalidationService.add(dataCategory, "dataCategoryIndexed");
+        // Increment count for DataCategories successfully indexed.
+        incrementCount();
     }
 
     /**
@@ -310,5 +320,17 @@ public class SearchIndexer implements Runnable {
                 }
             }
         }
+    }
+
+    public static long getCount() {
+        return COUNT;
+    }
+
+    public synchronized static void resetCount() {
+        COUNT = 0;
+    }
+
+    private synchronized static void incrementCount() {
+        COUNT++;
     }
 }

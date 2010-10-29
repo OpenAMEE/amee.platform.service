@@ -218,10 +218,10 @@ public class DataService extends BaseService implements ApplicationListener {
         return new ResultsWrapper<DataCategory>(activeCategories, resultsWrapper.isTruncated());
     }
 
-    public Map<Long, DataCategory> getDataCategoryMap(Set<Long> dataCategoryIds) {
-        Map<Long, DataCategory> dataCategoryMap = new HashMap<Long, DataCategory>();
+    public Map<String, DataCategory> getDataCategoryMap(Set<Long> dataCategoryIds) {
+        Map<String, DataCategory> dataCategoryMap = new HashMap<String, DataCategory>();
         for (DataCategory dataCategory : dao.getDataCategories(dataCategoryIds)) {
-            dataCategoryMap.put(dataCategory.getEntityId(), dataCategory);
+            dataCategoryMap.put(dataCategory.getUid(), dataCategory);
         }
         return dataCategoryMap;
     }
@@ -359,21 +359,10 @@ public class DataService extends BaseService implements ApplicationListener {
         }
     }
 
-    public Map<Long, DataItem> getDataItemMap(Set<Long> dataItemIds) {
-        return getDataItemMap(dataItemIds, false);
-    }
-
-    public Map<Long, DataItem> getDataItemMap(Set<Long> dataItemIds, boolean values) {
-        Set<String> dataItemUids = new HashSet<String>();
-        Map<Long, DataItem> dataItemMap = new HashMap<Long, DataItem>();
-        for (NuDataItem nuDataItem : dataItemService.getDataItems(dataItemIds)) {
-            dataItemUids.add(nuDataItem.getUid());
-            dataItemMap.put(nuDataItem.getEntityId(), DataItem.getDataItem(nuDataItem));
-        }
-        for (DataItem dataItem : dao.getDataItems(dataItemIds, values)) {
-            if (!dataItemUids.contains(dataItem.getUid())) {
-                dataItemMap.put(dataItem.getEntityId(), dataItem);
-            }
+    public Map<String, DataItem> getDataItemMap(Set<Long> dataItemIds, boolean loadValues) {
+        Map<String, DataItem> dataItemMap = new HashMap<String, DataItem>();
+        for (DataItem dataItem : dao.getDataItems(dataItemIds, loadValues)) {
+            dataItemMap.put(dataItem.getUid(), dataItem);
         }
         localeService.loadLocaleNamesForDataItems(dataItemMap.values(), true);
         return dataItemMap;
@@ -383,17 +372,10 @@ public class DataService extends BaseService implements ApplicationListener {
         return getDataItems(dataItemIds, false);
     }
 
-    public List<DataItem> getDataItems(Set<Long> dataItemIds, boolean values) {
-        Set<String> dataItemUids = new HashSet<String>();
+    public List<DataItem> getDataItems(Set<Long> dataItemIds, boolean loadValues) {
         List<DataItem> dataItems = new ArrayList<DataItem>();
-        for (NuDataItem nuDataItem : dataItemService.getDataItems(dataItemIds)) {
-            dataItemUids.add(nuDataItem.getUid());
-            dataItems.add(DataItem.getDataItem(nuDataItem));
-        }
-        for (DataItem dataItem : dao.getDataItems(dataItemIds, values)) {
-            if (!dataItemUids.contains(dataItem.getUid())) {
-                dataItems.add(dataItem);
-            }
+        for (DataItem dataItem : dao.getDataItems(dataItemIds, loadValues)) {
+            dataItems.add(dataItem);
         }
         localeService.loadLocaleNamesForDataItems(dataItems, true);
         return dataItems;

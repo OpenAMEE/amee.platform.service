@@ -23,6 +23,8 @@ public interface LuceneService {
 
     void unlockIndex();
 
+    public void closeEverything();
+
     void clearIndex();
 
     void addDocument(Document document);

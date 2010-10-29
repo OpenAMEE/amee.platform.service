@@ -183,6 +183,8 @@ public class SearchManager implements Runnable, ApplicationListener {
      * Will update or create the whole search index.
      */
     public void init() {
+        // Clear the SearchIndexer DataCategory count.
+        SearchIndexer.resetCount();
         // Always make sure index is unlocked.
         luceneService.unlockIndex();
         // Clear the index?

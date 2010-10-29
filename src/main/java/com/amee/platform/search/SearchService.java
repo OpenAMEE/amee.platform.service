@@ -5,7 +5,9 @@ import com.amee.domain.IAMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
+import com.amee.domain.item.data.NuDataItem;
 import com.amee.service.data.DataService;
+import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
 import com.amee.service.tag.TagService;
@@ -43,6 +45,9 @@ public class SearchService {
     private DataService dataService;
 
     @Autowired
+    private DataItemService dataItemService;
+
+    @Autowired
     private MetadataService metadataService;
 
     @Autowired
@@ -60,102 +65,50 @@ public class SearchService {
     // Entity search.
 
     public ResultsWrapper<IAMEEEntity> getEntities(SearchFilter filter) {
-        Long entityId;
-        ObjectType entityType;
         // Ensure filter.types contains NDI if DI is present.
         if (filter.getTypes().contains(ObjectType.DI)) {
             filter.getTypes().add(ObjectType.NDI);
         }
         // Do search and fetch Lucene documents.
-        ResultsWrapper<Document> resultsWrapper = searchQueryService.doSearch(filter);
-        // Collate entityIds against entityTypes.
-        Map<ObjectType, Set<Long>> entityIds = new HashMap<ObjectType, Set<Long>>();
-        for (Document document : resultsWrapper.getResults()) {
-            entityId = new Long(document.getField("entityId").stringValue());
-            entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
-            Set<Long> idSet = entityIds.get(entityType);
-            if (idSet == null) {
-                idSet = new HashSet<Long>();
-                entityIds.put(entityType, idSet);
-            }
-            idSet.add(entityId);
-        }
-        // Collate AMEEEntities.
-        Map<ObjectType, Map<Long, IAMEEEntity>> entities = new HashMap<ObjectType, Map<Long, IAMEEEntity>>();
-        // Load DataCategories.
-        if (entityIds.containsKey(ObjectType.DC)) {
-            Map<Long, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(entityIds.get(ObjectType.DC));
-            addDataCategories(entities, dataCategoriesMap);
-            // Pre-loading of EntityTags, LocaleNames & DataCategories.
-            if (filter.isLoadEntityTags()) {
-                tagService.loadEntityTagsForDataCategories(dataCategoriesMap.values());
-            }
-            if (filter.isLoadMetadatas()) {
-                metadataService.loadMetadatasForDataCategories(dataCategoriesMap.values());
-            }
-            localeService.loadLocaleNamesForDataCategories(dataCategoriesMap.values());
-        }
-        // Load DataItems (LegacyDataItem & NuDataItem).
-        if (entityIds.containsKey(ObjectType.DI) || entityIds.containsKey(ObjectType.NDI)) {
-            // Collate LegacyDataItem & NuDataItem IDs.
-            Set<Long> dataItemIds = new HashSet<Long>();
-            if (entityIds.containsKey(ObjectType.DI)) {
-                dataItemIds.addAll(entityIds.get(ObjectType.DI));
-            }
-            if (entityIds.containsKey(ObjectType.NDI)) {
-                dataItemIds.addAll(entityIds.get(ObjectType.NDI));
-            }
-            // Load the items.
-            Map<Long, DataItem> dataItemsMap =
-                    dataService.getDataItemMap(dataItemIds, filter.isLoadDataItemValues());
-            addDataItems(entities, dataItemsMap);
-            // Pre-loading of LocaleNames & Metadatas.
-            if (filter.isLoadMetadatas()) {
-                metadataService.loadMetadatasForDataItems(dataItemsMap.values());
-            }
-            localeService.loadLocaleNamesForDataItems(dataItemsMap.values(), filter.isLoadDataItemValues());
-        }
-        // Create result list in relevance order.
-        List<IAMEEEntity> results = new ArrayList<IAMEEEntity>();
-        for (Document document : resultsWrapper.getResults()) {
-            entityId = new Long(document.getField("entityId").stringValue());
-            entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
-            IAMEEEntity result = entities.get(entityType).get(entityId);
-            if ((result == null) && (entityType.equals(ObjectType.DI))) {
-                result = entities.get(ObjectType.NDI).get(entityId);
-            }
-            if (result != null) {
-                if (!results.contains(result)) {
-                    results.add(result);
-                }
-            } else {
-                log.warn("getEntities() Entity was missing: " + entityType + " / " + entityId);
-            }
-        }
-        return new ResultsWrapper<IAMEEEntity>(results, resultsWrapper.isTruncated());
+        return getEntityResultsWrapperFromDocumentsResultsWrapper(
+                searchQueryService.doSearch(filter),
+                filter.isLoadEntityTags(),
+                filter.isLoadMetadatas(),
+                filter.isLoadDataItemValues());
     }
 
-    protected void addDataCategories(Map<ObjectType, Map<Long, IAMEEEntity>> entities, Map<Long, DataCategory> dataCategoriesMap) {
-        Map<Long, IAMEEEntity> e = new HashMap<Long, IAMEEEntity>();
-        for (Long id : dataCategoriesMap.keySet()) {
-            e.put(id, dataCategoriesMap.get(id));
+    protected void addDataCategories(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, DataCategory> dataCategoriesMap) {
+        Map<String, IAMEEEntity> e = new HashMap<String, IAMEEEntity>();
+        for (String uid : dataCategoriesMap.keySet()) {
+            e.put(uid, dataCategoriesMap.get(uid));
         }
         entities.put(ObjectType.DC, e);
     }
 
-    protected void addDataItems(Map<ObjectType, Map<Long, IAMEEEntity>> entities, Map<Long, DataItem> dataItemsMap) {
-        Map<Long, IAMEEEntity> legacyDataItems = new HashMap<Long, IAMEEEntity>();
-        Map<Long, IAMEEEntity> nuDataItems = new HashMap<Long, IAMEEEntity>();
-        for (Long id : dataItemsMap.keySet()) {
+    protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, DataItem> dataItemsMap) {
+        Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
+        for (String id : dataItemsMap.keySet()) {
             IAMEEEntity entity = dataItemsMap.get(id);
             if (entity.getObjectType().equals(ObjectType.DI)) {
-                legacyDataItems.put(id, dataItemsMap.get(id));
-            } else if (entity.getObjectType().equals(ObjectType.NDI)) {
-                nuDataItems.put(id, dataItemsMap.get(id));
+                dataItems.put(id, dataItemsMap.get(id));
+            } else {
+                throw new IllegalStateException("An ObjectType of DI was expected.");
             }
         }
-        entities.put(ObjectType.DI, legacyDataItems);
-        entities.put(ObjectType.NDI, nuDataItems);
+        entities.put(ObjectType.DI, dataItems);
+    }
+
+    protected void addNuDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, NuDataItem> dataItemsMap) {
+        Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
+        for (String uid : dataItemsMap.keySet()) {
+            IAMEEEntity entity = dataItemsMap.get(uid);
+            if (entity.getObjectType().equals(ObjectType.NDI)) {
+                dataItems.put(uid, DataItem.getDataItem(dataItemsMap.get(uid)));
+            } else {
+                throw new IllegalStateException("An ObjectType of NDI was expected.");
+            }
+        }
+        entities.put(ObjectType.NDI, dataItems);
     }
 
     // DataCategory Search.
@@ -215,7 +168,8 @@ public class SearchService {
 
     // DataItem search.
 
-    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
+    public ResultsWrapper<IAMEEEntity> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
+        // Create Query.
         BooleanQuery query = null;
         if (!filter.getQueries().isEmpty()) {
             query = new BooleanQuery();
@@ -224,16 +178,11 @@ public class SearchService {
             }
         }
         // Get the DataItems.
-        ResultsWrapper<DataItem> resultsWrapper = getDataItems(dataCategory, query, filter.getResultStart(), filter.getResultLimit());
-        // Pre-loading of Metadatas, LocaleNames and ItemValues.
-        if (filter.isLoadMetadatas()) {
-            metadataService.loadMetadatasForDataItems(resultsWrapper.getResults());
-        }
-        localeService.loadLocaleNamesForDataItems(resultsWrapper.getResults(), filter.isLoadDataItemValues());
-        return resultsWrapper;
+        return getDataItems(dataCategory, filter, query);
     }
 
-    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, Query query, int resultStart, int resultLimit) {
+    public ResultsWrapper<IAMEEEntity> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
+        // Create Query to find all DIs & NDIs in the DataCategory matching the supplied Query and range.
         BooleanQuery q = new BooleanQuery();
         BooleanQuery typesQuery = new BooleanQuery();
         typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
@@ -243,14 +192,114 @@ public class SearchService {
         if (query != null) {
             q.add(query, BooleanClause.Occur.MUST);
         }
-        ResultsWrapper<Document> resultsWrapper =
-                luceneService.doSearch(q, resultStart, resultLimit);
-        Set<Long> dataCategoryIds = new HashSet<Long>();
+        // Do search and fetch Lucene documents.
+        return getEntityResultsWrapperFromDocumentsResultsWrapper(
+                luceneService.doSearch(q, filter.getResultStart(), filter.getResultLimit()),
+                filter.isLoadEntityTags(),
+                filter.isLoadMetadatas(),
+                filter.isLoadDataItemValues());
+    }
+
+    private ResultsWrapper<IAMEEEntity> getEntityResultsWrapperFromDocumentsResultsWrapper(
+            ResultsWrapper<Document> resultsWrapper,
+            boolean loadEntityTags,
+            boolean loadMetadata,
+            boolean loadItemValues) {
+        // Collate entityIds against entityTypes.
+        Map<ObjectType, Set<Long>> entityIds = new HashMap<ObjectType, Set<Long>>();
         for (Document document : resultsWrapper.getResults()) {
-            dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
+            Long entityId = new Long(document.getField("entityId").stringValue());
+            ObjectType entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
+            Set<Long> idSet = entityIds.get(entityType);
+            if (idSet == null) {
+                idSet = new HashSet<Long>();
+                entityIds.put(entityType, idSet);
+            }
+            idSet.add(entityId);
         }
-        return new ResultsWrapper<DataItem>(
-                dataService.getDataItems(dataCategoryIds),
-                resultsWrapper.isTruncated());
+        // Collate AMEEEntities.
+        Map<ObjectType, Map<String, IAMEEEntity>> entities = new HashMap<ObjectType, Map<String, IAMEEEntity>>();
+        // Load DataCategories.
+        if (entityIds.containsKey(ObjectType.DC)) {
+            Map<String, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(entityIds.get(ObjectType.DC));
+            addDataCategories(entities, dataCategoriesMap);
+            // Pre-loading of EntityTags, LocaleNames & DataCategories.
+            if (loadEntityTags) {
+                tagService.loadEntityTagsForDataCategories(dataCategoriesMap.values());
+            }
+            if (loadMetadata) {
+                metadataService.loadMetadatasForDataCategories(dataCategoriesMap.values());
+            }
+            localeService.loadLocaleNamesForDataCategories(dataCategoriesMap.values());
+        }
+        // Load DataItems (NuDataItem).
+        Set<String> dataItemUids = new HashSet<String>();
+        if (entityIds.containsKey(ObjectType.NDI)) {
+            // Collate NuDataItem IDs.
+            Set<Long> dataItemIds = new HashSet<Long>();
+            if (entityIds.containsKey(ObjectType.NDI)) {
+                dataItemIds.addAll(entityIds.get(ObjectType.NDI));
+            }
+            // Load the items.
+            Map<String, NuDataItem> dataItemsMap = dataItemService.getDataItemMap(dataItemIds, loadItemValues);
+            // Collect UIDs.
+            for (NuDataItem dataItem : dataItemsMap.values()) {
+                dataItemUids.add(dataItem.getUid());
+            }
+            // Add to map.
+            addNuDataItems(entities, dataItemsMap);
+            // Pre-load Metadatas?
+            if (loadMetadata) {
+                metadataService.loadMetadatasForNuDataItems(dataItemsMap.values());
+            }
+        }
+        // Load DataItems (LegacyDataItem).
+        if (entityIds.containsKey(ObjectType.DI)) {
+            // Collate LegacyDataItem IDs.
+            Set<Long> dataItemIds = new HashSet<Long>();
+            if (entityIds.containsKey(ObjectType.DI)) {
+                dataItemIds.addAll(entityIds.get(ObjectType.DI));
+            }
+            // Load the items.
+            Map<String, DataItem> dataItemsMap = dataService.getDataItemMap(dataItemIds, loadItemValues);
+            // Exclude DI duplicates of NDI.
+            for (DataItem dataItem : dataItemsMap.values()) {
+                if (dataItemUids.contains(dataItem.getUid())) {
+                    dataItemsMap.remove(dataItem.getUid());
+                }
+            }
+            // Add to map.
+            addDataItems(entities, dataItemsMap);
+            // Pre-load Metadatas?
+            if (loadMetadata) {
+                metadataService.loadMetadatasForDataItems(dataItemsMap.values());
+            }
+        }
+        // Create result list in relevance order.
+        List<IAMEEEntity> results = new ArrayList<IAMEEEntity>();
+        for (Document document : resultsWrapper.getResults()) {
+            String entityUid = document.getField("entityUid").stringValue();
+            ObjectType entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
+            // Do we need to make NDI override DI?
+            if (entityType.equals(ObjectType.DI)) {
+                entityType = ObjectType.NDI;
+            }
+            // First attempt to find the result.
+            IAMEEEntity result = entities.containsKey(entityType) ? entities.get(entityType).get(entityUid) : null;
+            // If we failed to find an NDI, or we already have an NDI with the same identity   look for a DI instead.
+            if (((result == null) || results.contains(result)) && (entityType.equals(ObjectType.NDI))) {
+                // Second attempt to find the result.
+                result = entities.containsKey(ObjectType.DI) ? entities.get(ObjectType.DI).get(entityUid) : null;
+            }
+            // If we have a result and it is not a duplicate, add to the results list.
+            if (result != null) {
+                if (!results.contains(result)) {
+                    results.add(result);
+                }
+            } else {
+                log.warn("getEntities() Entity was missing: " + entityType + " / " + entityUid);
+            }
+        }
+        return new ResultsWrapper<IAMEEEntity>(results, resultsWrapper.isTruncated());
     }
 }

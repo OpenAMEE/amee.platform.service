@@ -12,8 +12,7 @@ import com.amee.domain.sheet.Choice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class DataItemService extends ItemService implements IDataItemService {
@@ -22,6 +21,7 @@ public class DataItemService extends ItemService implements IDataItemService {
     private DataItemServiceDAO dao;
 
     @Override
+    @SuppressWarnings(value = "unchecked")
     public List<NuDataItem> getDataItems(DataCategory dataCategory) {
         List<NuDataItem> dataItems = dao.getDataItems(dataCategory);
         loadItemValuesForItems((List) dataItems);
@@ -29,10 +29,32 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     @Override
+    @SuppressWarnings(value = "unchecked")
     public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
         List<NuDataItem> dataItems = dao.getDataItems(dataItemIds);
         loadItemValuesForItems((List) dataItems);
         return dataItems;
+    }
+
+    @Override
+    @SuppressWarnings(value = "unchecked")
+    public Map<String, NuDataItem> getDataItemMap(Set<Long> dataItemIds, boolean loadValues) {
+        Map<String, NuDataItem> dataItemMap = new HashMap<String, NuDataItem>();
+        Set<BaseItemValue> dataItemValues = new HashSet<BaseItemValue>();
+        // Load all NuDataItems and BaseItemValues, if required.
+        List<NuDataItem> dataItems = dao.getDataItems(dataItemIds);
+        if (loadValues) {
+            loadItemValuesForItems((List) dataItems);
+        }
+        // Add NuDataItems to map. Add BaseItemValue, if required.
+        for (NuDataItem dataItem : dataItems) {
+            dataItemMap.put(dataItem.getUid(), dataItem);
+            if (loadValues) {
+                dataItemValues.addAll(this.getItemValues(dataItem));
+            }
+        }
+        localeService.loadLocaleNamesForNuDataItems(dataItemMap.values(), dataItemValues);
+        return dataItemMap;
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.item.data.NuDataItem;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,7 @@ public class MetadataService implements IMetadataService, ApplicationListener {
                 }
             };
 
+    @Override
     public void onApplicationEvent(ApplicationEvent e) {
         if (e instanceof TransactionEvent) {
             TransactionEvent te = (TransactionEvent) e;
@@ -56,6 +58,7 @@ public class MetadataService implements IMetadataService, ApplicationListener {
         }
     }
 
+    @Override
     public Metadata getMetadataForEntity(IAMEEEntityReference entity, String name) {
         return getMetadatas(entity).get(name);
     }
@@ -87,6 +90,10 @@ public class MetadataService implements IMetadataService, ApplicationListener {
         loadMetadatas(ObjectType.DI, new HashSet<IAMEEEntityReference>(dataItems));
     }
 
+    public void loadMetadatasForNuDataItems(Collection<NuDataItem> dataItems) {
+        loadMetadatas(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
+    }
+
     public void loadMetadatasForItemValueDefinitions(Collection<ItemValueDefinition> itemValueDefinitions) {
         loadMetadatas(ObjectType.IVD, new HashSet<IAMEEEntityReference>(itemValueDefinitions));
     }
@@ -115,6 +122,7 @@ public class MetadataService implements IMetadataService, ApplicationListener {
         METADATAS.get().clear();
     }
 
+    @Override
     public void persist(Metadata metadata) {
         METADATAS.get().remove(metadata.getEntityReference().toString());
         dao.persist(metadata);

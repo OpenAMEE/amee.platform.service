@@ -6,6 +6,8 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.LocaleName;
+import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.NuDataItem;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,15 +130,26 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         loadLocaleNamesForDataItems(dataItems, true);
     }
 
-    public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems, boolean values) {
+    public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems, boolean loadValues) {
         loadLocaleNames(ObjectType.DI, new HashSet<IAMEEEntityReference>(dataItems));
-        loadLocaleNames(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
-        if (values) {
+        if (loadValues) {
             Set<IAMEEEntityReference> itemValueRefs = new HashSet<IAMEEEntityReference>();
             for (DataItem dataItem : dataItems) {
                 itemValueRefs.addAll(dataItem.getItemValues());
             }
             loadLocaleNames(ObjectType.IV, itemValueRefs);
+        }
+    }
+
+    public void loadLocaleNamesForNuDataItems(Collection<NuDataItem> dataItems) {
+        loadLocaleNamesForNuDataItems(dataItems, null);
+    }
+
+    public void loadLocaleNamesForNuDataItems(Collection<NuDataItem> dataItems, Set<BaseItemValue> values) {
+        loadLocaleNames(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
+        if ((values != null) && (!values.isEmpty())) {
+            Set<IAMEEEntityReference> itemValueRefs = new HashSet<IAMEEEntityReference>();
+            itemValueRefs.addAll(values);
             loadLocaleNames(ObjectType.DITV, itemValueRefs);
             loadLocaleNames(ObjectType.DITVH, itemValueRefs);
         }
