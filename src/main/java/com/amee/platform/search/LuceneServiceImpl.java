@@ -77,7 +77,7 @@ public class LuceneServiceImpl implements LuceneService {
     private boolean masterIndex = false;
 
     /**
-     * The time tof the most recent index write.
+     * The time of the most recent index write.
      */
     private long lastWriteTime = 0l;
 
