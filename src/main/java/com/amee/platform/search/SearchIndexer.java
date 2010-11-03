@@ -1,6 +1,7 @@
 package com.amee.platform.search;
 
 import com.amee.base.transaction.TransactionController;
+import com.amee.base.utils.ThreadBeanHolder;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
@@ -9,6 +10,7 @@ import com.amee.domain.data.ItemValue;
 import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationService;
+import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
 import com.amee.service.tag.TagService;
@@ -67,6 +69,9 @@ public class SearchIndexer implements Runnable {
     private DataService dataService;
 
     @Autowired
+    private DataItemService dataItemService;
+
+    @Autowired
     private MetadataService metadataService;
 
     @Autowired
@@ -108,6 +113,10 @@ public class SearchIndexer implements Runnable {
             searchLog.info(ctx.dataCategoryUid + "|Started processing DataCategory.");
             // Start persistence session.
             transactionController.beforeHandle(false);
+            // Some services are required in the thread.
+            ThreadBeanHolder.set("dataItemService", dataItemService);
+            ThreadBeanHolder.set("localeService", localeService);
+            ThreadBeanHolder.set("metadataService", metadataService);
             // Get the DataCategory and handle.
             dataCategory = dataService.getDataCategoryByUid(ctx.dataCategoryUid, null);
             if (dataCategory != null) {
