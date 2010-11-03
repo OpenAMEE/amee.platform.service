@@ -111,6 +111,8 @@ public class SearchIndexer implements Runnable {
     public void run() {
         try {
             searchLog.info(ctx.dataCategoryUid + "|Started processing DataCategory.");
+            // Clear thread locals.
+            ThreadBeanHolder.clear();
             // Start persistence session.
             transactionController.beforeHandle(false);
             // Some services are required in the thread.
@@ -129,7 +131,11 @@ public class SearchIndexer implements Runnable {
             searchLog.error(ctx.dataCategoryUid + "|Error processing DataCategory.");
             log.error("run() Caught Throwable: " + t.getMessage(), t);
         } finally {
+            // Always end the transaction.
             transactionController.end();
+            // Clear thread locals again.
+            ThreadBeanHolder.clear();
+            // We're done!
             searchLog.info(ctx.dataCategoryUid + "|Completed processing DataCategory.");
         }
     }
