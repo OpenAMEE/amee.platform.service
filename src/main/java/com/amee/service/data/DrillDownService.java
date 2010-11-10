@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -83,12 +84,14 @@ public class DrillDownService implements Serializable {
 
     public void clearDrillDownCache() {
         cacheHelper.clearCache("DrillDownChoices");
+        cacheHelper.clearCache("NuDrillDownChoices");
     }
 
     @SuppressWarnings("unchecked")
     protected List<Choice> getDataItemChoices(DataCategory dataCategory,
-        List<Choice> selections, List<Choice> drillDownChoices) {
+                                              List<Choice> selections, List<Choice> drillDownChoices) {
 
+        // Get legacy and nu choices.
         List<Choice> choices = ((List<Choice>) cacheHelper.getCacheable(
                 new DrillDownFactory(drillDownDao, dataCategory, selections, drillDownChoices)));
         List<Choice> nuChoices = ((List<Choice>) cacheHelper.getCacheable(
@@ -100,6 +103,8 @@ public class DrillDownService implements Serializable {
                 choices.add(choice);
             }
         }
+        Collections.sort(choices);
+
         return choices;
     }
 
