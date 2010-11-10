@@ -51,7 +51,7 @@ public class TagServiceDAO implements Serializable {
                         "LEFT JOIN t.entityTags et " +
                         "WHERE t.status != :trash " +
                         "AND et.status != :trash " +
-                        "GROUP BY t.tag " +
+                        "GROUP BY t.tag, t.uid " +
                         "ORDER BY t.tag");
         query.setParameter("trash", AMEEStatus.TRASH);
         query.setHint("org.hibernate.timeout", 5);
