@@ -20,6 +20,7 @@
 package com.amee.service.item;
 
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
@@ -140,9 +141,9 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate) {
+    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate) {
 
-        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+        if ((dataCategory == null) || (!dataCategory.isItemDefinitionPresent())) {
             return null;
         }
 
@@ -157,7 +158,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         // Get the NuProfileItems.
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(NuProfileItem.class);
-        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getEntityId()));
         criteria.add(Restrictions.eq("profile.id", profile.getId()));
         criteria.add(Restrictions.lt("startDate", profileDate));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
@@ -171,9 +172,9 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
     }
 
     @Override
-    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, StartEndDate startDate, StartEndDate endDate) {
+    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, StartEndDate startDate, StartEndDate endDate) {
 
-        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+        if ((dataCategory == null) || (!dataCategory.isItemDefinitionPresent())) {
             return null;
         }
 
@@ -184,7 +185,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         // Get the NuProfileItems.
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(NuProfileItem.class);
-        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getEntityId()));
         criteria.add(Restrictions.eq("profile.id", profile.getId()));
         if (endDate != null) {
             criteria.add(Restrictions.lt("startDate", endDate.toDate()));

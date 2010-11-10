@@ -1,5 +1,6 @@
 package com.amee.service.item;
 
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
@@ -27,9 +28,9 @@ public interface ProfileItemServiceDAO extends ItemServiceDAO {
 
     public int getProfileItemCount(Profile profile, DataCategory dataCategory);
 
-    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate);
+    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate);
 
-    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, StartEndDate startDate, StartEndDate endDate);
+    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, StartEndDate startDate, StartEndDate endDate);
 
     public boolean equivalentProfileItemExists(ProfileItem profileItem);
 

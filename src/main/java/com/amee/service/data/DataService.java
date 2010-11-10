@@ -22,10 +22,8 @@ package com.amee.service.data;
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
-import com.amee.domain.AMEEEntityReference;
-import com.amee.domain.AMEEStatus;
-import com.amee.domain.APIVersion;
-import com.amee.domain.ObjectType;
+import com.amee.domain.*;
+import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.*;
 import com.amee.domain.item.data.NuDataItem;
 import com.amee.service.BaseService;
@@ -69,6 +67,8 @@ public class DataService extends BaseService implements ApplicationListener {
 
     @Autowired
     private DataItemService dataItemService;
+
+    private CacheHelper cacheHelper = CacheHelper.getInstance();
 
     // Events
 
@@ -238,16 +238,22 @@ public class DataService extends BaseService implements ApplicationListener {
         return dao.getDataCategoriesForDataItemsModifiedWithin(modifiedSince, modifiedUntil);
     }
 
-    public List<DataCategory> getDataCategories(DataCategory dataCategory) {
-        return dao.getDataCategories(dataCategory);
+    @SuppressWarnings(value = "unchecked")
+    public List<IDataCategoryReference> getDataCategories(IDataCategoryReference dataCategoryReference) {
+        if (log.isDebugEnabled()) {
+            log.debug("getDataCategories() " + dataCategoryReference.getFullPath());
+        }
+        return (List<IDataCategoryReference>) cacheHelper.getCacheable(new DataCategoryChildrenFactory(dataCategoryReference, dao));
     }
 
-    public boolean hasDataCategories(DataCategory dataCategory, Collection<Long> dataCategoryIds) {
-        if (dataCategoryIds.contains(dataCategory.getId())) {
+    public boolean hasDataCategories(IDataCategoryReference dataCategoryReference, Collection<Long> dataCategoryIds) {
+        // Is a Data Category which is a direct Profile Item parent present?
+        if (dataCategoryIds.contains(dataCategoryReference.getEntityId())) {
             return true;
         }
-        for (DataCategory dc : getDataCategories(dataCategory)) {
-            if (dataCategoryIds.contains(dc.getId())) {
+        // Look further down in the tree.
+        for (IDataCategoryReference dc : getDataCategories(dataCategoryReference)) {
+            if (dataCategoryIds.contains(dc.getEntityId())) {
                 return true;
             }
             if (hasDataCategories(dc, dataCategoryIds)) {
@@ -304,6 +310,7 @@ public class DataService extends BaseService implements ApplicationListener {
         log.info("clearCaches() dataCategory: " + dataCategory.getUid());
         drillDownService.clearDrillDownCache();
         dao.invalidate(dataCategory);
+        cacheHelper.clearCache("DataCategoryChildren");
         // TODO: Metadata?
         // TODO: Locales?
         // TODO: What else?

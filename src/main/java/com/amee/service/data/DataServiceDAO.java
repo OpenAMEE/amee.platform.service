@@ -20,10 +20,7 @@
 package com.amee.service.data;
 
 import com.amee.base.domain.ResultsWrapper;
-import com.amee.domain.AMEEEntityReference;
-import com.amee.domain.AMEEStatus;
-import com.amee.domain.APIVersion;
-import com.amee.domain.ObjectType;
+import com.amee.domain.*;
 import com.amee.domain.data.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -239,18 +236,32 @@ public class DataServiceDAO implements Serializable {
                 .getResultList();
     }
 
+    /**
+     * Returns a List of IDataCategoryReferences whose parent matches the IDataCategoryReference supplied. Will
+     * exclude all Ecoinvent categories. 
+     *
+     * @param dataCategoryReference
+     * @return
+     */
     @SuppressWarnings(value = "unchecked")
-    public List<DataCategory> getDataCategories(DataCategory dataCategory) {
-        return (List<DataCategory>) entityManager.createQuery(
+    public List<IDataCategoryReference> getDataCategories(IDataCategoryReference dataCategoryReference) {
+        List<IDataCategoryReference> dataCategoriesReferences = new ArrayList<IDataCategoryReference>();
+        List<DataCategory> dataCategories = (List<DataCategory>) entityManager.createQuery(
                 "from DataCategory " +
                         "WHERE dataCategory.id = :dataCategoryId " +
                         "AND status != :trash " +
                         "ORDER BY lower(path)")
-                .setParameter("dataCategoryId", dataCategory.getId())
+                .setParameter("dataCategoryId", dataCategoryReference.getEntityId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
+        for (DataCategory dc : dataCategories) {
+            if (!dc.getFullPath().equalsIgnoreCase("/lca/ecoinvent")) {
+                dataCategoriesReferences.add(new DataCategoryReference(dc));
+            }
+        }
+        return dataCategoriesReferences;
     }
 
     @SuppressWarnings(value = "unchecked")

@@ -20,6 +20,7 @@
 package com.amee.service.profile;
 
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
 import com.amee.domain.data.DataCategory;
@@ -200,9 +201,9 @@ public class ProfileServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected List<ProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate) {
+    protected List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate) {
 
-        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+        if ((dataCategory == null) || (!dataCategory.isItemDefinitionPresent())) {
             return null;
         }
 
@@ -223,7 +224,7 @@ public class ProfileServiceDAO implements Serializable {
                         "AND pi.profile.id = :profileId " +
                         "AND pi.startDate < :profileDate " +
                         "AND pi.status != :trash ")
-                .setParameter("dataCategoryId", dataCategory.getId())
+                .setParameter("dataCategoryId", dataCategory.getEntityId())
                 .setParameter("profileId", profile.getId())
                 .setParameter("profileDate", profileDate)
                 .setParameter("trash", AMEEStatus.TRASH)

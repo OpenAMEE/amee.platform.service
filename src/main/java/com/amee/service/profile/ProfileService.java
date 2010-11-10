@@ -4,6 +4,7 @@ import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.APIVersion;
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
 import com.amee.domain.cache.CacheableFactory;
@@ -147,7 +148,7 @@ public class ProfileService extends BaseService {
      * @param date         - the date context
      * @return the active {@link ProfileItem} collection
      */
-    public List<ProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date date) {
+    public List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date date) {
         Set<String> profileItemUids = new HashSet<String>();
         List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
         for (NuProfileItem profileItem : profileItemService.getProfileItems(profile, dataCategory, date)) {
@@ -334,7 +335,7 @@ public class ProfileService extends BaseService {
 
     // Profile DataCategories
 
-    public Collection<Long> getProfileDataCategoryIds(Profile profile) {
+    public Set<Long> getProfileDataCategoryIds(Profile profile) {
         Set<Long> dataCategoryIds = new HashSet<Long>();
         dataCategoryIds.addAll(dao.getProfileDataCategoryIds(profile));
         dataCategoryIds.addAll(profileItemService.getProfileDataCategoryIds(profile));
