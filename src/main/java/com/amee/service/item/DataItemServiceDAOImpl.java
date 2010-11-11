@@ -20,7 +20,7 @@
 package com.amee.service.item;
 
 import com.amee.domain.AMEEStatus;
-import com.amee.domain.data.DataCategory;
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.*;
@@ -51,10 +51,10 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public List<NuDataItem> getDataItems(DataCategory dataCategory) {
+    public List<NuDataItem> getDataItems(IDataCategoryReference dataCategory) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(NuDataItem.class);
-        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getId()));
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getEntityId()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
     }
@@ -72,12 +72,12 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public NuDataItem getDataItemByPath(DataCategory parent, String path) {
+    public NuDataItem getDataItemByPath(IDataCategoryReference parent, String path) {
         NuDataItem dataItem = null;
         if ((parent != null) && !StringUtils.isBlank(path)) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(NuDataItem.class);
-            criteria.add(Restrictions.eq("dataCategory.id", parent.getId()));
+            criteria.add(Restrictions.eq("dataCategory.id", parent.getEntityId()));
             criteria.add(Restrictions.eq("path", path));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             List<NuDataItem> items = criteria.list();

@@ -1,7 +1,6 @@
 package com.amee.service.item;
 
-import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItemNumberValue;
 import com.amee.domain.item.data.DataItemTextValue;
@@ -12,7 +11,7 @@ import java.util.Set;
 
 public interface DataItemServiceDAO extends ItemServiceDAO {
 
-    public List<NuDataItem> getDataItems(DataCategory dataCategory);
+    public List<NuDataItem> getDataItems(IDataCategoryReference dataCategory);
 
     public List<NuDataItem> getDataItems(Set<Long> dataItemIds);
 
@@ -26,5 +25,5 @@ public interface DataItemServiceDAO extends ItemServiceDAO {
 
     public void persist(NuDataItem dataItem);
 
-    public NuDataItem getDataItemByPath(DataCategory parent, String path);
+    public NuDataItem getDataItemByPath(IDataCategoryReference parent, String path);
 }

@@ -66,12 +66,12 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected DataCategory getDataCategoryByPath(DataCategory parent, String path) {
+    protected DataCategory getDataCategoryByPath(IDataCategoryReference parent, String path) {
         DataCategory dataCategory = null;
         if ((parent != null) && !StringUtils.isBlank(path)) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(DataCategory.class);
-            criteria.add(Restrictions.eq("dataCategory.id", parent.getId()));
+            criteria.add(Restrictions.eq("dataCategory.id", parent.getEntityId()));
             criteria.add(Restrictions.ilike("path", path, MatchMode.EXACT));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setCacheable(true);
@@ -89,7 +89,7 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected DataCategory getDataCategoryByUid(String uid) {
+    protected DataCategory getDataCategoryByUidWithAnyStatus(String uid) {
         DataCategory dataCategory = null;
         if (!StringUtils.isBlank(uid)) {
             Session session = (Session) entityManager.getDelegate();
@@ -105,6 +105,14 @@ public class DataServiceDAO implements Serializable {
             }
         }
         return dataCategory;
+    }
+
+    public DataCategory getDataCategoryByUidWithActiveStatus(String uid) {
+        return getDataCategoryByUidWithStatus(uid, AMEEStatus.ACTIVE);
+    }
+
+    public DataCategory getDataCategoryByUidWithStatus(String uid, AMEEStatus status) {
+        return getDataCategoryWithStatus(getDataCategoryByUidWithAnyStatus(uid), status);
     }
 
     @SuppressWarnings(value = "unchecked")
@@ -155,6 +163,52 @@ public class DataServiceDAO implements Serializable {
             }
         }
         return dataCategory;
+    }
+
+    /**
+     * Return the supplied DataCategory if the status matches.
+     *
+     * @param dataCategory to check status against
+     * @param status       status to check
+     * @return the supplied DataCategory if it matches the status, otherwise null
+     */
+    public DataCategory getDataCategoryWithStatus(DataCategory dataCategory, AMEEStatus status) {
+        if (dataCategory != null) {
+            // Was a specific status requested?
+            if (status != null) {
+                // Specific status requested.
+                boolean trashed = dataCategory.isTrash();
+                if (status.equals(AMEEStatus.TRASH) && trashed) {
+                    // TRASHed status requested and DataCategory IS trashed.
+                    return dataCategory;
+                } else if (!trashed) {
+                    // ACTIVE or DEPRECATED status requested and DataCategory is NOT trashed.
+                    return dataCategory;
+                } else {
+                    // Not found.
+                    return null;
+                }
+            } else {
+                // Allow any status.
+                return dataCategory;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get full DataCategory entity based on the supplied IDataCategoryReference.
+     *
+     * @param dataCategory IDataCategoryReference to fetch a DataCategory for
+     * @return the DataCategory matching the IDataCategoryReference
+     */
+    public DataCategory getDataCategory(IDataCategoryReference dataCategory) {
+        DataCategory dc = getDataCategoryWithStatus(entityManager.find(DataCategory.class, dataCategory.getEntityId()), AMEEStatus.ACTIVE);
+        if (dc == null) {
+            throw new IllegalStateException("DataCategory should not be null.");
+        }
+        return dc;
     }
 
     @SuppressWarnings(value = "unchecked")
@@ -238,14 +292,14 @@ public class DataServiceDAO implements Serializable {
 
     /**
      * Returns a List of IDataCategoryReferences whose parent matches the IDataCategoryReference supplied. Will
-     * exclude all Ecoinvent categories. 
+     * exclude all Ecoinvent categories.
      *
      * @param dataCategoryReference
      * @return
      */
     @SuppressWarnings(value = "unchecked")
-    public List<IDataCategoryReference> getDataCategories(IDataCategoryReference dataCategoryReference) {
-        List<IDataCategoryReference> dataCategoriesReferences = new ArrayList<IDataCategoryReference>();
+    public Map<String, IDataCategoryReference> getDataCategories(IDataCategoryReference dataCategoryReference) {
+        Map<String, IDataCategoryReference> dataCategoriesReferences = new TreeMap<String, IDataCategoryReference>();
         List<DataCategory> dataCategories = (List<DataCategory>) entityManager.createQuery(
                 "from DataCategory " +
                         "WHERE dataCategory.id = :dataCategoryId " +
@@ -257,9 +311,7 @@ public class DataServiceDAO implements Serializable {
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
         for (DataCategory dc : dataCategories) {
-            if (!dc.getFullPath().equalsIgnoreCase("/lca/ecoinvent")) {
-                dataCategoriesReferences.add(new DataCategoryReference(dc));
-            }
+            dataCategoriesReferences.put(dc.getPath(), new DataCategoryReference(dc));
         }
         return dataCategoriesReferences;
     }
@@ -401,8 +453,8 @@ public class DataServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected List<DataItem> getDataItems(DataCategory dataCategory) {
-        log.debug("getDataItems() Start: " + dataCategory.toString());
+    protected List<DataItem> getDataItems(IDataCategoryReference dc) {
+        log.debug("getDataItems() Start: " + dc.toString());
         List<LegacyDataItem> legacyDataItems = entityManager.createQuery(
                 "SELECT DISTINCT di " +
                         "FROM LegacyDataItem di " +
@@ -410,13 +462,13 @@ public class DataServiceDAO implements Serializable {
                         "WHERE di.itemDefinition.id = :itemDefinitionId " +
                         "AND di.dataCategory.id = :dataCategoryId " +
                         "AND di.status != :trash")
-                .setParameter("itemDefinitionId", dataCategory.getItemDefinition().getId())
-                .setParameter("dataCategoryId", dataCategory.getId())
+                .setParameter("itemDefinitionId", getDataCategory(dc).getItemDefinition().getId())
+                .setParameter("dataCategoryId", dc.getEntityId())
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
-        log.debug("getDataItems() Done: " + dataCategory.toString() + " (" + legacyDataItems.size() + ")");
+        log.debug("getDataItems() Done: " + dc.toString() + " (" + legacyDataItems.size() + ")");
         // Convert from legacy to adapter.
         List<DataItem> dataItems = new ArrayList<DataItem>();
         for (LegacyDataItem legacyDataItem : legacyDataItems) {

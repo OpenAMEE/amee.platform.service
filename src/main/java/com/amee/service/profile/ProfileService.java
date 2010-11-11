@@ -187,7 +187,7 @@ public class ProfileService extends BaseService {
      */
     public List<ProfileItem> getProfileItems(
             Profile profile,
-            DataCategory dataCategory,
+            IDataCategoryReference dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
         Set<String> profileItemUids = new HashSet<String>();

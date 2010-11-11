@@ -19,6 +19,7 @@
  */
 package com.amee.service.data;
 
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
@@ -37,6 +38,9 @@ import java.util.List;
 public class DrillDownService implements Serializable {
 
     @Autowired
+    private DataServiceDAO dataServiceDao;
+
+    @Autowired
     private DrillDownDAO drillDownDao;
 
     @Autowired
@@ -44,7 +48,10 @@ public class DrillDownService implements Serializable {
 
     private CacheHelper cacheHelper = CacheHelper.getInstance();
 
-    public Choices getChoices(DataCategory dataCategory, List<Choice> selections) {
+    public Choices getChoices(IDataCategoryReference dc, List<Choice> selections) {
+
+        // Get Data Category.
+        DataCategory dataCategory = dataServiceDao.getDataCategory(dc);
 
         // we can do a drill down if an itemDefinition is attached to current dataCategory
         ItemDefinition itemDefinition = dataCategory.getItemDefinition();
@@ -88,7 +95,7 @@ public class DrillDownService implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    protected List<Choice> getDataItemChoices(DataCategory dataCategory,
+    protected List<Choice> getDataItemChoices(IDataCategoryReference dataCategory,
                                               List<Choice> selections, List<Choice> drillDownChoices) {
 
         // Get legacy and nu choices.

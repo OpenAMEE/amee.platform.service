@@ -247,11 +247,11 @@ public class ProfileServiceDAO implements Serializable {
     @SuppressWarnings(value = "unchecked")
     protected List<ProfileItem> getProfileItems(
             Profile profile,
-            DataCategory dataCategory,
+            IDataCategoryReference dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
 
-        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+        if ((dataCategory == null) || (!dataCategory.isItemDefinitionPresent())) {
             return null;
         }
 
@@ -275,7 +275,7 @@ public class ProfileServiceDAO implements Serializable {
 
         // Create Query.
         Query query = entityManager.createQuery(queryBuilder.toString());
-        query.setParameter("dataCategoryId", dataCategory.getId());
+        query.setParameter("dataCategoryId", dataCategory.getEntityId());
         query.setParameter("profileId", profile.getId());
         query.setParameter("startDate", startDate.toDate());
         if (endDate != null) {

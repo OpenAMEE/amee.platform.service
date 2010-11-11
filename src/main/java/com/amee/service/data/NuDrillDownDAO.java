@@ -22,6 +22,7 @@
 package com.amee.service.data;
 
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.LocaleHolder;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
@@ -33,6 +34,7 @@ import org.hibernate.Hibernate;
 import org.hibernate.HibernateException;
 import org.hibernate.SQLQuery;
 import org.hibernate.Session;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
@@ -62,6 +64,9 @@ class NuDrillDownDAO implements Serializable {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Autowired
+    private DataServiceDAO dataServiceDao;
+
     /**
      * Retrieves a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing values for a user to select. The value choices
      * are appropriate for the current level within the 'drill down' given the supplied {@link com.amee.domain.data.DataCategory},
@@ -74,19 +79,22 @@ class NuDrillDownDAO implements Serializable {
      * @return a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing values for a user to select
      */
     public List<Choice> getDataItemValueChoices(
-            DataCategory dataCategory,
+            IDataCategoryReference dc,
             String path,
             List<Choice> selections) {
 
         Collection<Long> dataItemIds;
 
         // check arguments
-        if ((dataCategory == null) ||
-                (dataCategory.getItemDefinition() == null) ||
+        if ((dc == null) ||
+                (!dc.isItemDefinitionPresent()) ||
                 (selections == null) ||
                 (path == null)) {
             throw new IllegalArgumentException("A required argument is missing.");
         }
+
+        // Get the Data Category.
+        DataCategory dataCategory = dataServiceDao.getDataCategory(dc);
 
         // get choices
         List<Choice> choices = new ArrayList<Choice>();
@@ -103,7 +111,7 @@ class NuDrillDownDAO implements Serializable {
                 }
             } else {
                 // get choices for top level (no selections)
-                Long dataCategoryId = dataCategory.getId();
+                Long dataCategoryId = dataCategory.getEntityId();
                 Long itemDefinitionId = itemDefinition.getId();
                 Long itemValueDefinitionId = itemValueDefinition.getId();
                 for (String value : getDataItemValues(dataCategoryId, itemDefinitionId, itemValueDefinitionId)) {
@@ -127,12 +135,15 @@ class NuDrillDownDAO implements Serializable {
      * @param selections   the current user selections for a drill down
      * @return a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing UIDs for a user to select
      */
-    public List<Choice> getDataItemUIDChoices(DataCategory dataCategory, List<Choice> selections) {
+    public List<Choice> getDataItemUIDChoices(IDataCategoryReference dc, List<Choice> selections) {
 
         // check arguments
-        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
+        if ((dc == null) || (!dc.isItemDefinitionPresent())) {
             throw new IllegalArgumentException("A required argument is missing.");
         }
+
+        // Get the Data Category.
+        DataCategory dataCategory = dataServiceDao.getDataCategory(dc);
 
         // get choices
         List<Choice> choices = new ArrayList<Choice>();
@@ -148,7 +159,7 @@ class NuDrillDownDAO implements Serializable {
             }
         } else {
             // get choices for top level (no selections)
-            for (String value : getDataItemUIDs(dataCategory.getId(), itemDefinition.getId())) {
+            for (String value : getDataItemUIDs(dataCategory.getEntityId(), itemDefinition.getId())) {
                 choices.add(new Choice(value));
             }
         }
@@ -316,14 +327,17 @@ class NuDrillDownDAO implements Serializable {
         }
     }
 
-    private Collection<Long> getDataItemIds(DataCategory dataCategory, List<Choice> selections) {
+    private Collection<Long> getDataItemIds(IDataCategoryReference dc, List<Choice> selections) {
 
         // check arguments
-        if ((dataCategory == null) ||
-                (dataCategory.getItemDefinition() == null) ||
+        if ((dc == null) ||
+                (!dc.isItemDefinitionPresent()) ||
                 (selections == null)) {
             throw new IllegalArgumentException("A required argument is missing.");
         }
+
+        // Get the Data Category.
+        DataCategory dataCategory = dataServiceDao.getDataCategory(dc);
 
         // iterate over selections and fetch DataItem IDs
         Set<Long> allDataItemIds = new HashSet<Long>();
