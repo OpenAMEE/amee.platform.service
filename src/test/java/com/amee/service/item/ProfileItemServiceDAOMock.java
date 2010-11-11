@@ -1,5 +1,6 @@
 package com.amee.service.item;
 
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
@@ -55,12 +56,12 @@ public class ProfileItemServiceDAOMock implements ProfileItemServiceDAO {
     }
 
     @Override
-    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate) {
+    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, StartEndDate startDate, StartEndDate endDate) {
+    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, StartEndDate startDate, StartEndDate endDate) {
         throw new UnsupportedOperationException();
     }
 

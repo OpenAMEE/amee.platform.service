@@ -22,10 +22,8 @@ package com.amee.service.data;
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
-import com.amee.domain.AMEEEntityReference;
-import com.amee.domain.AMEEStatus;
-import com.amee.domain.APIVersion;
-import com.amee.domain.ObjectType;
+import com.amee.domain.*;
+import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.*;
 import com.amee.domain.item.data.NuDataItem;
 import com.amee.service.BaseService;
@@ -70,6 +68,8 @@ public class DataService extends BaseService implements ApplicationListener {
     @Autowired
     private DataItemService dataItemService;
 
+    private CacheHelper cacheHelper = CacheHelper.getInstance();
+
     // Events
 
     public void onApplicationEvent(ApplicationEvent event) {
@@ -96,8 +96,8 @@ public class DataService extends BaseService implements ApplicationListener {
         return dao.getRootDataCategory();
     }
 
-    public DataCategory getDataCategoryByPath(DataCategory parent, String path) {
-        return dao.getDataCategoryByPath(parent, path);
+    public IDataCategoryReference getDataCategoryByPath(IDataCategoryReference parent, String path) {
+        return getDataCategories(parent).get(path);
     }
 
     public DataCategory getDataCategoryByIdentifier(String identifier) {
@@ -120,52 +120,37 @@ public class DataService extends BaseService implements ApplicationListener {
     }
 
     public DataCategory getDataCategoryByWikiName(String wikiName, AMEEStatus status) {
-        return getDataCategoryWithStatus(dao.getDataCategoryByWikiName(wikiName, status), status);
+        return dao.getDataCategoryWithStatus(dao.getDataCategoryByWikiName(wikiName, status), status);
     }
 
     public DataCategory getDataCategoryByUid(String uid) {
-        return getDataCategoryByUid(uid, AMEEStatus.ACTIVE);
+        return dao.getDataCategoryByUidWithActiveStatus(uid);
     }
 
     public DataCategory getDataCategoryByUid(String uid, AMEEStatus status) {
-        return getDataCategoryWithStatus(dao.getDataCategoryByUid(uid), status);
+        return dao.getDataCategoryByUidWithStatus(uid, status);
     }
 
-    public DataCategory getDataCategoryWithStatus(DataCategory dataCategory, AMEEStatus status) {
-        if (dataCategory != null) {
-            // Was a specific status requested?
-            if (status != null) {
-                // Specific status requested.
-                boolean trashed = dataCategory.isTrash();
-                if (status.equals(AMEEStatus.TRASH) && trashed) {
-                    // TRASHed status requested and DataCategory IS trashed.
-                    return dataCategory;
-                } else if (!trashed) {
-                    // ACTIVE or DEPRECATED status requested and DataCategory is NOT trashed.
-                    return dataCategory;
-                } else {
-                    // Not found.
-                    return null;
-                }
-            } else {
-                // Allow any status.
-                return dataCategory;
-            }
-        } else {
-            return null;
-        }
+    /**
+     * Get full DataCategory entity based on the supplied IDataCategoryReference.
+     *
+     * @param dataCategory IDataCategoryReference to fetch a DataCategory for
+     * @return the DataCategory matching the IDataCategoryReference
+     */
+    public DataCategory getDataCategory(IDataCategoryReference dataCategory) {
+        return dao.getDataCategory(dataCategory);
     }
 
-    public DataCategory getDataCategoryByFullPath(String path) {
-        DataCategory dataCategory = null;
+    public IDataCategoryReference getDataCategoryByFullPath(String path) {
+        IDataCategoryReference dataCategory = null;
         if (!StringUtils.isBlank(path)) {
             dataCategory = getDataCategoryByFullPath(new ArrayList<String>(Arrays.asList(path.split("/"))));
         }
         return dataCategory;
     }
 
-    public DataCategory getDataCategoryByFullPath(List<String> segments) {
-        DataCategory dataCategory = null;
+    public IDataCategoryReference getDataCategoryByFullPath(List<String> segments) {
+        IDataCategoryReference dataCategory = null;
         if ((segments != null) && !segments.isEmpty()) {
             // Start with the root DataCategory.
             dataCategory = getRootDataCategory();
@@ -238,16 +223,22 @@ public class DataService extends BaseService implements ApplicationListener {
         return dao.getDataCategoriesForDataItemsModifiedWithin(modifiedSince, modifiedUntil);
     }
 
-    public List<DataCategory> getDataCategories(DataCategory dataCategory) {
-        return dao.getDataCategories(dataCategory);
+    @SuppressWarnings(value = "unchecked")
+    public Map<String, IDataCategoryReference> getDataCategories(IDataCategoryReference dataCategoryReference) {
+        if (log.isDebugEnabled()) {
+            log.debug("getDataCategories() " + dataCategoryReference.getFullPath());
+        }
+        return (Map<String, IDataCategoryReference>) cacheHelper.getCacheable(new DataCategoryChildrenFactory(dataCategoryReference, dao));
     }
 
-    public boolean hasDataCategories(DataCategory dataCategory, Collection<Long> dataCategoryIds) {
-        if (dataCategoryIds.contains(dataCategory.getId())) {
+    public boolean hasDataCategories(IDataCategoryReference dataCategoryReference, Collection<Long> dataCategoryIds) {
+        // Is a Data Category which is a direct Profile Item parent present?
+        if (dataCategoryIds.contains(dataCategoryReference.getEntityId())) {
             return true;
         }
-        for (DataCategory dc : getDataCategories(dataCategory)) {
-            if (dataCategoryIds.contains(dc.getId())) {
+        // Look deeper into the tree.
+        for (IDataCategoryReference dc : getDataCategories(dataCategoryReference).values()) {
+            if (dataCategoryIds.contains(dc.getEntityId())) {
                 return true;
             }
             if (hasDataCategories(dc, dataCategoryIds)) {
@@ -304,6 +295,7 @@ public class DataService extends BaseService implements ApplicationListener {
         log.info("clearCaches() dataCategory: " + dataCategory.getUid());
         drillDownService.clearDrillDownCache();
         dao.invalidate(dataCategory);
+        cacheHelper.clearCache("DataCategoryChildren");
         // TODO: Metadata?
         // TODO: Locales?
         // TODO: What else?
@@ -381,11 +373,11 @@ public class DataService extends BaseService implements ApplicationListener {
         return dataItems;
     }
 
-    public List<DataItem> getDataItems(DataCategory dataCategory) {
+    public List<DataItem> getDataItems(IDataCategoryReference dataCategory) {
         return getDataItems(dataCategory, true);
     }
 
-    public List<DataItem> getDataItems(DataCategory dataCategory, boolean checkDataItems) {
+    public List<DataItem> getDataItems(IDataCategoryReference dataCategory, boolean checkDataItems) {
         Set<String> dataItemUids = new HashSet<String>();
         List<DataItem> dataItems = new ArrayList<DataItem>();
         for (NuDataItem nuDataItem : dataItemService.getDataItems(dataCategory)) {
