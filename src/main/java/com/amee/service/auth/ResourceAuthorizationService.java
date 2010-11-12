@@ -1,5 +1,6 @@
 package com.amee.service.auth;
 
+import com.amee.base.resource.NotAuthorizedException;
 import com.amee.domain.AMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.auth.AccessSpecification;
@@ -7,6 +8,8 @@ import com.amee.domain.auth.AuthorizationContext;
 import com.amee.domain.auth.PermissionEntry;
 import com.amee.domain.auth.User;
 import com.amee.domain.path.Pathable;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,8 @@ import java.util.List;
 @Service
 @Scope("prototype")
 public class ResourceAuthorizationService {
+
+    private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
     private AuthenticationService authenticationService;
@@ -36,12 +41,48 @@ public class ResourceAuthorizationService {
     private AuthorizationContext authorizationContext;
 
     /**
-     * Returns true if the user authorized to get (GET) a representation for the resource.
+     * A utility method wrapping up a setUserByUid, setResource and isAuthorizedForBuild call sequence. Will cause
+     * a NotAuthorizedException if the user is not authorized to build (GET) the resource.
      *
-     * @return true if the user authorized to get (GET) a representation for the resource
+     * @param userUid  to authorize
+     * @param resource to authorize against
      */
-    public boolean isAuthorizedForGet() {
-        return isAuthorized(getGetAccessSpecifications());
+    public void ensureAuthorizedForBuild(String userUid, Pathable resource) {
+        setUserByUid(userUid);
+        setResource(resource);
+        if (!isAuthorizedForBuild()) {
+            if (log.isDebugEnabled()) {
+                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
+            }
+            throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
+        }
+    }
+
+    /**
+     * Returns true if the user authorized to build (GET) a representation for the resource.
+     *
+     * @return true if the user authorized to build (GET) a representation for the resource
+     */
+    public boolean isAuthorizedForBuild() {
+        return isAuthorized(getBuildAccessSpecifications());
+    }
+
+    /**
+     * A utility method wrapping up a setUserByUid, setResource and isAuthorizedForAccept call sequence. Will cause
+     * a NotAuthorizedException if the user is not authorized to accept (POST) a resource.
+     *
+     * @param userUid  to authorize
+     * @param resource to authorize against
+     */
+    public void ensureAuthorizedForAccept(String userUid, Pathable resource) {
+        setUserByUid(userUid);
+        setResource(resource);
+        if (!isAuthorizedForAccept()) {
+            if (log.isDebugEnabled()) {
+                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
+            }
+            throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
+        }
     }
 
     /**
@@ -54,12 +95,30 @@ public class ResourceAuthorizationService {
     }
 
     /**
-     * Returns true if the user authorized to store (POST) a representation for this resource.
+     * A utility method wrapping up a setUserByUid, setResource and isAuthorizedForModify call sequence. Will cause
+     * a NotAuthorizedException if the user is not authorized to modify (PUT) a resource.
      *
-     * @return true if the user authorized to store (POST) a representation for this resource
+     * @param userUid  to authorize
+     * @param resource to authorize against
      */
-    public boolean isAuthorizedForStore() {
-        return isAuthorized(getStoreAccessSpecifications());
+    public void ensureAuthorizedForModify(String userUid, Pathable resource) {
+        setUserByUid(userUid);
+        setResource(resource);
+        if (!isAuthorizedForModify()) {
+            if (log.isDebugEnabled()) {
+                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
+            }
+            throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
+        }
+    }
+
+    /**
+     * Returns true if the user authorized to modify (POST) a representation for this resource.
+     *
+     * @return true if the user authorized to modify (POST) a representation for this resource
+     */
+    public boolean isAuthorizedForModify() {
+        return isAuthorized(getModifyAccessSpecifications());
     }
 
     /**
@@ -72,13 +131,13 @@ public class ResourceAuthorizationService {
     }
 
     /**
-     * Get the AccessSpecifications for GET requests. Creates an AccessSpecification for each entity
+     * Get the AccessSpecifications for build (GET) requests. Creates an AccessSpecification for each entity
      * from getEntities with VIEW as the PermissionEntry. This specifies that principals must have VIEW permissions
      * for all the entities.
      *
-     * @return AccessSpecifications for GET requests
+     * @return AccessSpecifications for build requests
      */
-    public List<AccessSpecification> getGetAccessSpecifications() {
+    public List<AccessSpecification> getBuildAccessSpecifications() {
         List<AccessSpecification> accessSpecifications = new ArrayList<AccessSpecification>();
         for (IAMEEEntityReference entity : getDistinctEntities()) {
             accessSpecifications.add(new AccessSpecification(entity, PermissionEntry.VIEW));
@@ -87,36 +146,36 @@ public class ResourceAuthorizationService {
     }
 
     /**
-     * Get the AccessSpecifications for POST requests. Updates the last entry from getGetAccessSpecifications with
+     * Get the AccessSpecifications for accept (POST) requests. Updates the last entry from getBuildAccessSpecifications with
      * the CREATE PermissionEntry. This specifies that principals must have VIEW permissions
      * for all the entities and VIEW & CREATE for the last entity.
      *
      * @return AccessSpecifications for POST requests
      */
     public List<AccessSpecification> getAcceptAccessSpecifications() {
-        return updateLastAccessSpecificationWithPermissionEntry(getGetAccessSpecifications(), PermissionEntry.CREATE);
+        return updateLastAccessSpecificationWithPermissionEntry(getBuildAccessSpecifications(), PermissionEntry.CREATE);
     }
 
     /**
-     * Get the AccessSpecifications for PUT requests. Updates the last entry from getGetAccessSpecifications with
+     * Get the AccessSpecifications to modify (PUT) requests. Updates the last entry from getBuildAccessSpecifications with
      * the MODIFY PermissionEntry. This specifies that principals must have VIEW permissions
      * for all the entities and VIEW & MODIFY for the last entity.
      *
      * @return AccessSpecifications for PUT requests
      */
-    public List<AccessSpecification> getStoreAccessSpecifications() {
-        return updateLastAccessSpecificationWithPermissionEntry(getGetAccessSpecifications(), PermissionEntry.MODIFY);
+    public List<AccessSpecification> getModifyAccessSpecifications() {
+        return updateLastAccessSpecificationWithPermissionEntry(getBuildAccessSpecifications(), PermissionEntry.MODIFY);
     }
 
     /**
-     * Get the AccessSpecifications for DELETE requests. Updates the last entry from getGetAccessSpecifications with
+     * Get the AccessSpecifications for remove (DELETE) requests. Updates the last entry from getBuildAccessSpecifications with
      * the DELETE PermissionEntry. This specifies that principals must have VIEW permissions
      * for all the entities and VIEW & DELETE for the last entity.
      *
      * @return AccessSpecifications for DELETE requests
      */
     public List<AccessSpecification> getRemoveAccessSpecifications() {
-        return updateLastAccessSpecificationWithPermissionEntry(getGetAccessSpecifications(), PermissionEntry.DELETE);
+        return updateLastAccessSpecificationWithPermissionEntry(getBuildAccessSpecifications(), PermissionEntry.DELETE);
     }
 
     /**
@@ -145,9 +204,12 @@ public class ResourceAuthorizationService {
      * @return a list of principals
      */
     public List<AMEEEntity> getPrincipals() {
+        if (user == null) {
+            throw new IllegalStateException("User was null.");
+        }
         List<AMEEEntity> principals = new ArrayList<AMEEEntity>();
-        principals.addAll(groupService.getGroupsForPrincipal(getActiveUser()));
-        principals.add(getActiveUser());
+        principals.addAll(groupService.getGroupsForPrincipal(user));
+        principals.add(user);
         return principals;
     }
 
@@ -158,6 +220,9 @@ public class ResourceAuthorizationService {
      * @return list of entities required for authorization
      */
     public List<IAMEEEntityReference> getEntities() {
+        if (resource == null) {
+            throw new IllegalStateException("Resource was null.");
+        }
         return resource.getHierarchy();
     }
 
