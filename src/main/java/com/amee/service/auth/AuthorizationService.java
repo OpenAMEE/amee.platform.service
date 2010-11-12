@@ -24,11 +24,7 @@ package com.amee.service.auth;
 import com.amee.domain.AMEEEntity;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
-import com.amee.domain.auth.AccessSpecification;
-import com.amee.domain.auth.AuthorizationContext;
-import com.amee.domain.auth.Permission;
-import com.amee.domain.auth.PermissionEntry;
-import com.amee.domain.auth.User;
+import com.amee.domain.auth.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,6 +98,7 @@ public class AuthorizationService implements Serializable {
             log.debug("isAuthorized() - ALLOW (super-user)");
             authorizationContext.setSuperUser(true);
             authorizationContext.setAuthorized(true);
+            authorizationContext.addAllowReason("isSuperUser");
             return;
         }
 
@@ -109,6 +106,7 @@ public class AuthorizationService implements Serializable {
         if (authorizationContext.getAccessSpecifications().isEmpty()) {
             log.debug("isAuthorized() - DENY (not permitted)");
             authorizationContext.setAuthorized(false);
+            authorizationContext.addDenyReason("noAccessSpecifications");
             return;
         }
 
@@ -123,7 +121,7 @@ public class AuthorizationService implements Serializable {
         }
 
         // Was an authorization decision made?
-        authorizationContext.setAuthorized(isAuthorized(allow));
+        authorizationContext.setAuthorized(isAuthorized(authorizationContext, allow));
     }
 
     /**
@@ -147,6 +145,7 @@ public class AuthorizationService implements Serializable {
         // Always ALLOW a super-user.
         if (authorizationContext.isSuperUser()) {
             log.debug("isAuthorized() - ALLOW (super-user)");
+            authorizationContext.addAllowReason("isSuperUser");
             return true;
         }
 
@@ -155,6 +154,7 @@ public class AuthorizationService implements Serializable {
 
         // We must have an AccessSpecification to work with.
         if (lastAccessSpecification == null) {
+            authorizationContext.addDenyReason("noAccessSpecification");
             return false;
         }
 
@@ -173,7 +173,7 @@ public class AuthorizationService implements Serializable {
                 new HashSet<PermissionEntry>(authorizationContext.getEntries()));
 
         // Was an authorization decision made?
-        return isAuthorized(allow);
+        return isAuthorized(authorizationContext, allow);
     }
 
     /**
@@ -219,12 +219,14 @@ public class AuthorizationService implements Serializable {
 
         // Was a DENY decision previously made for this AuthorizationContext?
         if (!authorizationContext.isAuthorized()) {
+            authorizationContext.addDenyReason("denyDecisionAlreadyMade");
             return false;
         }
 
         // Always ALLOW super-users.
         if (authorizationContext.isSuperUser()) {
             log.debug("isAuthorized() - ALLOW (super-user)");
+            authorizationContext.addAllowReason("isSuperUser");
             return true;
         }
 
@@ -237,20 +239,22 @@ public class AuthorizationService implements Serializable {
                 new HashSet<PermissionEntry>(authorizationContext.getEntries()));
 
         // Was an authorization decision made?
-        return isAuthorized(allow);
+        return isAuthorized(authorizationContext, allow);
     }
 
     /**
      * Check the supplied allow Boolean. If not null then return the boxed boolean, otherwise return true.
      *
-     * @param allow to be considered
+     * @param authorizationContext to consider for authorization
+     * @param allow                to be considered
      * @return true if authorize result is allow, otherwise false if result is deny
      */
-    protected boolean isAuthorized(Boolean allow) {
+    protected boolean isAuthorized(AuthorizationContext authorizationContext, Boolean allow) {
         if (allow != null) {
             return allow;
         } else {
             log.debug("isAuthorized() - ALLOW");
+            authorizationContext.addAllowReason("noReasonToDeny");
             return true;
         }
     }
@@ -293,11 +297,12 @@ public class AuthorizationService implements Serializable {
         // Owner can do anything.
         if (principalEntries.contains(PermissionEntry.OWN)) {
             log.debug("isAuthorized() - ALLOW (owner)");
+            authorizationContext.addAllowReason("isOwner");
             allow = true;
         }
 
         // Principals must be able to do everything specified.
-        if ((allow == null) && !isAuthorized(accessSpecification, principalEntries)) {
+        if ((allow == null) && !isAuthorizedForAccessSpecification(authorizationContext, accessSpecification, principalEntries)) {
             log.debug("isAuthorized() - DENY (not permitted)");
             allow = false;
         }
@@ -348,39 +353,51 @@ public class AuthorizationService implements Serializable {
      * kind of access is desired. The PermissionEntry collection declares what kind of access principals are
      * allowed for the entity.
      *
-     * @param accessSpecification specification of access requested to an entity
-     * @param principalEntries    PermissionEntries for the current principals
+     * @param authorizationContext the current AuthorizationContext
+     * @param accessSpecification  specification of access requested to an entity
+     * @param principalEntries     PermissionEntries for the current principals
      * @return true if access is authorized
      */
-    protected boolean isAuthorized(AccessSpecification accessSpecification, Collection<PermissionEntry> principalEntries) {
+    protected boolean isAuthorizedForAccessSpecification(AuthorizationContext authorizationContext, AccessSpecification accessSpecification, Collection<PermissionEntry> principalEntries) {
         IAMEEEntity entity;
-        // Default to not authorized.
-        Boolean authorized = false;
-        // Iterate over the desired PermissionEntries specified for the entity.
-        for (PermissionEntry desiredEntry : accessSpecification.getDesired()) {
+        // We can only authorize if desired PermissionEntries are supplied.
+        if (!accessSpecification.getDesired().isEmpty()) {
             // Default to not authorized.
-            authorized = false;
-            // Iterate over PermissionEntries associated with current principals.
-            for (PermissionEntry principalEntry : principalEntries) {
-                // Authorized if:
-                // - Both PermissionEntries match by value.
-                // - Principals PermissionEntry is allowed.
-                // - Principals PermissionEntry status matches the entity status.
-                entity = permissionService.getEntity(accessSpecification.getEntityReference());
-                if (desiredEntry.getValue().equals(principalEntry.getValue()) &&
-                        principalEntry.isAllow() &&
-                        (principalEntry.getStatus().equals(entity.getStatus()))) {
-                    // Authorized, no need to continue so break. Most permissive principal PermissionEntry 'wins'.
-                    authorized = true;
+            Boolean authorized = false;
+            // Iterate over the desired PermissionEntries specified for the entity.
+            for (PermissionEntry desiredEntry : accessSpecification.getDesired()) {
+                // Default to not authorized.
+                authorized = false;
+                // Iterate over PermissionEntries associated with current principals.
+                for (PermissionEntry principalEntry : principalEntries) {
+                    // Authorized if:
+                    // - Both PermissionEntries match by value.
+                    // - Principals PermissionEntry is allowed.
+                    // - Principals PermissionEntry status matches the entity status.
+                    entity = permissionService.getEntity(accessSpecification.getEntityReference());
+                    if (desiredEntry.getValue().equals(principalEntry.getValue()) &&
+                            principalEntry.isAllow() &&
+                            (principalEntry.getStatus().equals(entity.getStatus()))) {
+                        // Authorized, no need to continue so break. Most permissive principal PermissionEntry 'wins'.
+                        authorized = true;
+                        authorizationContext.addAllowReason("matchFor__" + principalEntry.toString() + "__" + entity.toString() + "__" + entity.getStatus().toString());
+                        break;
+                    } else {
+                        // This PermissionEntry *may* cause a DENY.
+                        authorizationContext.addDenyReason("noMatchFor__" + principalEntry.toString() + "__" + entity.toString() + "__" + entity.getStatus().toString());
+                    }
+                }
+                // Stop now if not authorized.
+                if (!authorized) {
+                    authorizationContext.addDenyReason("noMatchFor__" + desiredEntry.toString());
                     break;
                 }
             }
-            // Stop now if not authorized.
-            if (!authorized) {
-                break;
-            }
+            return authorized;
+        } else {
+            authorizationContext.addDenyReason("noDesiredPermissionEntries");
+            return false;
         }
-        return authorized;
     }
 
     /**
