@@ -299,7 +299,8 @@ public class DataServiceDAO implements Serializable {
      */
     @SuppressWarnings(value = "unchecked")
     public Map<String, IDataCategoryReference> getDataCategories(IDataCategoryReference dataCategoryReference) {
-        Map<String, IDataCategoryReference> dataCategoriesReferences = new TreeMap<String, IDataCategoryReference>();
+        Map<String, IDataCategoryReference> dataCategoriesReferences =
+                new TreeMap<String, IDataCategoryReference>(String.CASE_INSENSITIVE_ORDER);
         List<DataCategory> dataCategories = (List<DataCategory>) entityManager.createQuery(
                 "from DataCategory " +
                         "WHERE dataCategory.id = :dataCategoryId " +
