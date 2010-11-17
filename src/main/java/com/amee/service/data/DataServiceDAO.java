@@ -335,6 +335,24 @@ public class DataServiceDAO implements Serializable {
         return dataCategoryReferences;
     }
 
+    @SuppressWarnings(value = "unchecked")
+    public Set<Long> getParentDataCategoryIds(Set<Long> dataCategoryIds) {
+        Set<Long> parentDataCategoryIds = new HashSet<Long>();
+        if ((dataCategoryIds != null) && !dataCategoryIds.isEmpty()) {
+            parentDataCategoryIds.addAll(
+                    (List<Long>) entityManager.createQuery(
+                            "SELECT dataCategory.id " +
+                                    "FROM DataCategory " +
+                                    "WHERE id in (:dataCategoryIds) " +
+                                    "AND status != :trash")
+                            .setParameter("dataCategoryIds", dataCategoryIds)
+                            .setParameter("trash", AMEEStatus.TRASH)
+                            .getResultList());
+            parentDataCategoryIds.remove(null);
+        }
+        return parentDataCategoryIds;
+    }
+
     /**
      * Returns true if the path of the supplied DataCategory is unique amongst peers.
      *

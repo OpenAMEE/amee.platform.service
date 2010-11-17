@@ -228,24 +228,24 @@ public class DataService extends BaseService implements ApplicationListener {
         if (log.isDebugEnabled()) {
             log.debug("getDataCategories() " + dataCategoryReference.getFullPath());
         }
-        return (Map<String, IDataCategoryReference>) cacheHelper.getCacheable(new DataCategoryChildrenFactory(dataCategoryReference, dao));
+        Map<String, IDataCategoryReference> dataCategories =
+                (Map<String, IDataCategoryReference>) cacheHelper.getCacheable(new DataCategoryChildrenFactory(dataCategoryReference, dao));
+        localeService.loadLocaleNamesForDataCategoryReferences(dataCategories.values());
+        return dataCategories;
     }
 
-    public boolean hasDataCategories(IDataCategoryReference dataCategoryReference, Collection<Long> dataCategoryIds) {
-        // Is a Data Category which is a direct Profile Item parent present?
-        if (dataCategoryIds.contains(dataCategoryReference.getEntityId())) {
-            return true;
+    /**
+     * Get the Set of parent Data Category IDs for the supplied Data Category IDs.
+     *
+     * @param dataCategoryIds Data Category IDs to find parents for
+     * @return Set of parent Data Category IDs
+     */
+    public Set<Long> getParentDataCategoryIds(Set<Long> dataCategoryIds) {
+        Set<Long> parentDataCategoryIds = dao.getParentDataCategoryIds(dataCategoryIds);
+        if (!parentDataCategoryIds.isEmpty()) {
+            parentDataCategoryIds.addAll(getParentDataCategoryIds(parentDataCategoryIds));
         }
-        // Look deeper into the tree.
-        for (IDataCategoryReference dc : getDataCategories(dataCategoryReference).values()) {
-            if (dataCategoryIds.contains(dc.getEntityId())) {
-                return true;
-            }
-            if (hasDataCategories(dc, dataCategoryIds)) {
-                return true;
-            }
-        }
-        return false;
+        return parentDataCategoryIds;
     }
 
     public Set<AMEEEntityReference> getDataCategoryReferences(ItemDefinition itemDefinition) {
