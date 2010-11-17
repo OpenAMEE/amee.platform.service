@@ -20,7 +20,7 @@
 package com.amee.calculation.service;
 
 import com.amee.domain.AMEEStatistics;
-import com.amee.domain.data.DataCategory;
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.data.ItemValue;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.service.profile.ProfileService;
@@ -115,7 +115,7 @@ public class ProfileFinder implements Serializable {
     public List<ProfileItem> getProfileItems(String path) {
         List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
         if (profileItem != null) {
-            DataCategory dataCategory = dataFinder.getDataCategory(path);
+            IDataCategoryReference dataCategory = dataFinder.getDataCategory(path);
             if (dataCategory != null) {
                 profileItems = profileService.getProfileItems(
                         profileItem.getProfile(),

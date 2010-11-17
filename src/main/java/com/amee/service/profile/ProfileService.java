@@ -4,6 +4,7 @@ import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.APIVersion;
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
 import com.amee.domain.cache.CacheableFactory;
@@ -17,6 +18,7 @@ import com.amee.domain.sheet.Sheet;
 import com.amee.platform.science.StartEndDate;
 import com.amee.service.BaseService;
 import com.amee.service.auth.PermissionService;
+import com.amee.service.data.DataService;
 import com.amee.service.item.ProfileItemService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -57,6 +59,9 @@ public class ProfileService extends BaseService {
 
     @Autowired
     private PermissionService permissionService;
+
+    @Autowired
+    private DataService dataService;
 
     @Autowired
     private ProfileServiceDAO dao;
@@ -147,7 +152,7 @@ public class ProfileService extends BaseService {
      * @param date         - the date context
      * @return the active {@link ProfileItem} collection
      */
-    public List<ProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date date) {
+    public List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date date) {
         Set<String> profileItemUids = new HashSet<String>();
         List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
         for (NuProfileItem profileItem : profileItemService.getProfileItems(profile, dataCategory, date)) {
@@ -186,7 +191,7 @@ public class ProfileService extends BaseService {
      */
     public List<ProfileItem> getProfileItems(
             Profile profile,
-            DataCategory dataCategory,
+            IDataCategoryReference dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
         Set<String> profileItemUids = new HashSet<String>();
@@ -334,10 +339,14 @@ public class ProfileService extends BaseService {
 
     // Profile DataCategories
 
-    public Collection<Long> getProfileDataCategoryIds(Profile profile) {
+    public Set<Long> getProfileDataCategoryIds(Profile profile) {
         Set<Long> dataCategoryIds = new HashSet<Long>();
+        // Get Data Category IDs for legacy Profile Items.
         dataCategoryIds.addAll(dao.getProfileDataCategoryIds(profile));
+        // Get Data Category IDs for nu Profile Items.
         dataCategoryIds.addAll(profileItemService.getProfileDataCategoryIds(profile));
+        // Get parent Data Category IDs based on existing Data Category IDs.
+        dataCategoryIds.addAll(dataService.getParentDataCategoryIds(dataCategoryIds));
         return dataCategoryIds;
     }
 

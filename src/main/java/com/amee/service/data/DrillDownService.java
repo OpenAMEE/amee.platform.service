@@ -19,6 +19,7 @@
  */
 package com.amee.service.data;
 
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
@@ -29,11 +30,15 @@ import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 @Service
 public class DrillDownService implements Serializable {
+
+    @Autowired
+    private DataServiceDAO dataServiceDao;
 
     @Autowired
     private DrillDownDAO drillDownDao;
@@ -43,7 +48,10 @@ public class DrillDownService implements Serializable {
 
     private CacheHelper cacheHelper = CacheHelper.getInstance();
 
-    public Choices getChoices(DataCategory dataCategory, List<Choice> selections) {
+    public Choices getChoices(IDataCategoryReference dc, List<Choice> selections) {
+
+        // Get Data Category.
+        DataCategory dataCategory = dataServiceDao.getDataCategory(dc);
 
         // we can do a drill down if an itemDefinition is attached to current dataCategory
         ItemDefinition itemDefinition = dataCategory.getItemDefinition();
@@ -83,12 +91,14 @@ public class DrillDownService implements Serializable {
 
     public void clearDrillDownCache() {
         cacheHelper.clearCache("DrillDownChoices");
+        cacheHelper.clearCache("NuDrillDownChoices");
     }
 
     @SuppressWarnings("unchecked")
-    protected List<Choice> getDataItemChoices(DataCategory dataCategory,
-        List<Choice> selections, List<Choice> drillDownChoices) {
+    protected List<Choice> getDataItemChoices(IDataCategoryReference dataCategory,
+                                              List<Choice> selections, List<Choice> drillDownChoices) {
 
+        // Get legacy and nu choices.
         List<Choice> choices = ((List<Choice>) cacheHelper.getCacheable(
                 new DrillDownFactory(drillDownDao, dataCategory, selections, drillDownChoices)));
         List<Choice> nuChoices = ((List<Choice>) cacheHelper.getCacheable(
@@ -100,6 +110,8 @@ public class DrillDownService implements Serializable {
                 choices.add(choice);
             }
         }
+        Collections.sort(choices);
+
         return choices;
     }
 

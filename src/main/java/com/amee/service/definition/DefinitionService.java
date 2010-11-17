@@ -148,7 +148,7 @@ public class DefinitionService extends BaseService implements ApplicationListene
     }
 
     /**
-     * Invalidate a ItemDefinition. This will send an invalidation message via the
+     * Invalidate an ItemDefinition. This will send an invalidation message via the
      * InvalidationService and clear the local caches.
      *
      * @param itemDefinition to invalidate

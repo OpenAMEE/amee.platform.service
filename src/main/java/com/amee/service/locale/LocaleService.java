@@ -126,6 +126,10 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         loadLocaleNames(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
     }
 
+    public void loadLocaleNamesForDataCategoryReferences(Collection<IDataCategoryReference> dataCategories) {
+        loadLocaleNames(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
+    }
+
     public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems) {
         loadLocaleNamesForDataItems(dataItems, true);
     }

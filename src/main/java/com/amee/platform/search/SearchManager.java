@@ -13,17 +13,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.core.task.TaskRejectedException;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class SearchManager implements Runnable, ApplicationListener {
+public class SearchManager implements Runnable, SmartLifecycle, ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -79,14 +78,14 @@ public class SearchManager implements Runnable, ApplicationListener {
 
     // Application start-up initialisation.
 
-    @PostConstruct
+    @Override
     public synchronized void start() {
         log.info("start()");
         thread = new Thread(this);
         thread.start();
     }
 
-    @PreDestroy
+    @Override
     public synchronized void stop() {
         log.info("stop()");
         stopping = true;
@@ -96,6 +95,29 @@ public class SearchManager implements Runnable, ApplicationListener {
         }
     }
 
+    @Override
+    public boolean isRunning() {
+        return (thread != null) && (thread.isAlive());
+    }
+
+    @Override
+    public boolean isAutoStartup() {
+        return true;
+    }
+
+    @Override
+    public void stop(Runnable callback) {
+        stop();
+        callback.run();
+    }
+
+    @Override
+    public int getPhase() {
+        // Start as late as possible.
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
     public void run() {
         log.info("run() Starting...");
         init();
@@ -104,6 +126,7 @@ public class SearchManager implements Runnable, ApplicationListener {
 
     // Events
 
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (InvalidationMessage.class.isAssignableFrom(event.getClass())) {
             onInvalidationMessage((InvalidationMessage) event);

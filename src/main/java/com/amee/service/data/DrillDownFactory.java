@@ -21,15 +21,14 @@
  */
 package com.amee.service.data;
 
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.LocaleHolder;
 import com.amee.domain.cache.CacheableFactory;
-import com.amee.domain.data.DataCategory;
 import com.amee.domain.sheet.Choice;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.Date;
 import java.util.List;
 
 public class DrillDownFactory implements CacheableFactory {
@@ -37,7 +36,7 @@ public class DrillDownFactory implements CacheableFactory {
     private final Log log = LogFactory.getLog(getClass());
 
     private DrillDownDAO drillDownDao;
-    private DataCategory dataCategory;
+    private IDataCategoryReference dataCategory;
     private List<Choice> selections;
     private List<Choice> drillDownChoices;
     private String key;
@@ -48,7 +47,7 @@ public class DrillDownFactory implements CacheableFactory {
 
     public DrillDownFactory(
             DrillDownDAO drillDownDao,
-            DataCategory dataCategory,
+            IDataCategoryReference dataCategory,
             List<Choice> selections,
             List<Choice> drillDownChoices) {
         this();
@@ -76,7 +75,7 @@ public class DrillDownFactory implements CacheableFactory {
         if (key == null) {
             StringBuilder keyBuilder = new StringBuilder();
             keyBuilder.append("DrillDown_");
-            keyBuilder.append(dataCategory.getUid());
+            keyBuilder.append(dataCategory.getEntityUid());
             for (Choice selection : selections) {
                 keyBuilder.append("_SL_");
                 if (StringUtils.isNotBlank(selection.getValue())) {

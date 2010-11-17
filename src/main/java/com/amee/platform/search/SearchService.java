@@ -70,7 +70,7 @@ public class SearchService {
             filter.getTypes().add(ObjectType.NDI);
         }
         // Do search and fetch Lucene documents.
-        return getEntityResultsWrapperFromDocumentsResultsWrapper(
+        return getEntityResultsWrapper(
                 searchQueryService.doSearch(filter),
                 filter.isLoadEntityTags(),
                 filter.isLoadMetadatas(),
@@ -118,57 +118,70 @@ public class SearchService {
         // Filter based on an allowed query parameter.
         if (!filter.getQueries().isEmpty()) {
             BooleanQuery query = new BooleanQuery();
-
             Query excTags = filter.removeExcTags();
             if (excTags != null) {
                 query.add(excTags, BooleanClause.Occur.MUST_NOT);
             }
-
             for (Query q : filter.getQueries().values()) {
                 query.add(q, BooleanClause.Occur.MUST);
             }
-            resultsWrapper = getDataCategories(
-                    query,
-                    filter.getResultStart(),
-                    filter.getResultLimit());
+            resultsWrapper = getDataCategories(query, filter);
         } else {
             // Just get a simple list of Data Categories.
             resultsWrapper = dataService.getDataCategories(
+                    true,
                     filter.getResultStart(),
                     filter.getResultLimit());
+            // Pre-loading of EntityTags, LocaleNames & DataCategories.
+            if (filter.isLoadEntityTags()) {
+                tagService.loadEntityTagsForDataCategories(resultsWrapper.getResults());
+            }
+            if (filter.isLoadMetadatas()) {
+                metadataService.loadMetadatasForDataCategories(resultsWrapper.getResults());
+            }
         }
-        // Pre-loading of EntityTags, LocaleNames & DataCategories.
-        if (filter.isLoadEntityTags()) {
-            tagService.loadEntityTagsForDataCategories(resultsWrapper.getResults());
-        }
-        if (filter.isLoadMetadatas()) {
-            metadataService.loadMetadatasForDataCategories(resultsWrapper.getResults());
-        }
-        localeService.loadLocaleNamesForDataCategories(resultsWrapper.getResults());
         return resultsWrapper;
     }
 
-    private ResultsWrapper<DataCategory> getDataCategories(BooleanQuery query, int resultStart, int resultLimit) {
+    private ResultsWrapper<DataCategory> getDataCategories(BooleanQuery query, DataCategoriesFilter filter) {
         if (query == null) {
             query = new BooleanQuery();
         }
         Query entityQuery = new TermQuery(new Term("entityType", ObjectType.DC.getName()));
         query.add(entityQuery, BooleanClause.Occur.MUST);
+        return getDataCategoryResultsWrapper(
+                getEntityResultsWrapper(
+                        luceneService.doSearch(
+                                query,
+                                filter.getResultStart(),
+                                filter.getResultLimit()),
+                        filter.isLoadEntityTags(),
+                        filter.isLoadMetadatas(),
+                        false));
+    }
 
-        ResultsWrapper<Document> resultsWrapper =
-                luceneService.doSearch(query, resultStart, resultLimit);
-        Set<Long> dataCategoryIds = new HashSet<Long>();
-        for (Document document : resultsWrapper.getResults()) {
-            dataCategoryIds.add(new Long(document.getField("entityId").stringValue()));
+    // TODO: Find a way to genericise this and the similar method below for Data Items.
+    private ResultsWrapper<DataCategory> getDataCategoryResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
+        ResultsWrapper<DataCategory> dataCategoryResultsWrapper = new ResultsWrapper<DataCategory>();
+        dataCategoryResultsWrapper.setTruncated(entityResultsWrapper.isTruncated());
+        dataCategoryResultsWrapper.setResultStart(entityResultsWrapper.getResultStart());
+        dataCategoryResultsWrapper.setResultLimit(entityResultsWrapper.getResultLimit());
+        dataCategoryResultsWrapper.setHits(entityResultsWrapper.getHits());
+        List<DataCategory> dataCategories = new ArrayList<DataCategory>();
+        for (IAMEEEntity entity : entityResultsWrapper.getResults()) {
+            if (DataCategory.class.isAssignableFrom(entity.getClass())) {
+                dataCategories.add((DataCategory) entity);
+            } else {
+                throw new IllegalStateException("A DataCategory was expected.");
+            }
         }
-        return new ResultsWrapper<DataCategory>(
-                dataService.getDataCategories(dataCategoryIds),
-                resultsWrapper.isTruncated());
+        dataCategoryResultsWrapper.setResults(dataCategories);
+        return dataCategoryResultsWrapper;
     }
 
     // DataItem search.
 
-    public ResultsWrapper<IAMEEEntity> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
+    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
         // Create Query.
         BooleanQuery query = null;
         if (!filter.getQueries().isEmpty()) {
@@ -181,7 +194,7 @@ public class SearchService {
         return getDataItems(dataCategory, filter, query);
     }
 
-    public ResultsWrapper<IAMEEEntity> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
+    private ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
         // Create Query to find all DIs & NDIs in the DataCategory matching the supplied Query and range.
         BooleanQuery q = new BooleanQuery();
         BooleanQuery typesQuery = new BooleanQuery();
@@ -193,14 +206,39 @@ public class SearchService {
             q.add(query, BooleanClause.Occur.MUST);
         }
         // Do search and fetch Lucene documents.
-        return getEntityResultsWrapperFromDocumentsResultsWrapper(
-                luceneService.doSearch(q, filter.getResultStart(), filter.getResultLimit()),
-                filter.isLoadEntityTags(),
-                filter.isLoadMetadatas(),
-                filter.isLoadDataItemValues());
+        return getDataItemResultsWrapper(
+                getEntityResultsWrapper(
+                        luceneService.doSearch(
+                                q,
+                                filter.getResultStart(),
+                                filter.getResultLimit()),
+                        filter.isLoadEntityTags(),
+                        filter.isLoadMetadatas(),
+                        filter.isLoadDataItemValues()));
     }
 
-    private ResultsWrapper<IAMEEEntity> getEntityResultsWrapperFromDocumentsResultsWrapper(
+    // TODO: Find a way to genericise this and the similar method above for Data Categories.
+    private ResultsWrapper<DataItem> getDataItemResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
+        ResultsWrapper<DataItem> dataItemResultsWrapper = new ResultsWrapper<DataItem>();
+        dataItemResultsWrapper.setTruncated(entityResultsWrapper.isTruncated());
+        dataItemResultsWrapper.setResultStart(entityResultsWrapper.getResultStart());
+        dataItemResultsWrapper.setResultLimit(entityResultsWrapper.getResultLimit());
+        dataItemResultsWrapper.setHits(entityResultsWrapper.getHits());
+        List<DataItem> dataItems = new ArrayList<DataItem>();
+        for (IAMEEEntity entity : entityResultsWrapper.getResults()) {
+            if (DataItem.class.isAssignableFrom(entity.getClass())) {
+                dataItems.add((DataItem) entity);
+            } else {
+                throw new IllegalStateException("A DataItem was expected.");
+            }
+        }
+        dataItemResultsWrapper.setResults(dataItems);
+        return dataItemResultsWrapper;
+    }
+
+    // General entity search.
+
+    private ResultsWrapper<IAMEEEntity> getEntityResultsWrapper(
             ResultsWrapper<Document> resultsWrapper,
             boolean loadEntityTags,
             boolean loadMetadata,

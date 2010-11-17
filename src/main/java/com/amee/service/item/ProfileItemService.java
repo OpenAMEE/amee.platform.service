@@ -1,5 +1,6 @@
 package com.amee.service.item;
 
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.IProfileItemService;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemValue;
@@ -78,7 +79,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     @Override
-    public List<NuProfileItem> getProfileItems(Profile profile, DataCategory dataCategory, Date profileDate) {
+    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate) {
         List<NuProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, profileDate);
         loadItemValuesForItems((List) profileItems);
         return profileItems;
@@ -87,7 +88,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     @Override
     public List<NuProfileItem> getProfileItems(
             Profile profile,
-            DataCategory dataCategory,
+            IDataCategoryReference dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
         List<NuProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, startDate, endDate);

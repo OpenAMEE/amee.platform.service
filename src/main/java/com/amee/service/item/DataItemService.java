@@ -1,6 +1,7 @@
 package com.amee.service.item;
 
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataItem;
@@ -22,7 +23,7 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public List<NuDataItem> getDataItems(DataCategory dataCategory) {
+    public List<NuDataItem> getDataItems(IDataCategoryReference dataCategory) {
         List<NuDataItem> dataItems = dao.getDataItems(dataCategory);
         loadItemValuesForItems((List) dataItems);
         return dataItems;
