@@ -122,6 +122,24 @@ public class ResourceAuthorizationService {
     }
 
     /**
+     * A utility method wrapping up a setUserByUid, setResource and isAuthorizedForRemove call sequence. Will cause
+     * a NotAuthorizedException if the user is not authorized to remove (DELETE) a resource.
+     *
+     * @param userUid  to authorize
+     * @param resource to authorize against
+     */
+    public void ensureAuthorizedForRemove(String userUid, Pathable resource) {
+        setUserByUid(userUid);
+        setResource(resource);
+        if (!isAuthorizedForRemove()) {
+            if (log.isDebugEnabled()) {
+                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
+            }
+            throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
+        }
+    }
+
+    /**
      * Returns true if the user authorized to remove (DELETE) the resource.
      *
      * @return true if the user authorized to remove (DELETE) the resource

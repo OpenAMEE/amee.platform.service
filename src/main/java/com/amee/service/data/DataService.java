@@ -46,7 +46,7 @@ import java.util.*;
  * Primary service interface to Data Resources.
  */
 @Service
-public class DataService extends BaseService implements ApplicationListener {
+public class DataService extends BaseService implements IDataService, ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
 

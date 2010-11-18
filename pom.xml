@@ -134,6 +134,11 @@
             <artifactId>lucene-core</artifactId>
             <version>${lucene-core.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-lucli</artifactId>
+            <version>${lucene-core.version}</version>
+        </dependency>
 
         <!-- Test Dependencies. -->
         <dependency>
