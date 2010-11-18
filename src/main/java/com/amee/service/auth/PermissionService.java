@@ -21,7 +21,6 @@
  */
 package com.amee.service.auth;
 
-import com.amee.domain.AMEEEntity;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
@@ -31,13 +30,7 @@ import com.amee.domain.auth.PermissionEntry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class PermissionService {
@@ -69,6 +62,7 @@ public class PermissionService {
         addPrincipalAndEntity(ObjectType.USR, ObjectType.AL);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.ID);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.IVD);
+        addPrincipalAndEntity(ObjectType.USR, ObjectType.RVD);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.ALC);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.USR);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.GRP);
@@ -90,6 +84,7 @@ public class PermissionService {
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.AL);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.ID);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.IVD);
+        addPrincipalAndEntity(ObjectType.GRP, ObjectType.RVD);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.ALC);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.USR);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.GRP);
