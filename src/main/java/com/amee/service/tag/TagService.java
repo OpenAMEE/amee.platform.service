@@ -1,6 +1,7 @@
 package com.amee.service.tag;
 
 import com.amee.base.transaction.TransactionEvent;
+import com.amee.base.utils.UidGen;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
@@ -92,8 +93,23 @@ public class TagService implements ApplicationListener {
         return tags;
     }
 
-    public Tag getTag(String tag) {
-        return dao.getTag(tag);
+    public Tag getTagByIdentifier(String identifier) {
+        Tag tag = null;
+        if (UidGen.INSTANCE_12.isValid(identifier)) {
+            tag = getTagByUid(identifier);
+        }
+        if (tag == null) {
+            tag = getTagByTag(identifier);
+        }
+        return tag;
+    }
+
+    public Tag getTagByUid(String uid) {
+        return dao.getTagByUid(uid);
+    }
+
+    public Tag getTagByTag(String tag) {
+        return dao.getTagByTag(tag);
     }
 
     public EntityTag getEntityTag(IAMEEEntityReference entity, String tag) {

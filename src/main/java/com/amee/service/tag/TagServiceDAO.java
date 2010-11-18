@@ -24,7 +24,16 @@ public class TagServiceDAO implements Serializable {
     @PersistenceContext
     private EntityManager entityManager;
 
-    protected Tag getTag(String tag) {
+    protected Tag getTagByUid(String uid) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(Tag.class);
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
+        criteria.setTimeout(5);
+        return (Tag) criteria.uniqueResult();
+    }
+
+    protected Tag getTagByTag(String tag) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(Tag.class);
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
