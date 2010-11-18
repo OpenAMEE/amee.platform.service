@@ -189,13 +189,13 @@ public class SearchIndexer implements Runnable {
         if (ctx.handleDataItems) {
             handleDataItems();
         }
-        // Are handling a new Data Category?
+        // Are we handling a new Data Category?
         if (!newCategory) {
             // Store / update the Data Category Document.
             luceneService.updateDocument(
                     dataCategoryDoc,
                     new Term("entityType", ObjectType.DC.getName()),
-                    new Term("entityUid", dataCategory.toString()));
+                    new Term("entityUid", dataCategory.getUid()));
         } else {
             // Add the new Document.
             luceneService.addDocument(dataCategoryDoc);
