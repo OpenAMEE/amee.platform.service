@@ -72,10 +72,10 @@ class NuDrillDownDAO implements Serializable {
      * are appropriate for the current level within the 'drill down' given the supplied {@link com.amee.domain.data.DataCategory},
      * {@link com.amee.domain.data.ItemValueDefinition) path and selections.
      *
-     * @param dataCategory the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
-     *                     be selected (required)
-     * @param path         the path of the {@link com.amee.domain.data.ItemValueDefinition) from which to select values
-     * @param selections   the current user selections for a drill down
+     * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
+     *                   be selected (required)
+     * @param path       the path of the {@link com.amee.domain.data.ItemValueDefinition) from which to select values
+     * @param selections the current user selections for a drill down
      * @return a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing values for a user to select
      */
     public List<Choice> getDataItemValueChoices(
@@ -101,20 +101,17 @@ class NuDrillDownDAO implements Serializable {
         ItemDefinition itemDefinition = dataCategory.getItemDefinition();
         ItemValueDefinition itemValueDefinition = itemDefinition.getItemValueDefinition(path);
         if (itemValueDefinition != null) {
+            // Get Data Item IDs.
             if (!selections.isEmpty()) {
-                // get choices based on selections
+                // Get Data Item IDs based on selections.
                 dataItemIds = getDataItemIds(dataCategory, selections);
-                if (!dataItemIds.isEmpty()) {
-                    for (String value : getDataItemValues(itemValueDefinition.getId(), dataItemIds)) {
-                        choices.add(new Choice(value));
-                    }
-                }
             } else {
-                // get choices for top level (no selections)
-                Long dataCategoryId = dataCategory.getEntityId();
-                Long itemDefinitionId = itemDefinition.getId();
-                Long itemValueDefinitionId = itemValueDefinition.getId();
-                for (String value : getDataItemValues(dataCategoryId, itemDefinitionId, itemValueDefinitionId)) {
+                // Get Data Item IDs for top level (no selections).
+                dataItemIds = getDataItemIds(dataCategory.getEntityId(), itemDefinition.getId());
+            }
+            // Get choices.
+            if (!dataItemIds.isEmpty()) {
+                for (String value : getDataItemValues(itemValueDefinition.getId(), dataItemIds)) {
                     choices.add(new Choice(value));
                 }
             }
@@ -130,9 +127,9 @@ class NuDrillDownDAO implements Serializable {
      * are appropriate for the current level within the 'drill down' given the supplied {@link com.amee.domain.data.DataCategory},
      * {@link com.amee.domain.data.ItemValueDefinition) path and selections.
      *
-     * @param dataCategory the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
-     *                     be selected (required)
-     * @param selections   the current user selections for a drill down
+     * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
+     *                   be selected (required)
+     * @param selections the current user selections for a drill down
      * @return a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing UIDs for a user to select
      */
     public List<Choice> getDataItemUIDChoices(IDataCategoryReference dc, List<Choice> selections) {
@@ -237,6 +234,37 @@ class NuDrillDownDAO implements Serializable {
         return new HashSet<String>(dataItemUids);
     }
 
+    private Collection<Long> getDataItemIds(Long dataCategoryId, Long itemDefinitionId) {
+
+        // check arguments
+        if ((dataCategoryId == null) || (itemDefinitionId == null)) {
+            throw new IllegalArgumentException("A required argument is missing.");
+        }
+
+        // create SQL
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT ID ");
+        sql.append("FROM DATA_ITEM ");
+        sql.append("WHERE STATUS != :trash ");
+        sql.append("AND DATA_CATEGORY_ID = :dataCategoryId ");
+        sql.append("AND ITEM_DEFINITION_ID = :itemDefinitionId");
+
+        // create query
+        Session session = (Session) entityManager.getDelegate();
+        SQLQuery query = session.createSQLQuery(sql.toString());
+        query.addScalar("ID", Hibernate.LONG);
+
+        // set parameters
+        query.setInteger("trash", AMEEStatus.TRASH.ordinal());
+        query.setLong("dataCategoryId", dataCategoryId);
+        query.setLong("itemDefinitionId", itemDefinitionId);
+
+        // execute SQL
+        List<Long> dataItemIds = query.list();
+        log.debug("getDataItemIDs() results: " + dataItemIds.size());
+        return new HashSet<Long>(dataItemIds);
+    }
+
     @SuppressWarnings(value = "unchecked")
     private List<String> getDataItemValues(Long itemValueDefinitionId, Collection<Long> dataItemIds) {
 
@@ -266,55 +294,6 @@ class NuDrillDownDAO implements Serializable {
         // set parameters
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
         query.setParameterList("dataItemIds", dataItemIds, Hibernate.LONG);
-
-        // execute SQL
-        try {
-            List<String> results = query.list();
-            log.debug("getDataItemValues() results: " + results.size());
-            return results;
-        } catch (HibernateException e) {
-            log.error("getDataItemValues() Caught HibernateException: " + e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    private List<String> getDataItemValues(Long dataCategoryId, Long itemDefinitionId, Long itemValueDefinitionId) {
-
-        // check arguments
-        if ((dataCategoryId == null) || (itemDefinitionId == null) || (itemValueDefinitionId == null)) {
-            throw new IllegalArgumentException("A required argument is missing.");
-        }
-
-        // create SQL
-        StringBuilder sql = new StringBuilder();
-        sql.append("(SELECT DISTINCT dinv.VALUE VALUE ");
-        sql.append("FROM DATA_ITEM_NUMBER_VALUE dinv, DATA_ITEM di ");
-        sql.append("WHERE dinv.DATA_ITEM_ID = di.ID ");
-        sql.append("AND di.STATUS != :trash ");
-        sql.append("AND di.DATA_CATEGORY_ID = :dataCategoryId ");
-        sql.append("AND di.ITEM_DEFINITION_ID = :itemDefinitionId ");
-        sql.append("AND dinv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId) ");
-        sql.append("UNION ");
-        sql.append("(SELECT DISTINCT ditv.VALUE VALUE ");
-        sql.append("FROM DATA_ITEM_TEXT_VALUE ditv, DATA_ITEM di ");
-        sql.append("WHERE ditv.DATA_ITEM_ID = di.ID ");
-        sql.append("AND di.STATUS != :trash ");
-        sql.append("AND di.DATA_CATEGORY_ID = :dataCategoryId ");
-        sql.append("AND di.ITEM_DEFINITION_ID = :itemDefinitionId ");
-        sql.append("AND ditv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId) ");
-        sql.append("ORDER BY LCASE(VALUE) ASC");
-
-        // create query
-        Session session = (Session) entityManager.getDelegate();
-        SQLQuery query = session.createSQLQuery(sql.toString());
-        query.addScalar("VALUE", Hibernate.STRING);
-
-        // set parameters
-        query.setInteger("trash", AMEEStatus.TRASH.ordinal());
-        query.setLong("dataCategoryId", dataCategoryId);
-        query.setLong("itemDefinitionId", itemDefinitionId);
-        query.setLong("itemValueDefinitionId", itemValueDefinitionId);
 
         // execute SQL
         try {

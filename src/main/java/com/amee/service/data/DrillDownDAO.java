@@ -101,20 +101,17 @@ class DrillDownDAO implements Serializable {
         ItemDefinition itemDefinition = dataCategory.getItemDefinition();
         ItemValueDefinition itemValueDefinition = itemDefinition.getItemValueDefinition(path);
         if (itemValueDefinition != null) {
+            // Get Data Item IDs.
             if (!selections.isEmpty()) {
-                // get choices based on selections
+                // Get Data Item IDs based on selections.
                 dataItemIds = getDataItemIds(dataCategory, selections);
-                if (!dataItemIds.isEmpty()) {
-                    for (String value : getDataItemValues(itemValueDefinition.getId(), dataItemIds)) {
-                        choices.add(new Choice(value));
-                    }
-                }
             } else {
-                // get choices for top level (no selections)
-                Long dataCategoryId = dataCategory.getEntityId();
-                Long itemDefinitionId = itemDefinition.getId();
-                Long itemValueDefinitionId = itemValueDefinition.getId();
-                for (String value : getDataItemValues(dataCategoryId, itemDefinitionId, itemValueDefinitionId)) {
+                // Get Data Item IDs for top level (no selections).
+                dataItemIds = getDataItemIds(dataCategory.getEntityId(), itemDefinition.getId());
+            }
+            // Get choices.
+            if (!dataItemIds.isEmpty()) {
+                for (String value : getDataItemValues(itemValueDefinition.getId(), dataItemIds)) {
                     choices.add(new Choice(value));
                 }
             }
@@ -238,6 +235,38 @@ class DrillDownDAO implements Serializable {
         return new HashSet<String>(dataItemUids);
     }
 
+    private Collection<Long> getDataItemIds(Long dataCategoryId, Long itemDefinitionId) {
+
+        // check arguments
+        if ((dataCategoryId == null) || (itemDefinitionId == null)) {
+            throw new IllegalArgumentException("A required argument is missing.");
+        }
+
+        // create SQL
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT ID ");
+        sql.append("FROM ITEM ");
+        sql.append("WHERE TYPE = 'DI' ");
+        sql.append("AND STATUS != :trash ");
+        sql.append("AND DATA_CATEGORY_ID = :dataCategoryId ");
+        sql.append("AND ITEM_DEFINITION_ID = :itemDefinitionId");
+
+        // create query
+        Session session = (Session) entityManager.getDelegate();
+        SQLQuery query = session.createSQLQuery(sql.toString());
+        query.addScalar("ID", Hibernate.LONG);
+
+        // set parameters
+        query.setInteger("trash", AMEEStatus.TRASH.ordinal());
+        query.setLong("dataCategoryId", dataCategoryId);
+        query.setLong("itemDefinitionId", itemDefinitionId);
+
+        // execute SQL
+        List<Long> dataItemIds = query.list();
+        log.debug("getDataItemIds() results: " + dataItemIds.size());
+        return new HashSet<Long>(dataItemIds);
+    }
+
     @SuppressWarnings(value = "unchecked")
     private List<String> getDataItemValues(Long itemValueDefinitionId, Collection<Long> dataItemIds) {
 
@@ -262,48 +291,6 @@ class DrillDownDAO implements Serializable {
         // set parameters
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
         query.setParameterList("dataItemIds", dataItemIds, Hibernate.LONG);
-
-        // execute SQL
-        try {
-            List<String> results = query.list();
-            log.debug("getDataItemValues() results: " + results.size());
-            return results;
-        } catch (HibernateException e) {
-            log.error("getDataItemValues() Caught HibernateException: " + e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    private List<String> getDataItemValues(Long dataCategoryId, Long itemDefinitionId, Long itemValueDefinitionId) {
-
-        // check arguments
-        if ((dataCategoryId == null) || (itemDefinitionId == null) || (itemValueDefinitionId == null)) {
-            throw new IllegalArgumentException("A required argument is missing.");
-        }
-
-        // create SQL
-        StringBuilder sql = new StringBuilder();
-        sql.append("SELECT DISTINCT iv.VALUE VALUE ");
-        sql.append("FROM ITEM_VALUE iv, ITEM i ");
-        sql.append("WHERE iv.ITEM_ID = i.ID ");
-        sql.append("AND i.STATUS != :trash ");
-        sql.append("AND i.TYPE = 'DI' ");
-        sql.append("AND i.DATA_CATEGORY_ID = :dataCategoryId ");
-        sql.append("AND i.ITEM_DEFINITION_ID = :itemDefinitionId ");
-        sql.append("AND iv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("ORDER BY LCASE(VALUE) ASC");
-
-        // create query
-        Session session = (Session) entityManager.getDelegate();
-        SQLQuery query = session.createSQLQuery(sql.toString());
-        query.addScalar("VALUE", Hibernate.STRING);
-
-        // set parameters
-        query.setInteger("trash", AMEEStatus.TRASH.ordinal());
-        query.setLong("dataCategoryId", dataCategoryId);
-        query.setLong("itemDefinitionId", itemDefinitionId);
-        query.setLong("itemValueDefinitionId", itemValueDefinitionId);
 
         // execute SQL
         try {
