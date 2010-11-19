@@ -294,6 +294,7 @@ class NuDrillDownDAO implements Serializable {
         query.addScalar("VALUE", Hibernate.STRING);
 
         // set parameters
+        query.setInteger("trash", AMEEStatus.TRASH.ordinal());
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
         query.setParameterList("dataItemIds", dataItemIds, Hibernate.LONG);
 
