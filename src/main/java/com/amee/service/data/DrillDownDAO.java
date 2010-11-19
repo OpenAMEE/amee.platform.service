@@ -72,10 +72,10 @@ class DrillDownDAO implements Serializable {
      * are appropriate for the current level within the 'drill down' given the supplied {@link DataCategory},
      * {@link com.amee.domain.data.ItemValueDefinition) path and selections.
      *
-     * @param dataCategory the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
-     *                     be selected (required)
-     * @param path         the path of the {@link com.amee.domain.data.ItemValueDefinition) from which to select values
-     * @param selections   the current user selections for a drill down
+     * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
+     *                   be selected (required)
+     * @param path       the path of the {@link com.amee.domain.data.ItemValueDefinition) from which to select values
+     * @param selections the current user selections for a drill down
      * @return a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing values for a user to select
      */
     public List<Choice> getDataItemValueChoices(
@@ -127,9 +127,9 @@ class DrillDownDAO implements Serializable {
      * are appropriate for the current level within the 'drill down' given the supplied {@link DataCategory},
      * {@link com.amee.domain.data.ItemValueDefinition) path and selections.
      *
-     * @param dataCategory the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
-     *                     be selected (required)
-     * @param selections   the current user selections for a drill down
+     * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
+     *                   be selected (required)
+     * @param selections the current user selections for a drill down
      * @return a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing UIDs for a user to select
      */
     public List<Choice> getDataItemUIDChoices(IDataCategoryReference dc, List<Choice> selections) {
@@ -270,7 +270,7 @@ class DrillDownDAO implements Serializable {
     @SuppressWarnings(value = "unchecked")
     private List<String> getDataItemValues(Long itemValueDefinitionId, Collection<Long> dataItemIds) {
 
-        // check arguments
+        // Check arguments.
         if ((itemValueDefinitionId == null) || (dataItemIds == null) || (dataItemIds.isEmpty())) {
             throw new IllegalArgumentException("A required argument is missing.");
         }
@@ -305,7 +305,7 @@ class DrillDownDAO implements Serializable {
 
     private Collection<Long> getDataItemIds(IDataCategoryReference dc, List<Choice> selections) {
 
-        // check arguments
+        // Check arguments.
         if ((dc == null) ||
                 (!dc.isItemDefinitionPresent()) ||
                 (selections == null)) {
@@ -315,38 +315,39 @@ class DrillDownDAO implements Serializable {
         // Get the Data Category.
         DataCategory dataCategory = dataServiceDao.getDataCategory(dc);
 
-        // iterate over selections and fetch DataItem IDs
-        Set<Long> allDataItemIds = new HashSet<Long>();
-        Collection<Collection<Long>> collections = new ArrayList<Collection<Long>>();
-        ItemValueDefinition itemValueDefinition;
-        Collection<Long> dataItemIds;
+        // Get all IDs for Data Items in the current Data Category.
+        Collection<Long> allCategoryDataItemIds = getDataItemIds(dataCategory.getId(), dataCategory.getItemDefinition().getId());
+
+        // Iterate over selections and fetch DataItem IDs for the selections.
+        Set<Long> refinedToSelectionDataItemIds = new HashSet<Long>();
+        Collection<Collection<Long>> allPerValueDataItemIds = new ArrayList<Collection<Long>>();
         for (Choice selection : selections) {
-            itemValueDefinition = dataCategory.getItemDefinition().getItemValueDefinition(selection.getName());
+            ItemValueDefinition itemValueDefinition = dataCategory.getItemDefinition().getItemValueDefinition(selection.getName());
             if (itemValueDefinition != null) {
-                dataItemIds = getDataItemIds(dataCategory.getEntityId(), itemValueDefinition.getId(), selection.getValue());
-                collections.add(dataItemIds);
-                allDataItemIds.addAll(dataItemIds);
+                Collection<Long> perValueDataItemIds = getDataItemIds(itemValueDefinition.getId(), allCategoryDataItemIds, selection.getValue());
+                allPerValueDataItemIds.add(perValueDataItemIds);
+                refinedToSelectionDataItemIds.addAll(perValueDataItemIds);
             } else {
                 throw new IllegalArgumentException("Could not locate ItemValueDefinition: " + selection.getName());
             }
         }
 
-        // reduce all to intersection
-        for (Collection<Long> c : collections) {
-            allDataItemIds.retainAll(c);
+        // Reduce all to intersection.
+        for (Collection<Long> c : allPerValueDataItemIds) {
+            refinedToSelectionDataItemIds.retainAll(c);
         }
 
-        return allDataItemIds;
+        return refinedToSelectionDataItemIds;
     }
 
     @SuppressWarnings(value = "unchecked")
-    private Collection<Long> getDataItemIds(Long dataCategoryId, Long itemValueDefinition, String value) {
+    private Collection<Long> getDataItemIds(Long itemValueDefinitionId, Collection<Long> categoryDataItemIds, String value) {
 
         Set<Long> dataItemIds;
         if (LocaleHolder.isDefaultLocale()) {
-            dataItemIds = getDataItemIdsUsingValue(dataCategoryId, itemValueDefinition, value);
+            dataItemIds = getDataItemIdsUsingValue(itemValueDefinitionId, categoryDataItemIds, value);
         } else {
-            dataItemIds = getDataItemIdsUsingLocaleNames(dataCategoryId, itemValueDefinition, value);
+            dataItemIds = getDataItemIdsUsingLocaleNames(itemValueDefinitionId, categoryDataItemIds, value);
         }
 
         log.debug("getDataItemIds() results: " + dataItemIds.size());
@@ -355,21 +356,22 @@ class DrillDownDAO implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    private Set<Long> getDataItemIdsUsingValue(
-            Long dataCategoryId,
-            Long itemValueDefinitionId,
-            String value) {
+    private Set<Long> getDataItemIdsUsingValue(Long itemValueDefinitionId, Collection<Long> categoryDataItemIds, String value) {
+
+        // Check arguments.
+        if ((itemValueDefinitionId == null) || (categoryDataItemIds == null)) {
+            throw new IllegalArgumentException("A required argument is missing.");
+        }
+        categoryDataItemIds.add(0L);
 
         // create SQL
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT i.ID ID ");
-        sql.append("FROM ITEM i, ITEM_VALUE iv ");
-        sql.append("WHERE i.ID = iv.ITEM_ID ");
-        sql.append("AND i.STATUS != :trash ");
-        sql.append("AND i.TYPE = 'DI' ");
-        sql.append("AND i.DATA_CATEGORY_ID = :dataCategoryId ");
-        sql.append("AND iv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("AND iv.VALUE = :value");
+        sql.append("SELECT ITEM_ID ID ");
+        sql.append("FROM ITEM_VALUE ");
+        sql.append("WHERE ITEM_ID IN (:dataItemIds) ");
+        sql.append("AND STATUS != :trash ");
+        sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
+        sql.append("AND VALUE = :value");
 
         // create query
         Session session = (Session) entityManager.getDelegate();
@@ -378,7 +380,7 @@ class DrillDownDAO implements Serializable {
 
         // set parameters
         query.setInteger("trash", AMEEStatus.TRASH.ordinal());
-        query.setLong("dataCategoryId", dataCategoryId);
+        query.setParameterList("dataItemIds", categoryDataItemIds, Hibernate.LONG);
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
         query.setString("value", value);
 
@@ -388,55 +390,41 @@ class DrillDownDAO implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    private Set<Long> getDataItemIdsUsingLocaleNames(
-            Long dataCategoryId,
-            Long itemValueDefinitionId,
-            String value) {
+    private Set<Long> getDataItemIdsUsingLocaleNames(Long itemValueDefinitionId, Collection<Long> categoryDataItemIds, String value) {
 
+        // Check arguments.
+        if ((itemValueDefinitionId == null) || (categoryDataItemIds == null)) {
+            throw new IllegalArgumentException("A required argument is missing.");
+        }
+        categoryDataItemIds.add(0L);
+
+        // Create SQL.
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT i.ID ID ");
-        sql.append("FROM ITEM i, ITEM_VALUE iv, LOCALE_NAME ln ");
-        sql.append("WHERE i.ID = iv.ITEM_ID ");
-        sql.append("AND i.STATUS != :trash ");
-        sql.append("AND i.TYPE = 'DI' ");
-        sql.append("AND i.DATA_CATEGORY_ID = :dataCategoryId ");
+        sql.append("SELECT iv.ITEM_ID ID ");
+        sql.append("FROM ITEM_VALUE iv, LOCALE_NAME ln ");
+        sql.append("WHERE iv.ITEM_ID IN (:dataItemIds) ");
+        sql.append("AND iv.STATUS != :trash ");
         sql.append("AND iv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
         sql.append("AND ln.ENTITY_TYPE='IV' AND ln.ENTITY_ID = iv.ID AND LOCALE = :locale AND ln.NAME = :value");
 
-        // create query
+        // Create query.
         Session session = (Session) entityManager.getDelegate();
         SQLQuery query = session.createSQLQuery(sql.toString());
         query.addScalar("ID", Hibernate.LONG);
 
-        // set parameters
+        // Set parameters.
         query.setInteger("trash", AMEEStatus.TRASH.ordinal());
-        query.setLong("dataCategoryId", dataCategoryId);
+        query.setParameterList("dataItemIds", categoryDataItemIds, Hibernate.LONG);
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
         query.setString("value", value);
         query.setString("locale", LocaleHolder.getLocale());
 
-        // execute SQL
+        // Execute SQL.
         List<Long> dataItemIds = query.list();
         if (dataItemIds.isEmpty()) {
-
             // There are no locale specific values for this locale, so get by default value instead.
-            return getDataItemIdsUsingValue(dataCategoryId, itemValueDefinitionId, value);
+            return getDataItemIdsUsingValue(itemValueDefinitionId, categoryDataItemIds, value);
         }
         return new HashSet<Long>(dataItemIds);
-    }
-
-    private boolean isWithinTimeFrame(Date targetStart, Date targetEnd, Date testStart, Date testEnd) {
-        boolean result = true;
-        if (targetEnd != null) {
-            if (!(testStart.before(targetEnd) &&
-                    ((testEnd == null) || testEnd.after(targetStart)))) {
-                result = false;
-            }
-        } else {
-            if (!((testEnd == null) || testEnd.after(targetStart))) {
-                result = false;
-            }
-        }
-        return result;
     }
 }
