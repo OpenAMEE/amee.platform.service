@@ -86,10 +86,7 @@ class DrillDownDAO implements Serializable {
         Collection<Long> dataItemIds;
 
         // check arguments
-        if ((dc == null) ||
-                (!dc.isItemDefinitionPresent()) ||
-                (selections == null) ||
-                (path == null)) {
+        if ((dc == null) || (!dc.isItemDefinitionPresent()) || (selections == null) || (path == null)) {
             throw new IllegalArgumentException("A required argument is missing.");
         }
 
@@ -171,10 +168,10 @@ class DrillDownDAO implements Serializable {
         SQLQuery query;
 
         // check arguments
-        if ((dataItemIds == null) ||
-                (dataItemIds.isEmpty())) {
+        if (dataItemIds == null) {
             throw new IllegalArgumentException("A required argument is missing.");
         }
+        dataItemIds.add(0L);
 
         // create SQL
         sql = new StringBuilder();
@@ -203,6 +200,7 @@ class DrillDownDAO implements Serializable {
         }
     }
 
+    @SuppressWarnings(value = "unchecked")
     private Collection<String> getDataItemUIDs(Long dataCategoryId, Long itemDefinitionId) {
 
         // check arguments
@@ -235,6 +233,7 @@ class DrillDownDAO implements Serializable {
         return new HashSet<String>(dataItemUids);
     }
 
+    @SuppressWarnings(value = "unchecked")
     private Collection<Long> getDataItemIds(Long dataCategoryId, Long itemDefinitionId) {
 
         // check arguments
@@ -271,9 +270,10 @@ class DrillDownDAO implements Serializable {
     private List<String> getDataItemValues(Long itemValueDefinitionId, Collection<Long> dataItemIds) {
 
         // Check arguments.
-        if ((itemValueDefinitionId == null) || (dataItemIds == null) || (dataItemIds.isEmpty())) {
+        if ((itemValueDefinitionId == null) || (dataItemIds == null)) {
             throw new IllegalArgumentException("A required argument is missing.");
         }
+        dataItemIds.add(0L);
 
         // create SQL
         StringBuilder sql = new StringBuilder();
@@ -306,9 +306,7 @@ class DrillDownDAO implements Serializable {
     private Collection<Long> getDataItemIds(IDataCategoryReference dc, List<Choice> selections) {
 
         // Check arguments.
-        if ((dc == null) ||
-                (!dc.isItemDefinitionPresent()) ||
-                (selections == null)) {
+        if ((dc == null) || (!dc.isItemDefinitionPresent()) || (selections == null)) {
             throw new IllegalArgumentException("A required argument is missing.");
         }
 
