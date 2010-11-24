@@ -15,7 +15,8 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SearchQueryService {
 
@@ -37,7 +38,7 @@ public class SearchQueryService {
             // Search for Data Items.
             ResultsWrapper<Document> allSecondaryResults =
                     luceneService.doSearch(filter.getQuery(ObjectType.DI, ObjectType.NDI));
-            // Only handle secondary results if some where found.
+            // Only handle secondary results if some were found.
             if (!allSecondaryResults.getResults().isEmpty()) {
                 // Get all Documents matching primary query (this is a duplicate of the search above).
                 ResultsWrapper<Document> allPrimaryResults = luceneService.doSearch(primaryQuery);
@@ -46,7 +47,7 @@ public class SearchQueryService {
                 for (Document d : allPrimaryResults.getResults()) {
                     primaryDataCategoryUids.add(d.getField("entityUid").stringValue());
                 }
-                // Collect secondary results Data Category UIDs.
+                // Collect secondary results Data Category UIDs (minus duplicates of primary Data Categories).
                 List<String> secondaryDataCategoryUids = new ArrayList<String>();
                 for (Document d : allSecondaryResults.getResults()) {
                     Field f = d.getField("categoryUid");
@@ -94,7 +95,7 @@ public class SearchQueryService {
                         }
                     }
                 }
-                // Note: Our ResultsWrapper document list may now contain duplicates which need to be removed higher up the stack.
+                // NOTE: Our ResultsWrapper document list may now contain duplicates which need to be removed higher up the stack.
             }
         }
         return pagedPrimaryResults;

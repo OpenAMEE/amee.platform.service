@@ -31,6 +31,10 @@ public class SearchFilter extends QueryFilter {
         return getQueries().get("tags");
     }
 
+    public boolean hasTags() {
+        return getTags() != null;
+    }
+
     public void setTags(Query tags) {
         getQueries().put("tags", tags);
     }
@@ -39,12 +43,24 @@ public class SearchFilter extends QueryFilter {
         return getQueries().get("excTags");
     }
 
+    public boolean hasExcTags() {
+        return getExcTags() != null;
+    }
+
     public void setExcTags(Query tags) {
         getQueries().put("excTags", tags);
     }
 
     public Set<ObjectType> getTypes() {
         return types;
+    }
+
+    public boolean hasTypes() {
+        return hasTypes(types);
+    }
+
+    public static boolean hasTypes(Set<ObjectType> types) {
+        return (types != null) && !types.isEmpty();
     }
 
     public void setTypes(Set<ObjectType> types) {
@@ -62,36 +78,48 @@ public class SearchFilter extends QueryFilter {
     }
 
     public Query getQuery(Set<ObjectType> types) {
-        Query q = getQ(),
-              tags = getTags(),
-              excTags = getExcTags();
-
-        if (tags != null || excTags != null || (types != null && !types.isEmpty())) {
+        // Do we need to create a combined query?
+        if (hasTags() || hasExcTags() || hasTypes(types)) {
             // Create a combined query.
             BooleanQuery combinedQuery = new BooleanQuery();
-            // First - add entityType queries.
-            if ((types != null) && !types.isEmpty()) {
-                BooleanQuery typesQuery = new BooleanQuery();
-                for (ObjectType objectType : types) {
-                    typesQuery.add(new TermQuery(new Term("entityType", objectType.getName())), BooleanClause.Occur.SHOULD);
-                }
-                combinedQuery.add(typesQuery, BooleanClause.Occur.MUST);
-            }
-            // Second - add tags query.
-            if (tags != null) {
-                combinedQuery.add(tags, BooleanClause.Occur.MUST);
-            }
-            // Third - add excluded tags
-            if (excTags != null) {
-                combinedQuery.add(excTags, BooleanClause.Occur.MUST_NOT);
-            }
-            // Finally - add plain query.
-            combinedQuery.add(q, BooleanClause.Occur.MUST);
-            return combinedQuery;
+            // Add refinement queries.
+            addRefinementQueries(combinedQuery, types);
+            // Add plain search query.
+            return addSearchQuery(combinedQuery);
         } else {
-            // Just return the simple query.
-            return q;
+            // Just return the plain query.
+            return getQ();
         }
+    }
+
+    public Query addRefinementQueries(BooleanQuery combinedQuery) {
+        addRefinementQueries(combinedQuery, getTypes());
+        return combinedQuery;
+    }
+
+    public Query addRefinementQueries(BooleanQuery combinedQuery, Set<ObjectType> types) {
+        // First - add entityType queries.
+        if (hasTypes(types)) {
+            BooleanQuery typesQuery = new BooleanQuery();
+            for (ObjectType objectType : types) {
+                typesQuery.add(new TermQuery(new Term("entityType", objectType.getName())), BooleanClause.Occur.SHOULD);
+            }
+            combinedQuery.add(typesQuery, BooleanClause.Occur.MUST);
+        }
+        // Second - add tags query.
+        if (hasTags()) {
+            combinedQuery.add(getTags(), BooleanClause.Occur.MUST);
+        }
+        // Third - add excluded tags.
+        if (hasExcTags()) {
+            combinedQuery.add(getExcTags(), BooleanClause.Occur.MUST_NOT);
+        }
+        return combinedQuery;
+    }
+
+    public Query addSearchQuery(BooleanQuery combinedQuery) {
+        combinedQuery.add(getQ(), BooleanClause.Occur.MUST);
+        return combinedQuery;
     }
 
     public int getResultLimitDefault() {
