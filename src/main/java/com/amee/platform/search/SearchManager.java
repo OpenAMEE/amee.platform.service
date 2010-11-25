@@ -5,6 +5,7 @@ import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationMessage;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
@@ -69,6 +70,11 @@ public class SearchManager implements Runnable, SmartLifecycle, ApplicationListe
      * Should all Data Items be re-indexed on application start?
      */
     private boolean indexDataItems = false;
+
+    /**
+     * The path prefix for Data Categories that should be indexed (e.g., '/lca/ecoinvent').
+     */
+    private String dataCategoryPathPrefix = null;
 
     // A Thread to do the initialisation work in.
     private Thread thread;
@@ -239,7 +245,10 @@ public class SearchManager implements Runnable, SmartLifecycle, ApplicationListe
         // Iterate over all DataCategories and gather DataCategory UIDs.
         Set<String> dataCategoryUids = new HashSet<String>();
         for (DataCategory dataCategory : dataService.getDataCategories()) {
-            if (!dataCategory.getFullPath().startsWith("/test")) {
+            // Don't index Data Categories whose path starts with '/test'.
+            // Only index Data Categories whose path starts with dataCategoryPathPrefix (if set).
+            if (!dataCategory.getFullPath().startsWith("/test") &&
+                    (StringUtils.isBlank(dataCategoryPathPrefix) || dataCategory.getFullPath().startsWith(dataCategoryPathPrefix))) {
                 dataCategoryUids.add(dataCategory.getUid());
             }
         }
@@ -319,5 +328,10 @@ public class SearchManager implements Runnable, SmartLifecycle, ApplicationListe
     @Value("#{ systemProperties['amee.indexDataItems'] }")
     public void setIndexDataItems(Boolean indexDataItems) {
         this.indexDataItems = indexDataItems;
+    }
+
+    @Value("#{ systemProperties['amee.dataCategoryPathPrefix'] }")
+    public void setDataCategoryPathPrefix(String dataCategoryPathPrefix) {
+        this.dataCategoryPathPrefix = dataCategoryPathPrefix;
     }
 }
