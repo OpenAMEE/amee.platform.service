@@ -32,4 +32,6 @@ public interface LuceneService {
     public void checkSearcher();
 
     public void flush();
+
+    public void takeSnapshot();
 }
