@@ -79,7 +79,7 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * The time of the most recent index write.
      */
-    private long lastWriteTime = 0l;
+    private long lastWriteTime = 0L;
 
     /**
      * Lock objects for the index.
@@ -113,7 +113,7 @@ public class LuceneServiceImpl implements LuceneService {
             // Get Collector limited to numHits + 1, so we can detect truncations.
             TopScoreDocCollector collector = TopScoreDocCollector.create(numHits + 1, true);
             // Get the IndexSearcher and do the search.
-            Searcher searcher = getSearcher();
+            Searcher searcher = getIndexSearcher();
             searcher.search(query, collector);
             // Get hits within our start and limit range.
             ScoreDoc[] hits = collector.topDocs(resultStart, resultLimit + 1).scoreDocs;
@@ -164,7 +164,7 @@ public class LuceneServiceImpl implements LuceneService {
             // Get Collector limited to numHits + 1, so we can detect truncations.
             TopScoreDocCollector collector = TopScoreDocCollector.create(MAX_NUM_HITS + 1, true);
             // Get the IndexSearcher and do the search.
-            Searcher searcher = getSearcher();
+            Searcher searcher = getIndexSearcher();
             searcher.search(query, collector);
             // Get all hits.
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
@@ -255,6 +255,7 @@ public class LuceneServiceImpl implements LuceneService {
                 q.add(new TermQuery(t), BooleanClause.Occur.MUST);
             }
         }
+        deleteDocuments(q);
     }
 
     @Override
@@ -352,7 +353,7 @@ public class LuceneServiceImpl implements LuceneService {
      *
      * @return the Searcher
      */
-    private Searcher getSearcher() {
+    private IndexSearcher getIndexSearcher() {
         if (searcher == null) {
             synchronized (this) {
                 if (searcher == null) {
@@ -507,28 +508,28 @@ public class LuceneServiceImpl implements LuceneService {
     }
 
     /**
-     * Flush the IndexWriter. Will optimise and commit the index and take a snapshot if appropriate.
+     * Flush the IndexWriter. Will optimise and commit the index if appropriate.
      */
     @Override
     public void flush() {
         if (!masterIndex || (indexWriter == null)) return;
-        wLock.lock();
+        rLock.lock();
         try {
             log.info("flush() Starting.");
-            // Optimize and commit the IndexWriter.
-            indexWriter.optimize();
-            indexWriter.commit();
-            // Take a snapshot if it is due.
-            if (isSnapshotDue()) {
-                takeSnapshot();
+            if (!getIndexSearcher().getIndexReader().isOptimized()) {
+                indexWriter.optimize();
+                indexWriter.commit();
+            } else {
+                log.info("flush() Index already optimized.");
             }
             log.info("flush() Done.");
         } catch (IOException e) {
             log.error("flush() Caught IOException: " + e.getMessage());
         } finally {
-            wLock.unlock();
+            rLock.unlock();
         }
     }
+
 
     /**
      * Closes the IndexWriter. Will flush the index prior to closing.
@@ -549,30 +550,40 @@ public class LuceneServiceImpl implements LuceneService {
      * Takes a snapshot of the lucene index using the solr snapshooter shell script.
      * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
      */
-    private synchronized void takeSnapshot() {
+    public synchronized void takeSnapshot() {
         Process p = null;
-        Timer timer = new Timer(true);
-        String command = getSnapShooterPath() + " -d " + getIndexDirPath();
-        try {
-            log.info("takeSnapshot() Executing: " + command);
-            // Invoke the Snapshooter.
-            p = Runtime.getRuntime().exec(command);
-            // Use a Timer to interrupt later on timeout.
-            InterruptTimerTask interrupter = new InterruptTimerTask(Thread.currentThread());
-            timer.schedule(interrupter, 30 * 1000); // 30 second timeout.
-            // Wait for process to complete (or until timeout is reached).
-            p.waitFor();
-            // If we get here then the snapshot completed.
-            log.info("takeSnapshot() Done.");
-        } catch (IOException e) {
-            log.error("takeSnapshot() Caught IOException: " + e.getMessage());
-        } catch (InterruptedException e) {
-            p.destroy();
-            log.warn("takeSnapshot() Timed out.");
-        } finally {
-            // Tidy up.
-            timer.cancel();
-            Thread.interrupted();
+        Timer timer;
+        String command;
+        InterruptTimerTask interrupter;
+        // Only take a snapshot if it is due.
+        if (isSnapshotDue()) {
+            // We need a write lock to ensure consistency.
+            wLock.lock();
+            // Setup time and command.
+            timer = new Timer(true);
+            command = getSnapShooterPath() + " -d " + getIndexDirPath();
+            try {
+                log.info("takeSnapshot() Executing: " + command);
+                // Invoke the Snapshooter.
+                p = Runtime.getRuntime().exec(command);
+                // Use a Timer to interrupt later on timeout.
+                interrupter = new InterruptTimerTask(Thread.currentThread());
+                timer.schedule(interrupter, 30 * 1000); // 30 second timeout.
+                // Wait for process to complete (or until timeout is reached).
+                p.waitFor();
+                // If we get here then the snapshot completed.
+                log.info("takeSnapshot() Done.");
+            } catch (IOException e) {
+                log.error("takeSnapshot() Caught IOException: " + e.getMessage());
+            } catch (InterruptedException e) {
+                p.destroy();
+                log.warn("takeSnapshot() Timed out.");
+            } finally {
+                // Tidy up.
+                timer.cancel();
+                Thread.interrupted();
+                wLock.unlock();
+            }
         }
     }
 
@@ -590,6 +601,7 @@ public class LuceneServiceImpl implements LuceneService {
         public void run() {
             thread.interrupt();
         }
+
     }
 
     /**
