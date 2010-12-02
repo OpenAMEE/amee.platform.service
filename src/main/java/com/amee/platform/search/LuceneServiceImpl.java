@@ -549,7 +549,7 @@ public class LuceneServiceImpl implements LuceneService {
      * Takes a snapshot of the lucene index using the solr snapshooter shell script.
      * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
      */
-    public synchronized void takeSnapshot() {
+    public void takeSnapshot() {
         Process p = null;
         Timer timer;
         String command;
