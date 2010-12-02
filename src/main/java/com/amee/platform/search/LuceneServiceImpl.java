@@ -512,13 +512,13 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public void flush() {
-        if (!masterIndex || (indexWriter == null)) return;
+        if (indexWriter == null) return;
         rLock.lock();
         try {
             log.info("flush() Starting.");
             if (!getIndexSearcher().getIndexReader().isOptimized()) {
-                indexWriter.optimize();
-                indexWriter.commit();
+                getIndexWriter().optimize();
+                getIndexWriter().commit();
             } else {
                 log.info("flush() Index already optimized.");
             }
@@ -529,7 +529,6 @@ public class LuceneServiceImpl implements LuceneService {
             rLock.unlock();
         }
     }
-
 
     /**
      * Closes the IndexWriter. Will flush the index prior to closing.

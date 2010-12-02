@@ -89,7 +89,6 @@ public class Invalidator {
         Option entityTypeOpt = OptionBuilder
                 .withArgName("entityType")
                 .hasArg()
-                .isRequired()
                 .withDescription("The entity type to invalidate. Optional, defaults to 'DC'.")
                 .create("entityType");
         options.addOption(entityTypeOpt);
@@ -108,7 +107,7 @@ public class Invalidator {
                 .withArgName("invOptions")
                 .hasArg()
                 .isRequired()
-                .withDescription("Extra options for the invalidation message. This can be a single option or a CSV list (e.g., 'indexDataItems,indexChildren'). Optional.")
+                .withDescription("Extra options for the invalidation message. This can be a single option or a CSV list (e.g., 'indexDataItems'). Optional.")
                 .create("invOptions");
         options.addOption(invOptionsOpt);
 
