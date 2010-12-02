@@ -512,7 +512,7 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public void flush() {
-        if (indexWriter == null) return;
+        if (!masterIndex) return;
         rLock.lock();
         try {
             log.info("flush() Starting.");
