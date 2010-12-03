@@ -12,11 +12,11 @@
     <!-- Properties. -->
     <properties>
         <!-- Versions. -->
-        <amee-base.version>1.0.5-SNAPSHOT</amee-base.version>
-        <amee-persist.version>1.0.7-SNAPSHOT</amee-persist.version>
-        <amee-messaging.version>1.0.5-SNAPSHOT</amee-messaging.version>
-        <amee-platform-science.version>1.0.11</amee-platform-science.version>
-        <amee-platform-domain.version>1.0.11-SNAPSHOT</amee-platform-domain.version>
+        <amee-base.version>1.0.6-SNAPSHOT</amee-base.version>
+        <amee-persist.version>1.0.8-SNAPSHOT</amee-persist.version>
+        <amee-messaging.version>1.0.6-SNAPSHOT</amee-messaging.version>
+        <amee-platform-science.version>1.0.12-SNAPSHOT</amee-platform-science.version>
+        <amee-platform-domain.version>1.0.12-SNAPSHOT</amee-platform-domain.version>
         <!-- External Versions. -->
         <!-- Note: These versions were last checked & upgraded on 15/04/2010. -->
         <org-aspectj.version>1.6.8</org-aspectj.version>
