@@ -83,6 +83,8 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.eq("entityReference.entityUid", entity.getEntityUid()));
         criteria.add(Restrictions.eq("entityReference.entityType", entity.getObjectType().getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.add(Restrictions.ne("t.status", AMEEStatus.TRASH));
+        criteria.createAlias("tag", "t");
         criteria.setFetchMode("tag", FetchMode.JOIN);
         criteria.setTimeout(5);
         return criteria.list();
@@ -100,6 +102,8 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.in("entityReference.entityId", entityIds));
         criteria.add(Restrictions.eq("entityReference.entityType", objectType.getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.add(Restrictions.ne("t.status", AMEEStatus.TRASH));
+        criteria.createAlias("tag", "t");
         criteria.setFetchMode("tag", FetchMode.JOIN);
         criteria.setTimeout(5);
         return criteria.list();
@@ -108,11 +112,12 @@ public class TagServiceDAO implements Serializable {
     public EntityTag getEntityTag(IAMEEEntityReference entity, String tag) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(EntityTag.class);
-        criteria.createAlias("tag", "t");
         criteria.add(Restrictions.eq("entityReference.entityUid", entity.getEntityUid()));
         criteria.add(Restrictions.eq("entityReference.entityType", entity.getObjectType().getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.add(Restrictions.ne("t.status", AMEEStatus.TRASH));
         criteria.add(Restrictions.ilike("t.tag", tag, MatchMode.EXACT));
+        criteria.createAlias("tag", "t");
         criteria.setTimeout(5);
         return (EntityTag) criteria.uniqueResult();
     }
