@@ -77,6 +77,11 @@ public class LuceneServiceImpl implements LuceneService {
     private boolean masterIndex = false;
 
     /**
+     * Should index snapshots be created? Only required for replication.
+     */
+    private Boolean snapshotEnabled = false;
+
+    /**
      * The time of the most recent index write.
      */
     private long lastWriteTime = 0L;
@@ -550,6 +555,7 @@ public class LuceneServiceImpl implements LuceneService {
      * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
      */
     public void takeSnapshot() {
+        if (!snapshotEnabled) return;
         Process p = null;
         Timer timer;
         String command;
@@ -607,6 +613,8 @@ public class LuceneServiceImpl implements LuceneService {
      * @return true if the last snapshot was taken longer than the most recent write
      */
     private boolean isSnapshotDue() {
+
+        // Unless this is the master index this test will always return false.
         return lastWriteTime > getLastSnapshotTime();
     }
 
@@ -635,6 +643,11 @@ public class LuceneServiceImpl implements LuceneService {
     @Value("#{ systemProperties['amee.masterIndex'] }")
     public void setMasterIndex(Boolean masterIndex) {
         this.masterIndex = masterIndex;
+    }
+
+    @Value("#{ systemProperties['amee.snapshotEnabled'] }")
+    public void setSnapshotEnabled(Boolean snapshotEnabled) {
+        this.snapshotEnabled = snapshotEnabled;
     }
 
     public String getIndexDirPath() {
