@@ -529,7 +529,7 @@ public class LuceneServiceImpl implements LuceneService {
             }
             log.info("flush() Done.");
         } catch (IOException e) {
-            log.error("flush() Caught IOException: " + e.getMessage());
+            log.error("flush() Caught IOException: " + e.getMessage(), e);
         } finally {
             rLock.unlock();
         }
@@ -579,7 +579,7 @@ public class LuceneServiceImpl implements LuceneService {
                 // If we get here then the snapshot completed.
                 log.info("takeSnapshot() Done.");
             } catch (IOException e) {
-                log.error("takeSnapshot() Caught IOException: " + e.getMessage());
+                log.error("takeSnapshot() Caught IOException: " + e.getMessage(), e);
             } catch (InterruptedException e) {
                 p.destroy();
                 log.warn("takeSnapshot() Timed out.");
