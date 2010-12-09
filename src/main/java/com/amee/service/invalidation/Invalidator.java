@@ -106,7 +106,6 @@ public class Invalidator {
         Option invOptionsOpt = OptionBuilder
                 .withArgName("invOptions")
                 .hasArg()
-                .isRequired()
                 .withDescription("Extra options for the invalidation message. This can be a single option or a CSV list (e.g., 'indexDataItems'). Optional.")
                 .create("invOptions");
         options.addOption(invOptionsOpt);
