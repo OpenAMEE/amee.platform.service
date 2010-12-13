@@ -11,6 +11,7 @@ import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
+import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
@@ -177,6 +178,15 @@ public class TagServiceDAO implements Serializable {
             // Return an empty list if the tags list is empty.
             return new ArrayList<EntityTag>();
         }
+    }
+
+    public Long getTagCount() {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(Tag.class);
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setProjection(Projections.rowCount());
+        criteria.setTimeout(5);
+        return (Long) criteria.uniqueResult();
     }
 
     public void persist(Tag tag) {

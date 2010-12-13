@@ -170,4 +170,8 @@ public class TagService implements ApplicationListener {
         ENTITY_TAGS.get().remove(entityTag.getEntityReference().toString());
         dao.remove(entityTag);
     }
+
+    public Long getTagCount() {
+        return dao.getTagCount();
+    }
 }
