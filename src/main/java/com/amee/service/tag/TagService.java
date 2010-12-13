@@ -33,6 +33,7 @@ public class TagService implements ApplicationListener {
                 }
             };
 
+    @Override
     public void onApplicationEvent(ApplicationEvent e) {
         if (e instanceof TransactionEvent) {
             TransactionEvent te = (TransactionEvent) e;
@@ -58,11 +59,16 @@ public class TagService implements ApplicationListener {
     }
 
     public List<Tag> getTags(IAMEEEntityReference entity) {
+        return getTags(entity, null, null);
+    }
+
+    public List<Tag> getTags(IAMEEEntityReference entity, Collection<String> incTags, Collection<String> excTags) {
         List<EntityTag> entityTags;
-        List<Tag> tags = new ArrayList<Tag>();
+        List<Tag> tags;
         if (entity != null) {
+            tags = new ArrayList<Tag>();
             if (ENTITY_TAGS.get().containsKey(entity.toString())) {
-                // Return existing Tag list, or at least an empty list.
+                // Return cached Tag list, or at least an empty list.
                 entityTags = ENTITY_TAGS.get().get(entity.toString());
                 if (entityTags != null) {
                     for (EntityTag entityTag : entityTags) {
@@ -70,7 +76,7 @@ public class TagService implements ApplicationListener {
                     }
                 }
             } else {
-                // Look up EntityTags.
+                // Look up EntityTags for entity.
                 entityTags = dao.getEntityTags(entity);
                 ENTITY_TAGS.get().put(entity.toString(), entityTags);
                 // Populate Tag list.
@@ -78,8 +84,10 @@ public class TagService implements ApplicationListener {
                     tags.add(entityTag.getTag());
                 }
             }
+            // NOTE: Tags from this code section do not have their count value set.
         } else {
-            tags.addAll(getAllTags());
+            // Get all tags with their count values set.
+            tags = dao.getTagsWithCount(incTags, excTags);
         }
         return tags;
     }
@@ -130,7 +138,7 @@ public class TagService implements ApplicationListener {
         }
         // Store Tags against entities.
         // If there are no Tags for an entity the entry will remain null.
-        for (EntityTag entityTag : dao.getEntityTags(objectType, entities)) {
+        for (EntityTag entityTag : dao.getEntityTagsForEntities(objectType, entities)) {
             List<EntityTag> entityTags = ENTITY_TAGS.get().get(entityTag.getEntityReference().toString());
             if (entityTags == null) {
                 entityTags = new ArrayList<EntityTag>();
