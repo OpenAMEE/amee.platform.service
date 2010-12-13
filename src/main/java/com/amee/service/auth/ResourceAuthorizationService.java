@@ -8,6 +8,7 @@ import com.amee.domain.auth.AuthorizationContext;
 import com.amee.domain.auth.PermissionEntry;
 import com.amee.domain.auth.User;
 import com.amee.domain.path.Pathable;
+import com.amee.service.data.DataService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ import java.util.List;
 public class ResourceAuthorizationService {
 
     private final Log log = LogFactory.getLog(getClass());
+
+    @Autowired
+    private DataService dataService;
 
     @Autowired
     private AuthenticationService authenticationService;
@@ -65,6 +69,17 @@ public class ResourceAuthorizationService {
      */
     public boolean isAuthorizedForBuild() {
         return isAuthorized(getBuildAccessSpecifications());
+    }
+
+    /**
+     * A utility method wrapping up a setUserByUid, setResource and isAuthorizedForAccept call sequence. Will cause
+     * a NotAuthorizedException if the user is not authorized to accept (POST) a resource. The Root DataCategory is
+     * assumed to be the parent resource for the entity to be created (accepted).
+     *
+     * @param userUid to authorize
+     */
+    public void ensureAuthorizedForAccept(String userUid) {
+        ensureAuthorizedForAccept(userUid, dataService.getRootDataCategory());
     }
 
     /**
