@@ -9,6 +9,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Transformer;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
+import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Projections;
@@ -36,12 +37,21 @@ public class TagServiceDAO implements Serializable {
         return (Tag) criteria.uniqueResult();
     }
 
+    /**
+     * Fetch a Tag with the given tag value.
+     *
+     * This query uses FlushMode.MANUAL to ensure the session is not flushed prior to execution.
+     *
+     * @param tag value to match Tag on
+     * @return Tag matching the tag value
+     */
     protected Tag getTagByTag(String tag) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(Tag.class);
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.add(Restrictions.ilike("tag", tag, MatchMode.EXACT));
         criteria.setTimeout(5);
+        criteria.setFlushMode(FlushMode.MANUAL);
         return (Tag) criteria.uniqueResult();
     }
 
