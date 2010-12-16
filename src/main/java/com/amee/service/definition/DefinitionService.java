@@ -227,6 +227,10 @@ public class DefinitionService extends BaseService implements ApplicationListene
         dao.save(returnValueDefinition);
     }
 
+    public void unsetDefaultTypes(ReturnValueDefinition returnValueDefinition) {
+        dao.unsetDefaultType(returnValueDefinition);
+    }
+
     public void remove(ReturnValueDefinition returnValueDefinition) {
         dao.remove(returnValueDefinition);
     }

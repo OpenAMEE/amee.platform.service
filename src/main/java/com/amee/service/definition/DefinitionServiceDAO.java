@@ -380,4 +380,20 @@ public class DefinitionServiceDAO implements Serializable {
     public void remove(ValueDefinition valueDefinition) {
         valueDefinition.setStatus(AMEEStatus.TRASH);
     }
+
+    /**
+     * Set all sibling ReturnValueDefinition defaultType values to false.
+     *
+     * @param returnValueDefinition the ReturnValueDefinition that is the new default type.
+     * 
+     */
+    public void unsetDefaultType(ReturnValueDefinition returnValueDefinition) {
+        entityManager.createQuery(
+            "UPDATE ReturnValueDefinition rvd SET rvd.defaultType = false " +
+            "WHERE rvd.itemDefinition = :itemDefinition " +
+            "AND rvd.id != :id")
+        .setParameter("itemDefinition", returnValueDefinition.getItemDefinition())
+        .setParameter("id", returnValueDefinition.getId())
+        .executeUpdate();
+    }
 }
