@@ -43,7 +43,7 @@ public class ProfileSheetService implements Serializable {
     }
 
     public Sheet getSheet(DataCategory dataCategory, CacheableFactory builder) {
-        ThreadBeanHolder.set("dataCategoryForFactory", dataCategory);
+        ThreadBeanHolder.set(DataCategory.class, dataCategory);
         return (Sheet) cacheHelper.getCacheable(builder);
     }
 
