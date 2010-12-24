@@ -51,9 +51,9 @@ public class InvalidationService implements ApplicationContextAware, Application
                     log.debug("onApplicationEvent() BEFORE_BEGIN");
                     onBeforeBegin();
                     break;
-                case END:
-                    log.debug("onApplicationEvent() END");
-                    onEnd();
+                case BEFORE_END:
+                    log.debug("onApplicationEvent() BEFORE_END");
+                    onBeforeEnd();
                     break;
                 default:
                     // Do nothing!
@@ -98,8 +98,8 @@ public class InvalidationService implements ApplicationContextAware, Application
      * Triggers entity invalidation. Sends InvalidationMessages into the invalidation topic for
      * the previously added in entities. Called after each request has been handled.
      */
-    public synchronized void onEnd() {
-        log.debug("onEnd()");
+    public synchronized void onBeforeEnd() {
+        log.debug("onBeforeEnd()");
         try {
             for (InvalidationMessage invalidationMessage : invalidationMessages.get()) {
                 invalidate(invalidationMessage);

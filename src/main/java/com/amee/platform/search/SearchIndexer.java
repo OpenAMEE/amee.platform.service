@@ -23,14 +23,15 @@ import org.apache.lucene.index.Term;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Configurable(autowire = Autowire.BY_TYPE)
+@Service
+@Scope("prototype")
 public class SearchIndexer implements Runnable {
 
     public static class DocumentContext {
@@ -90,7 +91,7 @@ public class SearchIndexer implements Runnable {
     private InvalidationService invalidationService;
 
     // A wrapper object encapsulating the context of the current indexing operation.
-    private DocumentContext ctx;
+    private DocumentContext documentContext;
 
     // The DataCategory currently being indexed.
     private DataCategory dataCategory;
@@ -98,19 +99,14 @@ public class SearchIndexer implements Runnable {
     // Flag indicating that the current DataCategory is new.
     private boolean newCategory = false;
 
-    private SearchIndexer() {
+    public SearchIndexer() {
         super();
-    }
-
-    public SearchIndexer(DocumentContext ctx) {
-        super();
-        this.ctx = ctx;
     }
 
     @Override
     public void run() {
         try {
-            searchLog.info(ctx.dataCategoryUid + "|Started processing DataCategory.");
+            searchLog.info(documentContext.dataCategoryUid + "|Started processing DataCategory.");
             // Clear thread locals.
             ThreadBeanHolder.clear();
             // Start persistence session.
@@ -120,15 +116,15 @@ public class SearchIndexer implements Runnable {
             ThreadBeanHolder.set("localeService", localeService);
             ThreadBeanHolder.set("metadataService", metadataService);
             // Get the DataCategory and handle.
-            dataCategory = dataService.getDataCategoryByUid(ctx.dataCategoryUid, null);
+            dataCategory = dataService.getDataCategoryByUid(documentContext.dataCategoryUid, null);
             if (dataCategory != null) {
                 updateDataCategory();
             } else {
-                searchLog.warn(ctx.dataCategoryUid + "|DataCategory not found.");
+                searchLog.warn(documentContext.dataCategoryUid + "|DataCategory not found.");
             }
         } catch (Throwable t) {
             transactionController.setRollbackOnly();
-            searchLog.error(ctx.dataCategoryUid + "|Error processing DataCategory.");
+            searchLog.error(documentContext.dataCategoryUid + "|Error processing DataCategory.");
             log.error("run() Caught Throwable: " + t.getMessage(), t);
         } finally {
             // Always end the transaction.
@@ -136,7 +132,7 @@ public class SearchIndexer implements Runnable {
             // Clear thread locals again.
             ThreadBeanHolder.clear();
             // We're done!
-            searchLog.info(ctx.dataCategoryUid + "|Completed processing DataCategory.");
+            searchLog.info(documentContext.dataCategoryUid + "|Completed processing DataCategory.");
         }
     }
 
@@ -153,24 +149,24 @@ public class SearchIndexer implements Runnable {
                             DATE_TO_SECOND.parseDateTime(modifiedField.stringValue());
                     DateTime modifiedInDatabase =
                             new DateTime(dataCategory.getModified()).withMillisOfSecond(0);
-                    if (ctx.handleDataCategories || ctx.handleDataItems || modifiedInDatabase.isAfter(modifiedInIndex)) {
-                        searchLog.info(ctx.dataCategoryUid + "|DataCategory has been modified or re-index requested, updating.");
+                    if (documentContext.handleDataCategories || documentContext.handleDataItems || modifiedInDatabase.isAfter(modifiedInIndex)) {
+                        searchLog.info(documentContext.dataCategoryUid + "|DataCategory has been modified or re-index requested, updating.");
                         handleDataCategory();
                     } else {
-                        searchLog.info(ctx.dataCategoryUid + "|DataCategory is up-to-date, skipping.");
+                        searchLog.info(documentContext.dataCategoryUid + "|DataCategory is up-to-date, skipping.");
                     }
                 } else {
-                    searchLog.info(ctx.dataCategoryUid + "|The DataCategory modified field was missing, updating");
+                    searchLog.info(documentContext.dataCategoryUid + "|The DataCategory modified field was missing, updating");
                     handleDataCategory();
                 }
             } else {
-                searchLog.info(ctx.dataCategoryUid + "|DataCategory not in index, adding for the first time.");
+                searchLog.info(documentContext.dataCategoryUid + "|DataCategory not in index, adding for the first time.");
                 newCategory = true;
-                ctx.handleDataItems = true;
+                documentContext.handleDataItems = true;
                 handleDataCategory();
             }
         } else {
-            searchLog.info(ctx.dataCategoryUid + "|DataCategory needs to be removed.");
+            searchLog.info(documentContext.dataCategoryUid + "|DataCategory needs to be removed.");
             searchQueryService.removeDataCategory(dataCategory);
             searchQueryService.removeDataItems(dataCategory);
             // Send message stating that the DataCategory has been re-indexed.
@@ -186,7 +182,7 @@ public class SearchIndexer implements Runnable {
         // Get Data Category Document.
         Document dataCategoryDoc = getDocumentForDataCategory(dataCategory);
         // Handle Data Items (Create, store & update documents).
-        if (ctx.handleDataItems) {
+        if (documentContext.handleDataItems) {
             handleDataItems();
         }
         // Are we handling a new Data Category?
@@ -210,8 +206,8 @@ public class SearchIndexer implements Runnable {
      * Create all DataItem documents for the supplied DataCategory.
      */
     protected void handleDataItems() {
-        ctx.dataItemDoc = null;
-        ctx.dataItemDocs = null;
+        documentContext.dataItemDoc = null;
+        documentContext.dataItemDocs = null;
         // There are only Data Items for a Data Category if there is an Item Definition.
         if (dataCategory.getItemDefinition() != null) {
             log.info("handleDataItems() Starting... (" + dataCategory.toString() + ")");
@@ -222,14 +218,14 @@ public class SearchIndexer implements Runnable {
             metadataService.loadMetadatasForDataItems(dataItems);
             localeService.loadLocaleNamesForDataItems(dataItems);
             // Iterate over all Data Items and create Documents.
-            ctx.dataItemDocs = new ArrayList<Document>();
+            documentContext.dataItemDocs = new ArrayList<Document>();
             for (DataItem dataItem : dataItems) {
-                ctx.dataItem = dataItem;
+                documentContext.dataItem = dataItem;
                 // Create new Data Item Document.
-                ctx.dataItemDoc = getDocumentForDataItem(dataItem);
-                ctx.dataItemDocs.add(ctx.dataItemDoc);
+                documentContext.dataItemDoc = getDocumentForDataItem(dataItem);
+                documentContext.dataItemDocs.add(documentContext.dataItemDoc);
                 // Handle the Data Item Values.
-                handleDataItemValues(ctx);
+                handleDataItemValues(documentContext);
             }
             // Clear caches.
             metadataService.clearMetadatas();
@@ -239,7 +235,7 @@ public class SearchIndexer implements Runnable {
                 searchQueryService.removeDataItems(dataCategory);
             }
             // Add the new Data Item Documents to the index (if any).
-            luceneService.addDocuments(ctx.dataItemDocs);
+            luceneService.addDocuments(documentContext.dataItemDocs);
             log.info("handleDataItems() ...done (" + dataCategory.toString() + ").");
         } else {
             log.debug("handleDataItems() DataCategory does not have items: " + dataCategory.toString());
@@ -348,5 +344,9 @@ public class SearchIndexer implements Runnable {
 
     private synchronized static void incrementCount() {
         COUNT++;
+    }
+
+    public void setDocumentContext(DocumentContext documentContext) {
+        this.documentContext = documentContext;
     }
 }
