@@ -70,7 +70,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <parallel>methods</parallel>
-                    <argLine>-javaagent:${basedir}/target/dependency/spring-instrument-${spring.version}.jar</argLine>
+                    <!-- Commented out as part of: https://jira.amee.com/browse/PL-9456 -->
+                    <!--<argLine>-javaagent:${basedir}/target/dependency/spring-instrument-${spring.version}.jar</argLine>-->
                     <systemProperties>
                         <property>
                             <name>amee.keyFile</name>
