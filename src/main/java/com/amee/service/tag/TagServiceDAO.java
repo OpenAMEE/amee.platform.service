@@ -7,6 +7,7 @@ import com.amee.domain.tag.EntityTag;
 import com.amee.domain.tag.Tag;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Transformer;
+import org.apache.commons.lang.StringUtils;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.FlushMode;
@@ -29,30 +30,38 @@ public class TagServiceDAO implements Serializable {
     private EntityManager entityManager;
 
     protected Tag getTagByUid(String uid) {
-        Session session = (Session) entityManager.getDelegate();
-        Criteria criteria = session.createCriteria(Tag.class);
-        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-        criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
-        criteria.setTimeout(5);
-        return (Tag) criteria.uniqueResult();
+        if (StringUtils.isNotBlank(uid)) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(Tag.class);
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
+            criteria.setTimeout(5);
+            return (Tag) criteria.uniqueResult();
+        } else {
+            return null;
+        }
     }
 
     /**
      * Fetch a Tag with the given tag value.
-     *
+     * <p/>
      * This query uses FlushMode.MANUAL to ensure the session is not flushed prior to execution.
      *
      * @param tag value to match Tag on
      * @return Tag matching the tag value
      */
     protected Tag getTagByTag(String tag) {
-        Session session = (Session) entityManager.getDelegate();
-        Criteria criteria = session.createCriteria(Tag.class);
-        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-        criteria.add(Restrictions.ilike("tag", tag, MatchMode.EXACT));
-        criteria.setTimeout(5);
-        criteria.setFlushMode(FlushMode.MANUAL);
-        return (Tag) criteria.uniqueResult();
+        if (StringUtils.isNotBlank(tag)) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(Tag.class);
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.add(Restrictions.ilike("tag", tag, MatchMode.EXACT));
+            criteria.setTimeout(5);
+            criteria.setFlushMode(FlushMode.MANUAL);
+            return (Tag) criteria.uniqueResult();
+        } else {
+            return null;
+        }
     }
 
     @SuppressWarnings(value = "unchecked")
