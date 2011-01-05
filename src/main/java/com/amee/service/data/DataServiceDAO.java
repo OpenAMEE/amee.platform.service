@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
+import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Restrictions;
@@ -124,6 +125,7 @@ public class DataServiceDAO implements Serializable {
             criteria.add(Restrictions.eq("wikiName", wikiName));
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
+            criteria.setFlushMode(FlushMode.MANUAL);
             List<DataCategory> dataCategories = criteria.list();
             // Remove Data Categories that don't match the requested status.
             Iterator<DataCategory> i = dataCategories.iterator();
