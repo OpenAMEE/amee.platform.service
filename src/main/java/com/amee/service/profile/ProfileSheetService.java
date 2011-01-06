@@ -42,11 +42,6 @@ public class ProfileSheetService implements Serializable {
         return (Sheet) cacheHelper.getCacheable(builder);
     }
 
-    public Sheet getSheet(DataCategory dataCategory, CacheableFactory builder) {
-        ThreadBeanHolder.set(DataCategory.class, dataCategory);
-        return (Sheet) cacheHelper.getCacheable(builder);
-    }
-
     public void removeSheets(Profile profile) {
         cacheHelper.clearCache("ProfileSheets", "ProfileSheet_" + profile.getUid());
     }
