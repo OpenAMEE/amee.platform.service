@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <aspectj>
-    <weaver>
-        <exclude within="*..*CGLIB*"/>
-        <exclude within="*..*javassist*"/>
-    </weaver>
-    <aspects>
-        <aspect name="org.springframework.beans.factory.aspectj.AbstractInterfaceDrivenDependencyInjectionAspect"/>
-    </aspects>
+    <!-- Commented out as part of: https://jira.amee.com/browse/PL-9456 -->
+    <!--<weaver>-->
+    <!--<exclude within="*..*CGLIB*"/>-->
+    <!--<exclude within="*..*javassist*"/>-->
+    <!--</weaver>-->
+    <!--<aspects>-->
+    <!--<aspect name="org.springframework.beans.factory.aspectj.AbstractInterfaceDrivenDependencyInjectionAspect"/>-->
+    <!--</aspects>-->
 </aspectj>

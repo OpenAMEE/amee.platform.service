@@ -5,6 +5,7 @@ import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.Metadata;
 import com.amee.domain.ObjectType;
 import org.hibernate.Criteria;
+import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
@@ -37,6 +38,7 @@ public class MetadataServiceDAOImpl implements Serializable, MetadataServiceDAO 
         criteria.add(Restrictions.eq("name", name));
         criteria.setCacheable(true);
         criteria.setCacheRegion(CACHE_REGION);
+        criteria.setFlushMode(FlushMode.MANUAL);
         try {
             return (Metadata) criteria.uniqueResult();
         } catch (HibernateException e) {
@@ -52,6 +54,7 @@ public class MetadataServiceDAOImpl implements Serializable, MetadataServiceDAO 
         criteria.add(Restrictions.eq("entityReference.entityUid", entity.getEntityUid()));
         criteria.add(Restrictions.eq("entityReference.entityType", entity.getObjectType().getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setFlushMode(FlushMode.MANUAL);
         return criteria.list();
     }
 
@@ -68,6 +71,7 @@ public class MetadataServiceDAOImpl implements Serializable, MetadataServiceDAO 
         criteria.add(Restrictions.in("entityReference.entityId", entityIds));
         criteria.add(Restrictions.eq("entityReference.entityType", objectType.getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setFlushMode(FlushMode.MANUAL);
         return criteria.list();
     }
 

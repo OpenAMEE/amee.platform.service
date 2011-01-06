@@ -9,12 +9,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.SmartLifecycle;
+import org.springframework.context.*;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.core.task.TaskRejectedException;
 
@@ -23,7 +22,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class SearchManager implements Runnable, SmartLifecycle, ApplicationListener {
+public class SearchManager implements Runnable, SmartLifecycle, ApplicationListener, ApplicationContextAware {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -81,6 +80,9 @@ public class SearchManager implements Runnable, SmartLifecycle, ApplicationListe
 
     // A flag to indicate the thread should stop soon.
     private boolean stopping = false;
+
+    // Used to obtain SearchIndexer instances.
+    private ApplicationContext applicationContext;
 
     // Application start-up initialisation.
 
@@ -283,7 +285,8 @@ public class SearchManager implements Runnable, SmartLifecycle, ApplicationListe
 
     protected void updateDataCategory(SearchIndexer.DocumentContext ctx) {
         // Create LcaImporter.
-        SearchIndexer searchIndexer = new SearchIndexer(ctx);
+        SearchIndexer searchIndexer = applicationContext.getBean(SearchIndexer.class);
+        searchIndexer.setDocumentContext(ctx);
         // Keep attempting to add LcaImporter to Executor.
         while (!Thread.currentThread().isInterrupted()) {
             try {
@@ -301,6 +304,11 @@ public class SearchManager implements Runnable, SmartLifecycle, ApplicationListe
                 }
             }
         }
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     // Properties.
