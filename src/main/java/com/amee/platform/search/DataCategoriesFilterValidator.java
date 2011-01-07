@@ -9,10 +9,12 @@ import org.springframework.validation.Validator;
 @Scope("prototype")
 public class DataCategoriesFilterValidator implements Validator {
 
+    @Override
     public boolean supports(Class clazz) {
         return DataCategoriesFilter.class.isAssignableFrom(clazz);
     }
 
+    @Override
     public void validate(Object o, Errors e) {
         // Do nothing. The Editors do the validation.
     }

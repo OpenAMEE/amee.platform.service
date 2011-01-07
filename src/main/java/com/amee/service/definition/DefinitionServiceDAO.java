@@ -19,6 +19,7 @@
  */
 package com.amee.service.definition;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.Pager;
 import com.amee.domain.ValueDefinition;
@@ -28,12 +29,14 @@ import com.amee.domain.algorithm.AlgorithmContext;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ReturnValueDefinition;
+import com.amee.platform.search.ItemDefinitionsFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.Session;
+import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Service;
 
@@ -154,37 +157,40 @@ public class DefinitionServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
-    public List<ItemDefinition> getItemDefinitionsByName(String name) {
-        List<ItemDefinition> itemDefinitions = null;
-        if (!name.isEmpty()) {
-            // See http://www.hibernate.org/117.html#A12 for notes on DISTINCT_ROOT_ENTITY.
-            Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(ItemDefinition.class);
-            criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-            criteria.add(Restrictions.eq("name", name));
-            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-            criteria.setFetchMode("itemValueDefinitions", FetchMode.JOIN);
-            criteria.setCacheable(true);
-            criteria.setCacheRegion(CACHE_REGION);
-            itemDefinitions = criteria.list();
+    public ResultsWrapper<ItemDefinition> getItemDefinitions(ItemDefinitionsFilter filter) {
+        // Create Criteria.
+        // See http://www.hibernate.org/117.html#A12 for notes on DISTINCT_ROOT_ENTITY.
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(ItemDefinition.class);
+        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+        if (!filter.getName().isEmpty()) {
+            criteria.add(Restrictions.eq("name", filter.getName()));
         }
-        return itemDefinitions;
-    }
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setFetchMode("itemValueDefinitions", FetchMode.JOIN);
+        criteria.addOrder(Order.asc("name").ignoreCase());
+        criteria.setCacheable(true);
+        criteria.setCacheRegion(CACHE_REGION);
+        // Apply start and limit if relevant.
+        if (filter.getResultStart() > 0) {
+            criteria.setFirstResult(filter.getResultStart());
+        }
+        if (filter.getResultLimit() > 0) {
+            criteria.setMaxResults(filter.getResultLimit() + 1);
+        }
+        // Get the results.
+        List<ItemDefinition> itemDefinitions = (List<ItemDefinition>) criteria.list();
+        // Did we limit the results?
+        if (filter.getResultLimit() > 0) {
+            // Results were limited, work out correct results and truncation state.
+            return new ResultsWrapper<ItemDefinition>(
+                    itemDefinitions.size() > filter.getResultLimit() ? itemDefinitions.subList(0, filter.getResultLimit()) : itemDefinitions,
+                    itemDefinitions.size() > filter.getResultLimit());
 
-    @SuppressWarnings(value = "unchecked")
-    public List<ItemDefinition> getItemDefinitions() {
-        List<ItemDefinition> itemDefinitions;
-        itemDefinitions = entityManager.createQuery(
-                "SELECT DISTINCT id " +
-                        "FROM ItemDefinition id " +
-                        "LEFT JOIN FETCH id.itemValueDefinitions ivd " +
-                        "WHERE id.status != :trash " +
-                        "ORDER BY id.name")
-                .setParameter("trash", AMEEStatus.TRASH)
-                .setHint("org.hibernate.cacheable", true)
-                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-                .getResultList();
-        return itemDefinitions;
+        } else {
+            // Results were not limited, no truncation.
+            return new ResultsWrapper(itemDefinitions, false);
+        }
     }
 
     @SuppressWarnings(value = "unchecked")
@@ -206,7 +212,7 @@ public class DefinitionServiceDAO implements Serializable {
                 "SELECT id " +
                         "FROM ItemDefinition id " +
                         "WHERE id.status != :trash " +
-                        "ORDER BY id.name")
+                        "ORDER BY lower(id.name)")
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
@@ -385,15 +391,14 @@ public class DefinitionServiceDAO implements Serializable {
      * Set all sibling ReturnValueDefinition defaultType values to false.
      *
      * @param returnValueDefinition the ReturnValueDefinition that is the new default type.
-     * 
      */
     public void unsetDefaultType(ReturnValueDefinition returnValueDefinition) {
         entityManager.createQuery(
-            "UPDATE ReturnValueDefinition rvd SET rvd.defaultType = false " +
-            "WHERE rvd.itemDefinition = :itemDefinition " +
-            "AND rvd.id != :id")
-        .setParameter("itemDefinition", returnValueDefinition.getItemDefinition())
-        .setParameter("id", returnValueDefinition.getId())
-        .executeUpdate();
+                "UPDATE ReturnValueDefinition rvd SET rvd.defaultType = false " +
+                        "WHERE rvd.itemDefinition = :itemDefinition " +
+                        "AND rvd.id != :id")
+                .setParameter("itemDefinition", returnValueDefinition.getItemDefinition())
+                .setParameter("id", returnValueDefinition.getId())
+                .executeUpdate();
     }
 }

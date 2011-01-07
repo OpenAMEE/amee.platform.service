@@ -21,6 +21,7 @@
  */
 package com.amee.service.definition;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
 import com.amee.domain.Pager;
@@ -31,6 +32,7 @@ import com.amee.domain.algorithm.AlgorithmContext;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ReturnValueDefinition;
+import com.amee.platform.search.ItemDefinitionsFilter;
 import com.amee.service.BaseService;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationMessage;
@@ -127,12 +129,15 @@ public class DefinitionService extends BaseService implements ApplicationListene
         return dao.getItemDefinitionByUid(uid, includeTrash);
     }
 
-    public List<ItemDefinition> getItemDefinitionsByName(String name) {
-        return dao.getItemDefinitionsByName(name);
+    public List<ItemDefinition> getItemDefinitions() {
+        ItemDefinitionsFilter filter = new ItemDefinitionsFilter();
+        filter.setResultLimit(0);
+        filter.setResultStart(0);
+        return getItemDefinitions(filter).getResults();
     }
 
-    public List<ItemDefinition> getItemDefinitions() {
-        return dao.getItemDefinitions();
+    public ResultsWrapper<ItemDefinition> getItemDefinitions(ItemDefinitionsFilter filter) {
+        return dao.getItemDefinitions(filter);
     }
 
     public List<ItemDefinition> getItemDefinitions(Pager pager) {
