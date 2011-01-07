@@ -252,8 +252,24 @@ public class DataService extends BaseService implements IDataService, Applicatio
         return dao.getDataCategoryReferences(itemDefinition);
     }
 
-    public boolean isUnique(DataCategory dataCategory) {
-        return dao.isUnique(dataCategory);
+    /**
+     * Returns true if the path of the supplied DataCategory is unique amongst peers.
+     *
+     * @param dataCategory to check for uniqueness
+     * @return true if the DataCategory has a unique path amongst peers
+     */
+    public boolean isDataCategoryUniqueByPath(DataCategory dataCategory) {
+        return dao.isDataCategoryUniqueByPath(dataCategory);
+    }
+
+    /**
+     * Returns true if the wikiName of the supplied DataCategory is unique.
+     *
+     * @param dataCategory to check for uniqueness
+     * @return true if the DataCategory has a unique wikiName
+     */
+    public boolean isDataCategoryUniqueByWikiName(DataCategory dataCategory) {
+        return dao.isDataCategoryUniqueByWikiName(dataCategory);
     }
 
     public void persist(DataCategory dataCategory) {
