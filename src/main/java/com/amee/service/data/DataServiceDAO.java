@@ -27,8 +27,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
+import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
+import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
@@ -124,6 +126,7 @@ public class DataServiceDAO implements Serializable {
             criteria.add(Restrictions.eq("wikiName", wikiName));
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
+            criteria.setFlushMode(FlushMode.MANUAL);
             List<DataCategory> dataCategories = criteria.list();
             // Remove Data Categories that don't match the requested status.
             Iterator<DataCategory> i = dataCategories.iterator();
@@ -301,16 +304,15 @@ public class DataServiceDAO implements Serializable {
     public Map<String, IDataCategoryReference> getDataCategories(IDataCategoryReference dataCategoryReference) {
         Map<String, IDataCategoryReference> dataCategoriesReferences =
                 new TreeMap<String, IDataCategoryReference>(String.CASE_INSENSITIVE_ORDER);
-        List<DataCategory> dataCategories = (List<DataCategory>) entityManager.createQuery(
-                "from DataCategory " +
-                        "WHERE dataCategory.id = :dataCategoryId " +
-                        "AND status != :trash " +
-                        "ORDER BY lower(path)")
-                .setParameter("dataCategoryId", dataCategoryReference.getEntityId())
-                .setParameter("trash", AMEEStatus.TRASH)
-                .setHint("org.hibernate.cacheable", true)
-                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-                .getResultList();
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataCategory.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategoryReference.getEntityId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.addOrder(Order.asc("path").ignoreCase());
+        criteria.setCacheable(true);
+        criteria.setCacheRegion(CACHE_REGION);
+        criteria.setFlushMode(FlushMode.MANUAL);
+        List<DataCategory> dataCategories = criteria.list();
         for (DataCategory dc : dataCategories) {
             dataCategoriesReferences.put(dc.getPath(), new DataCategoryReference(dc));
         }
@@ -360,17 +362,42 @@ public class DataServiceDAO implements Serializable {
      * @param dataCategory to check for uniqueness
      * @return true if the DataCategory has a unique path amongst peers
      */
-    public boolean isUnique(DataCategory dataCategory) {
+    public boolean isDataCategoryUniqueByPath(DataCategory dataCategory) {
         if ((dataCategory != null) && (dataCategory.getDataCategory() != null)) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(DataCategory.class);
-            criteria.add(Restrictions.ne("uid", dataCategory.getUid()));
+            if (entityManager.contains(dataCategory)) {
+                criteria.add(Restrictions.ne("uid", dataCategory.getUid()));
+            }
             criteria.add(Restrictions.eq("path", dataCategory.getPath()));
             criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getDataCategory().getId()));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.setFlushMode(FlushMode.MANUAL);
             return criteria.list().isEmpty();
         } else {
             throw new RuntimeException("DataCategory was null or it doesn't have a parent.");
+        }
+    }
+
+    /**
+     * Returns true if the wikiName of the supplied DataCategory is unique.
+     *
+     * @param dataCategory to check for uniqueness
+     * @return true if the DataCategory has a unique wikiName
+     */
+    public boolean isDataCategoryUniqueByWikiName(DataCategory dataCategory) {
+        if (dataCategory != null) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(DataCategory.class);
+            if (entityManager.contains(dataCategory)) {
+                criteria.add(Restrictions.ne("uid", dataCategory.getUid()));
+            }
+            criteria.add(Restrictions.eq("wikiName", dataCategory.getWikiName()));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.setFlushMode(FlushMode.MANUAL);
+            return criteria.list().isEmpty();
+        } else {
+            throw new RuntimeException("DataCategory was null.");
         }
     }
 

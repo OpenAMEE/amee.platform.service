@@ -5,6 +5,7 @@ import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.LocaleName;
 import org.hibernate.Criteria;
+import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
@@ -33,6 +34,7 @@ public class LocaleServiceDAOImpl implements LocaleServiceDAO {
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.setCacheable(true);
         criteria.setCacheRegion(CACHE_REGION);
+        criteria.setFlushMode(FlushMode.MANUAL);
         return criteria.list();
     }
 
@@ -55,6 +57,7 @@ public class LocaleServiceDAOImpl implements LocaleServiceDAO {
         criteria.add(Restrictions.in("entity.entityId", entityIds));
         criteria.add(Restrictions.eq("entity.entityType", objectType.getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setFlushMode(FlushMode.MANUAL);
         return criteria.list();
     }
 
