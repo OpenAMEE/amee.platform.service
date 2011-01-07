@@ -36,6 +36,7 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.Session;
+import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Service;
@@ -164,7 +165,7 @@ public class DefinitionServiceDAO implements Serializable {
         Criteria criteria = session.createCriteria(ItemDefinition.class);
         criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
         if (!filter.getName().isEmpty()) {
-            criteria.add(Restrictions.eq("name", filter.getName()));
+            criteria.add(Restrictions.ilike("name", filter.getName(), MatchMode.EXACT));
         }
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.setFetchMode("itemValueDefinitions", FetchMode.JOIN);
