@@ -8,7 +8,7 @@
                            http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
     <!-- Commented out as part of: https://jira.amee.com/browse/PL-9456 -->
-    <!--<context:load-time-weaver/>-->
+    <context:load-time-weaver/>
     <!--<context:spring-configured/>-->
 
     <bean class="com.amee.service.ServiceData"/>
