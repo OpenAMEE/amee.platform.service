@@ -9,25 +9,29 @@ import java.util.Collection;
 
 public interface LuceneService {
 
-    ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit);
+    public ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit);
 
-    ResultsWrapper<Document> doSearch(Query query);
+    public ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit, int maxNumHits);
 
-    void deleteDocuments(Term... terms);
+    public ResultsWrapper<Document> doSearch(Query query);
+
+    public ResultsWrapper<Document> doSearch(Query query, int maxNumHits);
+
+    public void deleteDocuments(Term... terms);
 
     public void deleteDocuments(Query q);
 
-    void updateDocument(Document document, Term... terms);
+    public void updateDocument(Document document, Term... terms);
 
-    void addDocuments(Collection<Document> documents);
+    public void addDocuments(Collection<Document> documents);
 
-    void unlockIndex();
+    public void unlockIndex();
 
     public void closeEverything();
 
-    void clearIndex();
+    public void clearIndex();
 
-    void addDocument(Document document);
+    public void addDocument(Document document);
 
     public void checkSearcher();
 

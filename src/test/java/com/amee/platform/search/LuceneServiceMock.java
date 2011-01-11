@@ -9,6 +9,8 @@ import java.util.*;
 
 public class LuceneServiceMock implements LuceneService {
 
+    public final static int MAX_NUM_HITS = 1000;
+
     private ResultsWrapper<Document> allResults;
     private ResultsWrapper<Document> resultsWrapperA;
     private ResultsWrapper<Document> resultsWrapperB;
@@ -17,6 +19,11 @@ public class LuceneServiceMock implements LuceneService {
 
     @Override
     public ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit) {
+        return doSearch(query, resultStart, resultLimit, MAX_NUM_HITS);
+    }
+
+    @Override
+    public ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit, int maxNumHits) {
         if (count == 0) {
             count++;
             return resultsWrapperA;
@@ -47,6 +54,11 @@ public class LuceneServiceMock implements LuceneService {
 
     @Override
     public ResultsWrapper<Document> doSearch(Query query) {
+        return doSearch(query, MAX_NUM_HITS);
+    }
+
+    @Override
+    public ResultsWrapper<Document> doSearch(Query query, int maxNumHits) {
         if (count == 1) {
             count++;
             return resultsWrapperB;

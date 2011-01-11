@@ -281,6 +281,7 @@ public class SearchIndexer implements Runnable {
             if (itemValue.isUsableValue()) {
                 if (itemValue.getItemValueDefinition().isDrillDown()) {
                     doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+                    doc.add(new Field(itemValue.getDisplayPath() + "_drill", itemValue.getValue(), Field.Store.YES, Field.Index.NO));
                 } else {
                     if (itemValue.isDouble()) {
                         try {

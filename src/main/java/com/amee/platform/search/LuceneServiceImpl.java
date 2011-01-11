@@ -93,6 +93,7 @@ public class LuceneServiceImpl implements LuceneService {
     private Lock rLock = rwLock.readLock();
     private Lock wLock = rwLock.writeLock();
 
+
     /**
      * Conduct a search in the Lucene index based on the supplied Query, constrained by resultStart and resultLimit.
      * <p/>
@@ -106,14 +107,30 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit) {
+        return doSearch(query, resultStart, resultLimit, MAX_NUM_HITS);
+    }
+
+    /**
+     * Conduct a search in the Lucene index based on the supplied Query, constrained by resultStart and resultLimit.
+     * <p/>
+     * At most this will allow up to MAX_RESULT_LIMIT search hits, with a return window based
+     * on resultStart and resultLimit.
+     *
+     * @param query       to search with
+     * @param resultStart 0 based index of first result
+     * @param resultLimit results limit
+     * @return a List of Lucene Documents
+     */
+    @Override
+    public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits) {
         rLock.lock();
         try {
             log.info("doSearch() query='" + query.toString() + "', resultStart=" + resultStart + ", resultLimit=" + resultLimit);
             long start = System.currentTimeMillis();
-            // Cannot go above MAX_NUM_HITS.
+            // Cannot go above maxNumHits.
             int numHits = resultStart + resultLimit;
-            if (numHits > MAX_NUM_HITS) {
-                numHits = MAX_NUM_HITS;
+            if (numHits > maxNumHits) {
+                numHits = maxNumHits;
             }
             // Get Collector limited to numHits + 1, so we can detect truncations.
             TopScoreDocCollector collector = TopScoreDocCollector.create(numHits + 1, true);
@@ -127,22 +144,22 @@ public class LuceneServiceImpl implements LuceneService {
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
             }
-            // Trim resultLimit if we're close to MAX_NUM_HITS.
+            // Trim resultLimit if we're close to maxNumHits.
             int resultLimitWithCeiling = resultLimit;
-            if (resultStart >= MAX_NUM_HITS) {
+            if (resultStart >= maxNumHits) {
                 // Never return results.
                 resultLimitWithCeiling = 0;
-            } else if ((resultStart + resultLimit) > MAX_NUM_HITS) {
-                // Only return those results from resultStart to MAX_NUM_HITS.
-                resultLimitWithCeiling = MAX_NUM_HITS - resultStart;
+            } else if ((resultStart + resultLimit) > maxNumHits) {
+                // Only return those results from resultStart to maxNumHits.
+                resultLimitWithCeiling = maxNumHits - resultStart;
             }
             // Create ResultsWrapper appropriate for our limit.
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents.size() > resultLimitWithCeiling ? documents.subList(0, resultLimitWithCeiling) : documents,
-                    (documents.size() > resultLimitWithCeiling) && !((resultStart + resultLimitWithCeiling) >= MAX_NUM_HITS),
+                    (documents.size() > resultLimitWithCeiling) && !((resultStart + resultLimitWithCeiling) >= maxNumHits),
                     resultStart,
                     resultLimit,
-                    collector.getTotalHits() > MAX_NUM_HITS ? MAX_NUM_HITS : collector.getTotalHits());
+                    collector.getTotalHits() > maxNumHits ? maxNumHits : collector.getTotalHits());
             log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
         } catch (IOException e) {
@@ -162,12 +179,25 @@ public class LuceneServiceImpl implements LuceneService {
      */
     @Override
     public ResultsWrapper<Document> doSearch(Query query) {
+        return doSearch(query, MAX_NUM_HITS);
+    }
+
+    /**
+     * Conduct a search in the Lucene index based on the supplied Query (unconstrained.
+     * <p/>
+     * At most this will allow up to MAX_RESULT_LIMIT search hits.
+     *
+     * @param query to search with
+     * @return a List of Lucene Documents
+     */
+    @Override
+    public ResultsWrapper<Document> doSearch(Query query, final int maxNumHits) {
         rLock.lock();
         try {
             log.info("doSearch() query='" + query.toString() + "'");
             long start = System.currentTimeMillis();
             // Get Collector limited to numHits + 1, so we can detect truncations.
-            TopScoreDocCollector collector = TopScoreDocCollector.create(MAX_NUM_HITS + 1, true);
+            TopScoreDocCollector collector = TopScoreDocCollector.create(maxNumHits + 1, true);
             // Get the IndexSearcher and do the search.
             Searcher searcher = getIndexSearcher();
             searcher.search(query, collector);
@@ -181,7 +211,7 @@ public class LuceneServiceImpl implements LuceneService {
             // Create ResultsWrapper containing all Documents.
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents,
-                    documents.size() > MAX_NUM_HITS);
+                    documents.size() > maxNumHits);
             log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
         } catch (IOException e) {
