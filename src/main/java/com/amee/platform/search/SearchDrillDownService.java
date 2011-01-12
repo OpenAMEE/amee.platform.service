@@ -21,6 +21,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * A search index backed sub-class of DrillDownService which overrides the getDataItemChoices method with an
+ * implementation that uses the Lucene index instead of the original SQL based implementation.
+ */
 @Service
 public class SearchDrillDownService extends DrillDownService {
 
@@ -29,6 +33,13 @@ public class SearchDrillDownService extends DrillDownService {
     @Autowired
     private LuceneService luceneService;
 
+    /**
+     * @param dataCategory     to perform drill down within
+     * @param selections       that have already been made for the drill down
+     * @param drillDownChoices that remain to be chosen within the drill down
+     * @return a list of Choices for the next level of drill down available
+     */
+    @Override
     protected List<Choice> getDataItemChoices(
             IDataCategoryReference dataCategory,
             List<Choice> selections,
