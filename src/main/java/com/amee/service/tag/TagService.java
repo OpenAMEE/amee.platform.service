@@ -124,6 +124,10 @@ public class TagService implements ApplicationListener {
         return dao.getEntityTag(entity, tag);
     }
 
+    public List<EntityTag> getEntityTagsForTag(ObjectType objectType, Tag tag) {
+        return dao.getEntityTagsForTag(objectType, tag);
+    }
+
     public void loadEntityTagsForDataCategories(Collection<DataCategory> dataCategories) {
         loadEntityTags(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
     }
