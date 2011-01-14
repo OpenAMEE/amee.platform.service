@@ -21,6 +21,7 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.util.Version;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -33,6 +34,10 @@ public class SearchService {
 
     public final static Analyzer STANDARD_ANALYZER = new StandardAnalyzer(Version.LUCENE_30);
     public final static Analyzer KEYWORD_ANALYZER = new KeywordAnalyzer();
+
+    /**
+     * An Analyzer instance which ensures tokens are in lower case. Uses KeywordTokenizer and LowerCaseFilter.
+     */
     public final static Analyzer LOWER_CASE_KEYWORD_ANALYZER = new Analyzer() {
         public TokenStream tokenStream(String fieldName, Reader reader) {
             TokenStream result = new KeywordTokenizer(reader);
@@ -40,6 +45,42 @@ public class SearchService {
             return result;
         }
     };
+
+    /**
+     * An Analyzer instance to parse tags. Uses TagTokenizer and LowerCaseFilter. Will replace all commas with a
+     * space to avoid confusing Lucene.
+     */
+    public final static Analyzer TAG_ANALYZER = new Analyzer() {
+        public TokenStream tokenStream(String fieldName, Reader reader) {
+            TokenStream result = new TagTokenizer(reader);
+            result = new LowerCaseFilter(result);
+            return result;
+        }
+    };
+
+    /**
+     * A Tokenizer to turn tags into tokens. Follows the rules of AMEE Tags. Tags can contain numbers, letters and
+     * underscores.
+     */
+    public final static class TagTokenizer extends CharTokenizer {
+
+        public TagTokenizer(Reader in) {
+            super(in);
+        }
+
+        public TagTokenizer(AttributeSource source, Reader in) {
+            super(source, in);
+        }
+
+        public TagTokenizer(AttributeFactory factory, Reader in) {
+            super(factory, in);
+        }
+
+        @Override
+        protected boolean isTokenChar(char c) {
+            return Character.isLetterOrDigit(c) || (c == '_');
+        }
+    }
 
     @Autowired
     private DataService dataService;

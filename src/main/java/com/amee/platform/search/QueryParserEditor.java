@@ -36,12 +36,27 @@ public class QueryParserEditor extends PropertyEditorSupport {
         setDoubleValue(doubleValue);
     }
 
+    /**
+     * A factory method to return a tag specific implementation of QueryParserEditor. Uses SearchService.TAG_ANALYZER
+     * and a custom  implementation of getModifiedText to replace commas with spaces (to avoid confusing Lucene).
+     *
+     * @param field
+     * @return
+     */
+    public static QueryParserEditor getTagQueryParserEditor(String field) {
+        return new QueryParserEditor(field, SearchService.TAG_ANALYZER) {
+            public String getModifiedText(String text) {
+                return text.replace(',', ' ');
+            }
+        };
+    }
+
     @Override
     public void setAsText(String text) {
         if (text != null) {
             try {
                 QueryParser parser = getQueryParser();
-                setValue(parser.parse(text));
+                setValue(parser.parse(getModifiedText(text)));
             } catch (ParseException e) {
                 throw new IllegalArgumentException("Cannot parse query (" + e.getMessage() + ").", e);
             }
@@ -86,6 +101,17 @@ public class QueryParserEditor extends PropertyEditorSupport {
                 }
             }
         };
+    }
+
+    /**
+     * Extension point to allow the text to be modified before it is parsed by the QueryParser. The default
+     * implementation simply returns the text unmodified.
+     *
+     * @param text to be modified
+     * @return text following modification.
+     */
+    public String getModifiedText(String text) {
+        return text;
     }
 
     public String getField() {

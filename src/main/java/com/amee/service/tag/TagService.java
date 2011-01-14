@@ -54,42 +54,35 @@ public class TagService implements ApplicationListener {
         }
     }
 
-    public List<Tag> getAllTags() {
-        return dao.getTagsWithCount();
-    }
-
     public List<Tag> getTags(IAMEEEntityReference entity) {
-        return getTags(entity, null, null);
-    }
-
-    public List<Tag> getTags(IAMEEEntityReference entity, Collection<String> incTags, Collection<String> excTags) {
         List<EntityTag> entityTags;
-        List<Tag> tags;
-        if (entity != null) {
-            tags = new ArrayList<Tag>();
-            if (ENTITY_TAGS.get().containsKey(entity.toString())) {
-                // Return cached Tag list, or at least an empty list.
-                entityTags = ENTITY_TAGS.get().get(entity.toString());
-                if (entityTags != null) {
-                    for (EntityTag entityTag : entityTags) {
-                        tags.add(entityTag.getTag());
-                    }
-                }
-            } else {
-                // Look up EntityTags for entity.
-                entityTags = dao.getEntityTags(entity);
-                ENTITY_TAGS.get().put(entity.toString(), entityTags);
-                // Populate Tag list.
+        List<Tag> tags = new ArrayList<Tag>();
+        if (ENTITY_TAGS.get().containsKey(entity.toString())) {
+            // Return cached Tag list, or at least an empty list.
+            entityTags = ENTITY_TAGS.get().get(entity.toString());
+            if (entityTags != null) {
                 for (EntityTag entityTag : entityTags) {
                     tags.add(entityTag.getTag());
                 }
             }
-            // NOTE: Tags from this code section do not have their count value set.
         } else {
-            // Get all tags with their count values set.
-            tags = dao.getTagsWithCount(incTags, excTags);
+            // Look up EntityTags for entity.
+            entityTags = dao.getEntityTags(entity);
+            ENTITY_TAGS.get().put(entity.toString(), entityTags);
+            // Populate Tag list.
+            for (EntityTag entityTag : entityTags) {
+                tags.add(entityTag.getTag());
+            }
         }
         return tags;
+    }
+
+    protected List<Tag> getTagsWithCount() {
+        return dao.getTagsWithCount();
+    }
+
+    public List<Tag> getTagsWithCount(Collection<String> incTags, Collection<String> excTags) {
+        return dao.getTagsWithCount(incTags, excTags);
     }
 
     public String getTagsCSV(IAMEEEntityReference entity) {
@@ -97,7 +90,7 @@ public class TagService implements ApplicationListener {
         for (Tag tag : getTags(entity)) {
             tags = tags + tag.getTag() + ", ";
         }
-        StringUtils.chomp(tags, ", ");
+        tags = StringUtils.chomp(tags, ", ");
         return tags;
     }
 

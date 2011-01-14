@@ -98,7 +98,6 @@ public class LuceneServiceImpl implements LuceneService {
     private Lock rLock = rwLock.readLock();
     private Lock wLock = rwLock.writeLock();
 
-
     /**
      * Conduct a search in the Lucene index based on the supplied Query, constrained by resultStart and resultLimit.
      * <p/>
