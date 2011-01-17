@@ -19,7 +19,7 @@
         <!-- Note: These versions were last checked & upgraded on 15/04/2010. -->
         <org-aspectj.version>1.6.8</org-aspectj.version>
         <junit.version>4.7</junit.version>
-        <lucene-core.version>3.0.2</lucene-core.version>
+        <lucene-core.version>3.0.3</lucene-core.version>
         <spring.version>3.0.2.RELEASE</spring.version>
         <!-- Other. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

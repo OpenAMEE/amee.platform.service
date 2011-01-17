@@ -181,6 +181,21 @@ public class TagServiceDAO implements Serializable {
     }
 
     @SuppressWarnings(value = "unchecked")
+    public List<EntityTag> getEntityTagsForTag(ObjectType objectType, Tag tag) {
+        if ((objectType == null) || (tag == null)) {
+            throw new IllegalArgumentException("ObjectType or Tag was null");
+        }
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(EntityTag.class);
+        criteria.add(Restrictions.eq("entityReference.entityType", objectType.getName()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.add(Restrictions.eq("t.id", tag.getId()));
+        criteria.createAlias("tag", "t");
+        criteria.setTimeout(5);
+        return criteria.list();
+    }
+
+    @SuppressWarnings(value = "unchecked")
     public List<EntityTag> getEntityTagsForTags(ObjectType objectType, Collection<String> tags) {
         if ((tags != null) && !tags.isEmpty()) {
             Session session = (Session) entityManager.getDelegate();

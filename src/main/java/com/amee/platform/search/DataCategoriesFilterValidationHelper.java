@@ -35,8 +35,8 @@ public class DataCategoriesFilterValidationHelper extends ValidationHelper {
         dataBinder.registerCustomEditor(Query.class, "parentWikiName", new QueryParserEditor("parentWikiName"));
         dataBinder.registerCustomEditor(Query.class, "itemDefinitionUid", new QueryParserEditor("itemDefinitionUid", SearchService.KEYWORD_ANALYZER));
         dataBinder.registerCustomEditor(Query.class, "itemDefinitionName", new QueryParserEditor("itemDefinitionName"));
-        dataBinder.registerCustomEditor(Query.class, "tags", new QueryParserEditor("tags"));
-        dataBinder.registerCustomEditor(Query.class, "excTags", new QueryParserEditor("tags"));
+        dataBinder.registerCustomEditor(Query.class, "tags", QueryParserEditor.getTagQueryParserEditor("tags"));
+        dataBinder.registerCustomEditor(Query.class, "excTags", QueryParserEditor.getTagQueryParserEditor("tags"));
     }
 
     @Override

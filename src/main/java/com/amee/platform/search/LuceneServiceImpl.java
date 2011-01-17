@@ -87,12 +87,16 @@ public class LuceneServiceImpl implements LuceneService {
     private long lastWriteTime = 0L;
 
     /**
+     * Should Searcher be checked after every commit? Useful for development & testing.
+     */
+    private boolean checkSearcherOnCommit = false;
+
+    /**
      * Lock objects for the index.
      */
     private ReadWriteLock rwLock = new ReentrantReadWriteLock(true);
     private Lock rLock = rwLock.readLock();
     private Lock wLock = rwLock.writeLock();
-
 
     /**
      * Conduct a search in the Lucene index based on the supplied Query, constrained by resultStart and resultLimit.
@@ -259,6 +263,9 @@ public class LuceneServiceImpl implements LuceneService {
             lastWriteTime = System.currentTimeMillis();
             rLock.unlock();
         }
+        if (checkSearcherOnCommit) {
+            checkSearcher();
+        }
     }
 
     @Override
@@ -275,6 +282,9 @@ public class LuceneServiceImpl implements LuceneService {
         } finally {
             lastWriteTime = System.currentTimeMillis();
             rLock.unlock();
+        }
+        if (checkSearcherOnCommit) {
+            checkSearcher();
         }
     }
 
@@ -304,6 +314,9 @@ public class LuceneServiceImpl implements LuceneService {
             lastWriteTime = System.currentTimeMillis();
             rLock.unlock();
         }
+        if (checkSearcherOnCommit) {
+            checkSearcher();
+        }
     }
 
     @Override
@@ -331,6 +344,9 @@ public class LuceneServiceImpl implements LuceneService {
             lastWriteTime = System.currentTimeMillis();
             rLock.unlock();
         }
+        if (checkSearcherOnCommit) {
+            checkSearcher();
+        }
     }
 
     /**
@@ -355,6 +371,9 @@ public class LuceneServiceImpl implements LuceneService {
         } finally {
             closeIndexWriter();
             wLock.unlock();
+        }
+        if (checkSearcherOnCommit) {
+            checkSearcher();
         }
     }
 
@@ -588,6 +607,9 @@ public class LuceneServiceImpl implements LuceneService {
         } finally {
             rLock.unlock();
         }
+        if (checkSearcherOnCommit) {
+            checkSearcher();
+        }
     }
 
     /**
@@ -719,5 +741,10 @@ public class LuceneServiceImpl implements LuceneService {
 
     public void setSnapShooterPath(String snapShooterPath) {
         this.snapShooterPath = snapShooterPath;
+    }
+
+    @Value("#{ systemProperties['amee.indexCheckSearcherOnCommit'] }")
+    public void setCheckSearcherOnCommit(Boolean checkSearcherOnCommit) {
+        this.checkSearcherOnCommit = checkSearcherOnCommit;
     }
 }
