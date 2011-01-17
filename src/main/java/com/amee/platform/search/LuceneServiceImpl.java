@@ -110,6 +110,11 @@ public class LuceneServiceImpl implements LuceneService {
         return doSearch(query, resultStart, resultLimit, MAX_NUM_HITS);
     }
 
+    @Override
+    public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits) {
+        return doSearch(query, resultStart, resultLimit, maxNumHits, null);
+    }
+
     /**
      * Conduct a search in the Lucene index based on the supplied Query, constrained by resultStart and resultLimit.
      * <p/>
@@ -122,7 +127,7 @@ public class LuceneServiceImpl implements LuceneService {
      * @return a List of Lucene Documents
      */
     @Override
-    public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits) {
+    public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits, String sortField) {
         rLock.lock();
         try {
             log.info("doSearch() query='" + query.toString() + "', resultStart=" + resultStart + ", resultLimit=" + resultLimit);
@@ -133,12 +138,26 @@ public class LuceneServiceImpl implements LuceneService {
                 numHits = maxNumHits;
             }
             // Get Collector limited to numHits + 1, so we can detect truncations.
-            TopScoreDocCollector collector = TopScoreDocCollector.create(numHits + 1, true);
+            // TODO: Hits are sorted by score when using a TopScoreDocCollector can we use a TopFieldCollector?
+            Collector collector;
+            if (sortField == null) {
+                collector = TopScoreDocCollector.create(numHits + 1, true);
+            } else {
+                collector = TopFieldCollector.create(new Sort(new SortField(sortField, SortField.STRING)), numHits + 1, false, false, false, false);
+            }
             // Get the IndexSearcher and do the search.
             Searcher searcher = getIndexSearcher();
+
+            // TODO: we need to get a sorted result
             searcher.search(query, collector);
             // Get hits within our start and limit range.
-            ScoreDoc[] hits = collector.topDocs(resultStart, resultLimit + 1).scoreDocs;
+            // TODO: Can we do this without using the collector?
+            ScoreDoc[] hits;
+            if (collector instanceof TopScoreDocCollector) {
+                hits = ((TopScoreDocCollector) collector).topDocs(resultStart, resultLimit + 1).scoreDocs;
+            } else {
+                hits = ((TopFieldCollector) collector).topDocs(resultStart, resultLimit + 1).scoreDocs;
+            }
             // Assemble List of Documents.
             List<Document> documents = new ArrayList<Document>();
             for (ScoreDoc hit : hits) {
@@ -154,12 +173,18 @@ public class LuceneServiceImpl implements LuceneService {
                 resultLimitWithCeiling = maxNumHits - resultStart;
             }
             // Create ResultsWrapper appropriate for our limit.
+            int totalHits = 0;
+            if (collector instanceof TopScoreDocCollector) {
+                totalHits = ((TopScoreDocCollector) collector).getTotalHits();
+            } else {
+                totalHits = ((TopFieldCollector) collector).getTotalHits();
+            }
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents.size() > resultLimitWithCeiling ? documents.subList(0, resultLimitWithCeiling) : documents,
                     (documents.size() > resultLimitWithCeiling) && !((resultStart + resultLimitWithCeiling) >= maxNumHits),
                     resultStart,
                     resultLimit,
-                    collector.getTotalHits() > maxNumHits ? maxNumHits : collector.getTotalHits());
+                    totalHits > maxNumHits ? maxNumHits : totalHits);
             log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
         } catch (IOException e) {

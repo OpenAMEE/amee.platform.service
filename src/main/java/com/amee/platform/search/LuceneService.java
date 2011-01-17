@@ -13,6 +13,8 @@ public interface LuceneService {
 
     public ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit, int maxNumHits);
 
+    public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits, String sortField);
+
     public ResultsWrapper<Document> doSearch(Query query);
 
     public ResultsWrapper<Document> doSearch(Query query, int maxNumHits);
