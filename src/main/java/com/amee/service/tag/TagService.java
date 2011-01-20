@@ -77,7 +77,7 @@ public class TagService implements ApplicationListener {
         return tags;
     }
 
-    protected List<Tag> getTagsWithCount() {
+    public List<Tag> getTagsWithCount() {
         return dao.getTagsWithCount();
     }
 
