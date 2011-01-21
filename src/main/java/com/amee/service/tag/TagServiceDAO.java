@@ -35,7 +35,7 @@ public class TagServiceDAO implements Serializable {
             Criteria criteria = session.createCriteria(Tag.class);
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
-            criteria.setTimeout(5);
+            criteria.setTimeout(60);
             return (Tag) criteria.uniqueResult();
         } else {
             return null;
@@ -56,7 +56,7 @@ public class TagServiceDAO implements Serializable {
             Criteria criteria = session.createCriteria(Tag.class);
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.add(Restrictions.ilike("tag", tag, MatchMode.EXACT));
-            criteria.setTimeout(5);
+            criteria.setTimeout(60);
             criteria.setFlushMode(FlushMode.MANUAL);
             return (Tag) criteria.uniqueResult();
         } else {
@@ -113,7 +113,7 @@ public class TagServiceDAO implements Serializable {
         if ((excEntityIds != null) && (!excEntityIds.isEmpty())) {
             query.setParameter("excEntityIds", excEntityIds);
         }
-        query.setHint("org.hibernate.timeout", 5);
+        query.setHint("org.hibernate.timeout", 60);
         // Execute Query, collate Tags and set count value.
         List<Object> results = query.getResultList();
         List<Tag> tags = new ArrayList<Tag>();
@@ -144,7 +144,7 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.ne("t.status", AMEEStatus.TRASH));
         criteria.createAlias("tag", "t");
         criteria.setFetchMode("tag", FetchMode.JOIN);
-        criteria.setTimeout(5);
+        criteria.setTimeout(60);
         return criteria.list();
     }
 
@@ -157,7 +157,7 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.ne("t.status", AMEEStatus.TRASH));
         criteria.add(Restrictions.ilike("t.tag", tag, MatchMode.EXACT));
         criteria.createAlias("tag", "t");
-        criteria.setTimeout(5);
+        criteria.setTimeout(60);
         return (EntityTag) criteria.uniqueResult();
     }
 
@@ -176,7 +176,7 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.ne("t.status", AMEEStatus.TRASH));
         criteria.createAlias("tag", "t");
         criteria.setFetchMode("tag", FetchMode.JOIN);
-        criteria.setTimeout(5);
+        criteria.setTimeout(60);
         return criteria.list();
     }
 
@@ -191,7 +191,7 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.add(Restrictions.eq("t.id", tag.getId()));
         criteria.createAlias("tag", "t");
-        criteria.setTimeout(5);
+        criteria.setTimeout(60);
         return criteria.list();
     }
 
@@ -206,7 +206,7 @@ public class TagServiceDAO implements Serializable {
             criteria.add(Restrictions.in("t.tag", tags));
             criteria.createAlias("tag", "t");
             criteria.setFetchMode("tag", FetchMode.JOIN);
-            criteria.setTimeout(5);
+            criteria.setTimeout(60);
             return criteria.list();
         } else {
             // Return an empty list if the tags list is empty.
@@ -219,7 +219,7 @@ public class TagServiceDAO implements Serializable {
         Criteria criteria = session.createCriteria(Tag.class);
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.setProjection(Projections.rowCount());
-        criteria.setTimeout(5);
+        criteria.setTimeout(60);
         return (Long) criteria.uniqueResult();
     }
 
