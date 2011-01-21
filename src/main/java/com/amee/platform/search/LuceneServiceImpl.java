@@ -36,14 +36,19 @@ public class LuceneServiceImpl implements LuceneService {
     public final static int MAX_NUM_HITS = 1000;
 
     /**
-     * Path to the snapshooter script
+     * Path to the SnapShooter script.
      */
     private String snapShooterPath = "";
 
     /**
-     * Path to the dir containing lucene index
+     * Path to the dir containing lucene index and snapshots.
      */
-    private String indexDirPath = "";
+    private String indexPath = "";
+
+    /**
+     * Path to the dir of the current lucene index. Usually this is: indexPath + '/lucene'
+     */
+    private String lucenePath = "";
 
     /**
      * The primary Lucene Searcher.
@@ -522,8 +527,7 @@ public class LuceneServiceImpl implements LuceneService {
             synchronized (this) {
                 try {
                     if (directory == null) {
-                        String path = System.getProperty("amee.lucenePath", "/var/www/apps/platform-api/lucene/index");
-                        directory = FSDirectory.open(new File(path));
+                        directory = FSDirectory.open(new File(lucenePath));
                     }
                 } catch (IOException e) {
                     throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
@@ -628,7 +632,7 @@ public class LuceneServiceImpl implements LuceneService {
     }
 
     /**
-     * Takes a snapshot of the lucene index using the solr snapshooter shell script.
+     * Takes a snapshot of the lucene index using the Solr SnapShooter shell script.
      * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
      */
     public void takeSnapshot() {
@@ -643,10 +647,10 @@ public class LuceneServiceImpl implements LuceneService {
             wLock.lock();
             // Setup time and command.
             timer = new Timer(true);
-            command = getSnapShooterPath() + " -d " + getIndexDirPath();
+            command = snapShooterPath + " -d " + indexPath;
             try {
                 log.info("takeSnapshot() Executing: " + command);
-                // Invoke the Snapshooter.
+                // Invoke the SnapShooter.
                 p = Runtime.getRuntime().exec(command);
                 // Use a Timer to interrupt later on timeout.
                 interrupter = new InterruptTimerTask(Thread.currentThread());
@@ -703,7 +707,7 @@ public class LuceneServiceImpl implements LuceneService {
      *         or 0L if no snapshot exists or if an I/O error occurs.
      */
     private long getLastSnapshotTime() {
-        File snapshotDir = new File(getIndexDirPath());
+        File snapshotDir = new File(indexPath);
         File[] snapshotFiles = snapshotDir.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.startsWith("snapshot");
@@ -727,18 +731,17 @@ public class LuceneServiceImpl implements LuceneService {
         this.snapshotEnabled = snapshotEnabled;
     }
 
-    public String getIndexDirPath() {
-        return indexDirPath;
+    @Value("#{ systemProperties['amee.indexPath'] }")
+    public void setIndexPath(String indexPath) {
+        this.indexPath = indexPath;
     }
 
-    public void setIndexDirPath(String indexDirPath) {
-        this.indexDirPath = indexDirPath;
+    @Value("#{ systemProperties['amee.lucenePath'] }")
+    public void setLucenePath(String lucenePath) {
+        this.lucenePath = lucenePath;
     }
 
-    public String getSnapShooterPath() {
-        return snapShooterPath;
-    }
-
+    @Value("#{ systemProperties['amee.snapShooterPath'] }")
     public void setSnapShooterPath(String snapShooterPath) {
         this.snapShooterPath = snapShooterPath;
     }
