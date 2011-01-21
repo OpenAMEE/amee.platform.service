@@ -14,7 +14,6 @@ import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.TermQuery;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -25,7 +24,6 @@ import java.util.Set;
  * A search index backed sub-class of DrillDownService which overrides the getDataItemChoices method with an
  * implementation that uses the Lucene index instead of the original SQL based implementation.
  */
-@Service
 public class SearchDrillDownService extends DrillDownService {
 
     private final Log log = LogFactory.getLog(getClass());
