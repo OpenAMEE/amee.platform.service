@@ -20,30 +20,21 @@
 package com.amee.service.profile;
 
 import com.amee.domain.AMEEStatus;
-import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
-import com.amee.domain.data.DataCategory;
-import com.amee.domain.profile.LegacyProfileItem;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.profile.ProfileItem;
-import com.amee.platform.science.StartEndDate;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.*;
+import org.hibernate.Criteria;
+import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
-import org.joda.time.DateTime;
-import org.joda.time.Period;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -150,225 +141,11 @@ public class ProfileServiceDAO implements Serializable {
         profile.setStatus(AMEEStatus.TRASH);
     }
 
-    // ProfileItems
-
-    @SuppressWarnings(value = "unchecked")
-    protected ProfileItem getProfileItem(String uid) {
-        LegacyProfileItem profileItem = null;
-        if (!StringUtils.isBlank(uid)) {
-            // See http://www.hibernate.org/117.html#A12 for notes on DISTINCT_ROOT_ENTITY.
-            Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(LegacyProfileItem.class);
-            criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-            criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
-            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-            criteria.setFetchMode("itemValues", FetchMode.JOIN);
-            criteria.setCacheable(true);
-            criteria.setCacheRegion(CACHE_REGION);
-            List<LegacyProfileItem> profileItems = criteria.list();
-            if (profileItems.size() == 1) {
-                log.debug("getProfileItem() found: " + uid);
-                profileItem = profileItems.get(0);
-            } else {
-                log.debug("getProfileItem() NOT found: " + uid);
-            }
-        }
-        return ProfileItem.getProfileItem(profileItem);
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    protected int getProfileItemCount(Profile profile, DataCategory dataCategory) {
-
-        if ((dataCategory == null) || (dataCategory.getItemDefinition() == null)) {
-            return -1;
-        }
-
-        log.debug("getProfileItemCount() start");
-
-        int count = entityManager.createQuery(
-                "SELECT COUNT(pi.id) " +
-                        "FROM LegacyProfileItem pi " +
-                        "WHERE pi.dataCategory.id = :dataCategoryId " +
-                        "AND pi.profile.id = :profileId")
-                .setParameter("dataCategoryId", dataCategory.getId())
-                .setParameter("profileId", profile.getId())
-                .setHint("org.hibernate.cacheable", true)
-                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-                .getResultList().size();
-
-        log.debug("getProfileItemCount() count: " + count);
-        return count;
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    protected List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate) {
-
-        if ((dataCategory == null) || (!dataCategory.isItemDefinitionPresent())) {
-            return null;
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() start");
-        }
-
-        // need to roll the date forward
-        DateTime nextMonth = new DateTime(profileDate).plus(Period.months(1));
-        profileDate = nextMonth.toDate();
-
-        // now get all the Profile Items
-        List<LegacyProfileItem> legacyProfileItems = entityManager.createQuery(
-                "SELECT DISTINCT pi " +
-                        "FROM LegacyProfileItem pi " +
-                        "LEFT JOIN FETCH pi.itemValues " +
-                        "WHERE pi.dataCategory.id = :dataCategoryId " +
-                        "AND pi.profile.id = :profileId " +
-                        "AND pi.startDate < :profileDate " +
-                        "AND pi.status != :trash ")
-                .setParameter("dataCategoryId", dataCategory.getEntityId())
-                .setParameter("profileId", profile.getId())
-                .setParameter("profileDate", profileDate)
-                .setParameter("trash", AMEEStatus.TRASH)
-                .setHint("org.hibernate.cacheable", true)
-                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-                .getResultList();
-
-        if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() done (" + legacyProfileItems.size() + ")");
-        }
-
-        // Convert from legacy to adapter.
-        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
-        for (LegacyProfileItem legacyProfileItem : legacyProfileItems) {
-            profileItems.add(ProfileItem.getProfileItem(legacyProfileItem));
-        }
-        return profileItems;
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    protected List<ProfileItem> getProfileItems(
-            Profile profile,
-            IDataCategoryReference dataCategory,
-            StartEndDate startDate,
-            StartEndDate endDate) {
-
-        if ((dataCategory == null) || (!dataCategory.isItemDefinitionPresent())) {
-            return null;
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() start");
-        }
-
-        // Create HQL.
-        StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append("SELECT DISTINCT pi ");
-        queryBuilder.append("FROM LegacyProfileItem pi ");
-        queryBuilder.append("LEFT JOIN FETCH pi.itemValues ");
-        queryBuilder.append("WHERE pi.dataCategory.id = :dataCategoryId ");
-        queryBuilder.append("AND pi.profile.id = :profileId AND ");
-        if (endDate == null) {
-            queryBuilder.append("(pi.endDate IS NULL OR pi.endDate > :startDate) ");
-        } else {
-            queryBuilder.append("(pi.startDate < :endDate) AND (pi.endDate IS NULL OR pi.endDate > :startDate) ");
-        }
-        queryBuilder.append("AND pi.status != :trash");
-
-        // Create Query.
-        Query query = entityManager.createQuery(queryBuilder.toString());
-        query.setParameter("dataCategoryId", dataCategory.getEntityId());
-        query.setParameter("profileId", profile.getId());
-        query.setParameter("startDate", startDate.toDate());
-        if (endDate != null) {
-            query.setParameter("endDate", endDate.toDate());
-        }
-        query.setParameter("trash", AMEEStatus.TRASH);
-        query.setHint("org.hibernate.cacheable", true);
-        query.setHint("org.hibernate.cacheRegion", CACHE_REGION);
-
-        // Execute query.
-        List<LegacyProfileItem> legacyProfileItems = query.getResultList();
-
-        if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() done (" + legacyProfileItems.size() + ")");
-        }
-
-        // Convert from legacy to adapter.
-        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
-        for (LegacyProfileItem legacyProfileItem : legacyProfileItems) {
-            profileItems.add(ProfileItem.getProfileItem(legacyProfileItem));
-        }
-        return profileItems;
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    protected boolean equivalentProfileItemExists(ProfileItem profileItem) {
-        List<LegacyProfileItem> profileItems = entityManager.createQuery(
-                "SELECT DISTINCT pi " +
-                        "FROM LegacyProfileItem pi " +
-                        "LEFT JOIN FETCH pi.itemValues " +
-                        "WHERE pi.profile.id = :profileId " +
-                        "AND pi.uid != :uid " +
-                        "AND pi.dataCategory.id = :dataCategoryId " +
-                        "AND pi.dataItem.id = :dataItemId " +
-                        "AND pi.startDate = :startDate " +
-                        "AND pi.name = :name " +
-                        "AND pi.status != :trash")
-                .setParameter("profileId", profileItem.getProfile().getId())
-                .setParameter("uid", profileItem.getUid())
-                .setParameter("dataCategoryId", profileItem.getDataCategory().getId())
-                .setParameter("dataItemId", profileItem.getDataItem().getId())
-                .setParameter("startDate", profileItem.getStartDate())
-                .setParameter("name", profileItem.getName())
-                .setParameter("trash", AMEEStatus.TRASH)
-                .getResultList();
-        if (profileItems.size() > 0) {
-            log.debug("equivalentProfileItemExists() - found ProfileItem(s)");
-            return true;
-        } else {
-            log.debug("equivalentProfileItemExists() - no ProfileItem(s) found");
-            return false;
-        }
-    }
-
     protected void persist(ProfileItem profileItem) {
         entityManager.persist(profileItem.getAdaptedEntity());
     }
 
     protected void remove(ProfileItem profileItem) {
         profileItem.getAdaptedEntity().setStatus(AMEEStatus.TRASH);
-    }
-
-    // Profile DataCategories
-
-    @SuppressWarnings(value = "unchecked")
-    protected Collection<Long> getProfileDataCategoryIds(Profile profile) {
-
-        StringBuilder sql;
-        SQLQuery query;
-
-        // check arguments
-        if (profile == null) {
-            throw new IllegalArgumentException("A required argument is missing.");
-        }
-
-        // create SQL
-        sql = new StringBuilder();
-        sql.append("SELECT DISTINCT DATA_CATEGORY_ID ID ");
-        sql.append("FROM ITEM ");
-        sql.append("WHERE TYPE = 'PI' ");
-        sql.append("AND PROFILE_ID = :profileId ");
-        sql.append("AND STATUS != :trash");
-
-        // create query
-        Session session = (Session) entityManager.getDelegate();
-        query = session.createSQLQuery(sql.toString());
-        query.addScalar("ID", Hibernate.LONG);
-
-        // set parameters
-        query.setLong("profileId", profile.getId());
-        query.setInteger("trash", AMEEStatus.TRASH.ordinal());
-
-        // execute SQL
-        return (List<Long>) query.list();
     }
 }
