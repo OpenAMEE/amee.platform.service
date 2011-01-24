@@ -27,7 +27,6 @@ import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
 import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
-import com.amee.domain.profile.LegacyProfileItem;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.profile.ProfileItem;
 import com.amee.platform.science.StartEndDate;
@@ -213,7 +212,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         criteria.add(Restrictions.eq("startDate", profileItem.getStartDate()));
         criteria.add(Restrictions.eq("name", profileItem.getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-        List<LegacyProfileItem> profileItems = criteria.list();
+        List<NuProfileItem> profileItems = criteria.list();
         if (profileItems.size() > 0) {
             log.debug("equivalentProfileItemExists() - found ProfileItem(s)");
             return true;
