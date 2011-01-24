@@ -216,7 +216,6 @@ public class SearchIndexer implements Runnable {
             localeService.loadLocaleNamesForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
             List<DataItem> dataItems = dataService.getDataItems(dataCategory, false);
             metadataService.loadMetadatasForDataItems(dataItems);
-            localeService.loadLocaleNamesForDataItems(dataItems);
             // Iterate over all Data Items and create Documents.
             documentContext.dataItemDocs = new ArrayList<Document>();
             for (DataItem dataItem : dataItems) {

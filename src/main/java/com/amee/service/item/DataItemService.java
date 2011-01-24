@@ -26,6 +26,7 @@ public class DataItemService extends ItemService implements IDataItemService {
     public List<NuDataItem> getDataItems(IDataCategoryReference dataCategory) {
         List<NuDataItem> dataItems = dao.getDataItems(dataCategory);
         loadItemValuesForItems((List) dataItems);
+        localeService.loadLocaleNamesForNuDataItems(dataItems);
         return dataItems;
     }
 
@@ -34,6 +35,7 @@ public class DataItemService extends ItemService implements IDataItemService {
     public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
         List<NuDataItem> dataItems = dao.getDataItems(dataItemIds);
         loadItemValuesForItems((List) dataItems);
+        localeService.loadLocaleNamesForNuDataItems(dataItems);
         return dataItems;
     }
 

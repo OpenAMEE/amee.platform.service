@@ -359,7 +359,6 @@ public class DataService extends BaseService implements IDataService, Applicatio
         for (NuDataItem nuDataItem : dataItemService.getDataItems(dataCategory)) {
             dataItems.add(DataItem.getDataItem(nuDataItem));
         }
-        localeService.loadLocaleNamesForDataItems(dataItems, true);
         return activeDataItems(dataItems, checkDataItems);
     }
 
