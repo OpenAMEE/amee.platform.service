@@ -292,17 +292,6 @@ public class DataService extends BaseService implements IDataService, Applicatio
     }
 
     /**
-     * Invalidate a DataCategory fully. This will send an invalidation message via the
-     * InvalidationService and clear the local caches. It was also trigger a re-index of the Data Items.
-     *
-     * @param dataCategory to invalidate
-     */
-    public void invalidateFull(DataCategory dataCategory) {
-        log.info("invalidate() dataCategory: " + dataCategory.getUid());
-        invalidationService.add(dataCategory, "indexDataItems");
-    }
-
-    /**
      * Clears all caches related to the supplied DataCategory.
      *
      * @param dataCategory to clear caches for
@@ -343,9 +332,6 @@ public class DataService extends BaseService implements IDataService, Applicatio
 
     public DataItem getDataItemByUid(String uid) {
         DataItem dataItem = DataItem.getDataItem(dataItemService.getItemByUid(uid));
-        if (dataItem == null) {
-            dataItem = dao.getDataItemByUid(uid);
-        }
         if ((dataItem != null) && !dataItem.isTrash()) {
             checkDataItem(dataItem);
             return dataItem;
@@ -356,9 +342,6 @@ public class DataService extends BaseService implements IDataService, Applicatio
 
     public DataItem getDataItemByPath(DataCategory parent, String path) {
         DataItem dataItem = DataItem.getDataItem(dataItemService.getDataItemByPath(parent, path));
-        if (dataItem == null) {
-            dataItem = dao.getDataItemByPath(parent, path);
-        }
         if ((dataItem != null) && !dataItem.isTrash()) {
             checkDataItem(dataItem);
             return dataItem;
@@ -367,50 +350,17 @@ public class DataService extends BaseService implements IDataService, Applicatio
         }
     }
 
-    public Map<String, DataItem> getDataItemMap(Set<Long> dataItemIds, boolean loadValues) {
-        Map<String, DataItem> dataItemMap = new HashMap<String, DataItem>();
-        for (DataItem dataItem : dao.getDataItems(dataItemIds, loadValues)) {
-            dataItemMap.put(dataItem.getUid(), dataItem);
-        }
-        localeService.loadLocaleNamesForDataItems(dataItemMap.values(), true);
-        return dataItemMap;
-    }
-
-    public List<DataItem> getDataItems(Set<Long> dataItemIds) {
-        return getDataItems(dataItemIds, false);
-    }
-
-    public List<DataItem> getDataItems(Set<Long> dataItemIds, boolean loadValues) {
-        List<DataItem> dataItems = new ArrayList<DataItem>();
-        for (DataItem dataItem : dao.getDataItems(dataItemIds, loadValues)) {
-            dataItems.add(dataItem);
-        }
-        localeService.loadLocaleNamesForDataItems(dataItems, true);
-        return dataItems;
-    }
-
     public List<DataItem> getDataItems(IDataCategoryReference dataCategory) {
         return getDataItems(dataCategory, true);
     }
 
     public List<DataItem> getDataItems(IDataCategoryReference dataCategory, boolean checkDataItems) {
-        Set<String> dataItemUids = new HashSet<String>();
         List<DataItem> dataItems = new ArrayList<DataItem>();
         for (NuDataItem nuDataItem : dataItemService.getDataItems(dataCategory)) {
-            dataItemUids.add(nuDataItem.getUid());
             dataItems.add(DataItem.getDataItem(nuDataItem));
-        }
-        for (DataItem dataItem : dao.getDataItems(dataCategory)) {
-            if (!dataItemUids.contains(dataItem.getUid())) {
-                dataItems.add(dataItem);
-            }
         }
         localeService.loadLocaleNamesForDataItems(dataItems, true);
         return activeDataItems(dataItems, checkDataItems);
-    }
-
-    private List<DataItem> activeDataItems(List<DataItem> dataItems) {
-        return activeDataItems(dataItems, true);
     }
 
     private List<DataItem> activeDataItems(List<DataItem> dataItems, boolean checkDataItems) {
@@ -479,7 +429,7 @@ public class DataService extends BaseService implements IDataService, Applicatio
 
     public void persist(DataItem dataItem, boolean checkDataItem) {
         if (dataItem.isLegacy()) {
-            dao.persist(dataItem);
+            throw new IllegalStateException("Legacy entities are no longer supported.");
         } else {
             dataItemService.persist(dataItem.getNuEntity());
         }
@@ -490,7 +440,7 @@ public class DataService extends BaseService implements IDataService, Applicatio
 
     public void remove(DataItem dataItem) {
         if (dataItem.isLegacy()) {
-            dao.remove(dataItem);
+            throw new IllegalStateException("Legacy entities are no longer supported.");
         } else {
             dataItemService.remove(dataItem);
         }
@@ -506,7 +456,7 @@ public class DataService extends BaseService implements IDataService, Applicatio
 
     public void remove(ItemValue itemValue) {
         if (itemValue.isLegacy()) {
-            dao.remove(itemValue);
+            throw new IllegalStateException("Legacy entities are no longer supported.");
         } else {
             dataItemService.remove(itemValue.getNuEntity());
         }

@@ -21,12 +21,13 @@ package com.amee.service.data;
 
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.*;
-import com.amee.domain.data.*;
+import com.amee.domain.data.DataCategory;
+import com.amee.domain.data.DataCategoryReference;
+import com.amee.domain.data.ItemDefinition;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
-import org.hibernate.FetchMode;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
@@ -285,7 +286,7 @@ public class DataServiceDAO implements Serializable {
             Date modifiedUntil) {
         return (List<DataCategory>) entityManager.createQuery(
                 "SELECT DISTINCT di.dataCategory " +
-                        "FROM LegacyDataItem di " +
+                        "FROM NuDataItem di " +
                         "WHERE di.modified >= :modifiedSince " +
                         "AND di.modified < :modifiedUntil")
                 .setParameter("modifiedSince", modifiedSince)
@@ -415,152 +416,6 @@ public class DataServiceDAO implements Serializable {
     public void invalidate(DataCategory dataCategory) {
         log.debug("invalidate() " + dataCategory.toString());
         ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(DataCategory.class, dataCategory.getId());
-    }
-
-    // ItemValues
-
-    // TODO: Looks like this can be removed.
-
-    @Deprecated
-    @SuppressWarnings(value = "unchecked")
-    private ItemValue getItemValueByUid(String uid) {
-        ItemValue itemValue = null;
-        if (!StringUtils.isBlank(uid)) {
-            Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(LegacyItemValue.class);
-            criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
-            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-            criteria.setCacheable(true);
-            criteria.setCacheRegion(CACHE_REGION);
-            List<ItemValue> itemValues = criteria.list();
-            if (itemValues.size() == 1) {
-                itemValue = itemValues.get(0);
-            } else {
-                log.debug("getItemValueByUid() NOT found: " + uid);
-            }
-        }
-        return (ItemValue) LegacyItemValueToItemValueTransformer.getInstance().transform(itemValue);
-    }
-
-    // DataItems
-
-    /**
-     * Returns the DatItem matching the specified UID.
-     *
-     * @param uid for the requested DataItem
-     * @return the matching DataItem or null if not found
-     */
-    @SuppressWarnings(value = "unchecked")
-    protected DataItem getDataItemByUid(String uid) {
-        LegacyDataItem dataItem = null;
-        if (!StringUtils.isBlank(uid)) {
-            // See http://www.hibernate.org/117.html#A12 for notes on DISTINCT_ROOT_ENTITY.
-            Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(LegacyDataItem.class);
-            criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-            criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
-            criteria.setFetchMode("itemValues", FetchMode.JOIN);
-            criteria.setCacheable(true);
-            criteria.setCacheRegion(CACHE_REGION);
-            List<LegacyDataItem> dataItems = criteria.list();
-            if (dataItems.size() == 1) {
-                dataItem = dataItems.get(0);
-            } else {
-                log.debug("getDataItemByUid() NOT found: " + uid);
-            }
-        }
-        return DataItem.getDataItem(dataItem);
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    protected DataItem getDataItemByPath(DataCategory parent, String path) {
-        LegacyDataItem dataItem = null;
-        if ((parent != null) && !StringUtils.isBlank(path)) {
-            List<LegacyDataItem> dataItems = entityManager.createQuery(
-                    "SELECT DISTINCT di " +
-                            "FROM LegacyDataItem di " +
-                            "LEFT JOIN FETCH di.itemValues " +
-                            "WHERE di.path = :path " +
-                            "AND di.status != :trash " +
-                            "AND di.dataCategory.id = :dataCategoryId")
-                    .setParameter("dataCategoryId", parent.getId())
-                    .setParameter("path", path)
-                    .setParameter("trash", AMEEStatus.TRASH)
-                    .setHint("org.hibernate.cacheable", true)
-                    .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-                    .getResultList();
-            if (dataItems.size() == 1) {
-                dataItem = dataItems.get(0);
-            } else {
-                log.debug("getDataItemByPath() NOT found: " + path);
-            }
-        }
-        return DataItem.getDataItem(dataItem);
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    protected List<DataItem> getDataItems(IDataCategoryReference dc) {
-        log.debug("getDataItems() Start: " + dc.toString());
-        List<LegacyDataItem> legacyDataItems = entityManager.createQuery(
-                "SELECT DISTINCT di " +
-                        "FROM LegacyDataItem di " +
-                        "LEFT JOIN FETCH di.itemValues " +
-                        "WHERE di.itemDefinition.id = :itemDefinitionId " +
-                        "AND di.dataCategory.id = :dataCategoryId " +
-                        "AND di.status != :trash")
-                .setParameter("itemDefinitionId", getDataCategory(dc).getItemDefinition().getId())
-                .setParameter("dataCategoryId", dc.getEntityId())
-                .setParameter("trash", AMEEStatus.TRASH)
-                .setHint("org.hibernate.cacheable", true)
-                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-                .getResultList();
-        log.debug("getDataItems() Done: " + dc.toString() + " (" + legacyDataItems.size() + ")");
-        // Convert from legacy to adapter.
-        List<DataItem> dataItems = new ArrayList<DataItem>();
-        for (LegacyDataItem legacyDataItem : legacyDataItems) {
-            dataItems.add(DataItem.getDataItem(legacyDataItem));
-        }
-        return dataItems;
-    }
-
-    @SuppressWarnings(value = "unchecked")
-    protected List<DataItem> getDataItems(Set<Long> dataItemIds, boolean values) {
-        // Don't fail with an empty Set.
-        if (dataItemIds.isEmpty()) {
-            dataItemIds.add(0L);
-        }
-        StringBuilder hql = new StringBuilder();
-        hql.append("SELECT DISTINCT di ");
-        hql.append("FROM LegacyDataItem di ");
-        if (values) {
-            hql.append("LEFT JOIN FETCH di.itemValues ");
-        }
-        hql.append("WHERE di.status != :trash ");
-        hql.append("AND di.id IN (:dataItemIds)");
-        List<LegacyDataItem> legacyDataItems = (List<LegacyDataItem>) entityManager.createQuery(hql.toString())
-                .setParameter("trash", AMEEStatus.TRASH)
-                .setParameter("dataItemIds", dataItemIds)
-                .setHint("org.hibernate.cacheable", true)
-                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-                .getResultList();
-        // Convert from legacy to adapter.
-        List<DataItem> dataItems = new ArrayList<DataItem>();
-        for (LegacyDataItem legacyDataItem : legacyDataItems) {
-            dataItems.add(DataItem.getDataItem(legacyDataItem));
-        }
-        return dataItems;
-    }
-
-    protected void persist(DataItem dataItem) {
-        entityManager.persist(dataItem.getLegacyEntity());
-    }
-
-    protected void remove(DataItem dataItem) {
-        dataItem.getLegacyEntity().setStatus(AMEEStatus.TRASH);
-    }
-
-    protected void remove(ItemValue dataItemValue) {
-        dataItemValue.getLegacyEntity().setStatus(AMEEStatus.TRASH);
     }
 
     //  API Versions
