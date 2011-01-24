@@ -95,23 +95,14 @@ public class DrillDownService implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    protected List<Choice> getDataItemChoices(IDataCategoryReference dataCategory,
-                                              List<Choice> selections, List<Choice> drillDownChoices) {
-
-        // Get legacy and nu choices.
+    protected List<Choice> getDataItemChoices(
+            IDataCategoryReference dataCategory,
+            List<Choice> selections,
+            List<Choice> drillDownChoices) {
+        // Get Choices and sort.
         List<Choice> choices = ((List<Choice>) cacheHelper.getCacheable(
-                new DrillDownFactory(drillDownDao, dataCategory, selections, drillDownChoices)));
-        List<Choice> nuChoices = ((List<Choice>) cacheHelper.getCacheable(
                 new NuDrillDownFactory(nuDrillDownDao, dataCategory, selections, drillDownChoices)));
-
-        // Deal with rows that occur in both tables
-        for (Choice choice : nuChoices) {
-            if (!choices.contains(choice)) {
-                choices.add(choice);
-            }
-        }
         Collections.sort(choices);
-
         return choices;
     }
 
