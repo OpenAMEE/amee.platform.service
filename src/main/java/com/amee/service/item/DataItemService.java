@@ -105,11 +105,11 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     /**
-     * Get an {@link com.amee.domain.data.LegacyItemValue} belonging to this Item using some identifier and prevailing datetime context.
+     * Get an {@link BaseItemValue} belonging to this Item using some identifier and prevailing datetime context.
      *
-     * @param identifier - a value to be compared to the path and then the uid of the {@link com.amee.domain.data.LegacyItemValue}s belonging
+     * @param identifier - a value to be compared to the path and then the uid of the Item Values belonging
      *                   to this Item.
-     * @return the matched {@link com.amee.domain.data.LegacyItemValue} or NULL if no match is found.
+     * @return the matched {@link BaseItemValue} or NULL if no match is found.
      */
     @Override
     public BaseItemValue getItemValue(BaseItem item, String identifier) {
