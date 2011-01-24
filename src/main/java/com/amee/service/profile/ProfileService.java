@@ -130,9 +130,6 @@ public class ProfileService extends BaseService {
 
     public ProfileItem getProfileItem(String uid) {
         ProfileItem pi = ProfileItem.getProfileItem(profileItemService.getItemByUid(uid));
-        if (pi == null) {
-            pi = dao.getProfileItem(uid);
-        }
         pi = checkProfileItem(pi);
         // If this ProfileItem is trashed then return null. A ProfileItem may be trash if it itself has been
         // trashed or an owning entity has been trashed.
@@ -153,16 +150,9 @@ public class ProfileService extends BaseService {
      * @return the active {@link ProfileItem} collection
      */
     public List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date date) {
-        Set<String> profileItemUids = new HashSet<String>();
         List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
         for (NuProfileItem profileItem : profileItemService.getProfileItems(profile, dataCategory, date)) {
-            profileItemUids.add(profileItem.getUid());
             profileItems.add(ProfileItem.getProfileItem(profileItem));
-        }
-        for (ProfileItem profileItem : dao.getProfileItems(profile, dataCategory, date)) {
-            if (!profileItemUids.contains(profileItem.getUid())) {
-                profileItems.add(profileItem);
-            }
         }
         // Order the returned collection by pi.name, di.name and pi.startDate DESC
         Collections.sort(profileItems, new Comparator<ProfileItem>() {
@@ -194,16 +184,9 @@ public class ProfileService extends BaseService {
             IDataCategoryReference dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
-        Set<String> profileItemUids = new HashSet<String>();
         List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
         for (NuProfileItem profileItem : profileItemService.getProfileItems(profile, dataCategory, startDate, endDate)) {
-            profileItemUids.add(profileItem.getUid());
             profileItems.add(ProfileItem.getProfileItem(profileItem));
-        }
-        for (ProfileItem profileItem : dao.getProfileItems(profile, dataCategory, startDate, endDate)) {
-            if (!profileItemUids.contains(profileItem.getUid())) {
-                profileItems.add(profileItem);
-            }
         }
         // Order the returned collection by pi.startDate DESC
         Collections.sort(profileItems, new Comparator<ProfileItem>() {
@@ -212,18 +195,6 @@ public class ProfileService extends BaseService {
             }
         });
         return checkProfileItems(profileItems);
-    }
-
-    /**
-     * Get a count of all {@link ProfileItem}s belonging to a {@link Profile} with a particular {@link DataCategory}.
-     *
-     * @param profile      - the {@link Profile} to which the {@link ProfileItem}s belong
-     * @param dataCategory - the DataCategory containing the ProfileItems
-     * @return the number of {@link ProfileItem}s
-     */
-    public int getProfileItemCount(Profile profile, DataCategory dataCategory) {
-        return dao.getProfileItemCount(profile, dataCategory) +
-                profileItemService.getProfileItemCount(profile, dataCategory);
     }
 
     private List<ProfileItem> checkProfileItems(List<ProfileItem> profileItems) {
@@ -313,12 +284,12 @@ public class ProfileService extends BaseService {
     }
 
     public boolean isUnique(ProfileItem pi) {
-        return !dao.equivalentProfileItemExists(pi) && !profileItemService.equivalentProfileItemExists(pi);
+        return !profileItemService.equivalentProfileItemExists(pi);
     }
 
     public void persist(ProfileItem profileItem) {
         if (profileItem.isLegacy()) {
-            dao.persist(profileItem);
+            throw new IllegalStateException("Legacy entities are no longer supported.");
         } else {
             profileItemService.persist(profileItem.getNuEntity());
         }
@@ -341,9 +312,7 @@ public class ProfileService extends BaseService {
 
     public Set<Long> getProfileDataCategoryIds(Profile profile) {
         Set<Long> dataCategoryIds = new HashSet<Long>();
-        // Get Data Category IDs for legacy Profile Items.
-        dataCategoryIds.addAll(dao.getProfileDataCategoryIds(profile));
-        // Get Data Category IDs for nu Profile Items.
+        // Get Data Category IDs for Profile Items.
         dataCategoryIds.addAll(profileItemService.getProfileDataCategoryIds(profile));
         // Get parent Data Category IDs based on existing Data Category IDs.
         dataCategoryIds.addAll(dataService.getParentDataCategoryIds(dataCategoryIds));
@@ -359,7 +328,7 @@ public class ProfileService extends BaseService {
     // Nu to Adapter.
 
     /**
-     * Convert from legacy to adapter.
+     * Convert from Nu to adapter.
      *
      * @param profileItems
      * @return
