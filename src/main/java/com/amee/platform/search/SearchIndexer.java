@@ -299,6 +299,7 @@ public class SearchIndexer implements Runnable {
             }
         }
         doc.add(new Field("label", dataItem.getLabel().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("byLabel", dataItem.getLabel().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         doc.add(new Field("tags", new SearchService.TagTokenizer(new StringReader(tagService.getTagsCSV(dataItem.getDataCategory()).toLowerCase()))));
         return doc;
     }

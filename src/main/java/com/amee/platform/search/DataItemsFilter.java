@@ -2,6 +2,8 @@ package com.amee.platform.search;
 
 import com.amee.domain.data.ItemDefinition;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 
 public class DataItemsFilter extends QueryFilter {
 
@@ -110,5 +112,18 @@ public class DataItemsFilter extends QueryFilter {
 
     public int getResultLimitMax() {
         return 100;
+    }
+
+    @Override
+    public Sort getSort() {
+        if (getQueries().isEmpty() ||
+            getQueries().containsKey("uid") ||
+            getQueries().containsKey("path") ||
+            getQueries().containsKey("categoryUid") ||
+            getQueries().containsKey("itemDefinitionUid")) {
+            return new Sort(new SortField("byLabel", SortField.STRING));
+        } else {
+            return Sort.RELEVANCE;
+        }
     }
 }
