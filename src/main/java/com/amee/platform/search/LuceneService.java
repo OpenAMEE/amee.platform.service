@@ -4,6 +4,7 @@ import com.amee.base.domain.ResultsWrapper;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Sort;
 
 import java.util.Collection;
 
@@ -13,7 +14,7 @@ public interface LuceneService {
 
     public ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit, int maxNumHits);
 
-    public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits, String sortField);
+    public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits, Sort sortField);
 
     public ResultsWrapper<Document> doSearch(Query query);
 

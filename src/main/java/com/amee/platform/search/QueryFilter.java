@@ -1,6 +1,7 @@
 package com.amee.platform.search;
 
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Sort;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,5 +49,15 @@ public abstract class QueryFilter extends LimitFilter {
 
     public void setLoadEntityTags(boolean loadEntityTags) {
         this.loadEntityTags = loadEntityTags;
+    }
+
+    /**
+     * Get a Sort object that encapsulates an ordered collection of field sorting information.
+     * To sort by relevance (the default) you may return Sort.RELEVANCE however there is some overhead in using a Sort object.
+     * 
+     * @return  A Sort object for ordering results.
+     */
+    public Sort getSort() {
+        return Sort.RELEVANCE;
     }
 }

@@ -5,7 +5,7 @@
     <name>amee-platform-service</name>
     <groupId>com.amee.platform</groupId>
     <artifactId>amee-platform-service</artifactId>
-    <version>1.0.17-SNAPSHOT</version>
+    <version>1.0.18-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <!-- Properties. -->
@@ -13,7 +13,7 @@
         <!-- Versions. -->
         <amee-messaging.version>1.0.6</amee-messaging.version>
         <amee-platform-science.version>1.0.12</amee-platform-science.version>
-        <amee-platform-domain.version>1.0.12</amee-platform-domain.version>
+        <amee-platform-domain.version>1.0.13</amee-platform-domain.version>
         <!-- External Versions. -->
         <!-- Note: These versions were last checked & upgraded on 15/04/2010. -->
         <org-aspectj.version>1.6.8</org-aspectj.version>

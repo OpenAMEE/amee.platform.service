@@ -1,6 +1,8 @@
 package com.amee.platform.search;
 
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 
 public class DataCategoriesFilter extends QueryFilter {
 
@@ -124,5 +126,19 @@ public class DataCategoriesFilter extends QueryFilter {
     @Override
     public int getResultLimitMax() {
         return 100;
+    }
+
+    @Override
+    public Sort getSort() {
+        if (getQueries().isEmpty() ||
+            getQueries().containsKey("uid") ||
+            getQueries().containsKey("path") ||
+            getQueries().containsKey("fullPath") ||
+            getQueries().containsKey("parentUid") ||
+            getQueries().containsKey("itemDefinitionUid")) {
+            return new Sort(new SortField("byWikiName", SortField.STRING));
+        } else {
+            return Sort.RELEVANCE;
+        }
     }
 }

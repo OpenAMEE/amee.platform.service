@@ -154,7 +154,6 @@ public class SearchService {
 
     // DataCategory Search.
 
-    // TODO: Sort the results
     public ResultsWrapper<DataCategory> getDataCategories(DataCategoriesFilter filter) {
         ResultsWrapper<DataCategory> resultsWrapper;
         // Filter based on an allowed query parameter.
@@ -185,7 +184,6 @@ public class SearchService {
         return resultsWrapper;
     }
 
-    // TODO: Write an integration test for these sorted results
     private ResultsWrapper<DataCategory> getDataCategories(BooleanQuery query, DataCategoriesFilter filter) {
         if (query == null) {
             query = new BooleanQuery();
@@ -197,7 +195,7 @@ public class SearchService {
                         luceneService.doSearch(
                                 query,
                                 filter.getResultStart(),
-                                filter.getResultLimit(), LuceneServiceImpl.MAX_NUM_HITS, "byWikiName"),
+                                filter.getResultLimit(), LuceneServiceImpl.MAX_NUM_HITS, filter.getSort()),
                         filter.isLoadEntityTags(),
                         filter.isLoadMetadatas(),
                         false));
@@ -249,13 +247,12 @@ public class SearchService {
             q.add(query, BooleanClause.Occur.MUST);
         }
         // Do search and fetch Lucene documents.
-        // TODO: sort the results
         return getDataItemResultsWrapper(
                 getEntityResultsWrapper(
                         luceneService.doSearch(
                                 q,
                                 filter.getResultStart(),
-                                filter.getResultLimit()),
+                                filter.getResultLimit(), LuceneServiceImpl.MAX_NUM_HITS, filter.getSort()),
                         filter.isLoadEntityTags(),
                         filter.isLoadMetadatas(),
                         filter.isLoadDataItemValues()));

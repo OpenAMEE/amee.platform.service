@@ -4,6 +4,7 @@ import com.amee.base.domain.ResultsWrapper;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Sort;
 
 import java.util.*;
 
@@ -50,6 +51,11 @@ public class LuceneServiceMock implements LuceneService {
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    @Override
+    public ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit, int maxNumHits, Sort sortField) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override

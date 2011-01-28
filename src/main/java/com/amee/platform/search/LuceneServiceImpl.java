@@ -121,7 +121,7 @@ public class LuceneServiceImpl implements LuceneService {
 
     @Override
     public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits) {
-        return doSearch(query, resultStart, resultLimit, maxNumHits, null);
+        return doSearch(query, resultStart, resultLimit, maxNumHits, Sort.RELEVANCE);
     }
 
     /**
@@ -133,10 +133,12 @@ public class LuceneServiceImpl implements LuceneService {
      * @param query       to search with
      * @param resultStart 0 based index of first result
      * @param resultLimit results limit
+     * @param maxNumHits maximum number of hits to return
+     * @param sortField Sort object to sort by. This field must be indexed but not tokenized.
      * @return a List of Lucene Documents
      */
     @Override
-    public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits, String sortField) {
+    public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits, Sort sortField) {
         rLock.lock();
         try {
             log.info("doSearch() query='" + query.toString() + "', resultStart=" + resultStart + ", resultLimit=" + resultLimit);
@@ -146,48 +148,39 @@ public class LuceneServiceImpl implements LuceneService {
             if (numHits > maxNumHits) {
                 numHits = maxNumHits;
             }
+
             // Get Collector limited to numHits + 1, so we can detect truncations.
-            // TODO: Hits are sorted by score when using a TopScoreDocCollector can we use a TopFieldCollector?
-            Collector collector;
-            if (sortField == null) {
-                collector = TopScoreDocCollector.create(numHits + 1, true);
-            } else {
-                collector = TopFieldCollector.create(new Sort(new SortField(sortField, SortField.STRING)), numHits + 1, false, false, false, false);
-            }
+            TopFieldCollector collector = TopFieldCollector.create(sortField, numHits + 1, false, false, false, false);
+
             // Get the IndexSearcher and do the search.
             Searcher searcher = getIndexSearcher();
-
-            // TODO: we need to get a sorted result
             searcher.search(query, collector);
+
             // Get hits within our start and limit range.
-            // TODO: Can we do this without using the collector?
             ScoreDoc[] hits;
-            if (collector instanceof TopScoreDocCollector) {
-                hits = ((TopScoreDocCollector) collector).topDocs(resultStart, resultLimit + 1).scoreDocs;
-            } else {
-                hits = ((TopFieldCollector) collector).topDocs(resultStart, resultLimit + 1).scoreDocs;
-            }
+            hits = collector.topDocs(resultStart, resultLimit + 1).scoreDocs;
+
             // Assemble List of Documents.
             List<Document> documents = new ArrayList<Document>();
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
             }
+
             // Trim resultLimit if we're close to maxNumHits.
             int resultLimitWithCeiling = resultLimit;
             if (resultStart >= maxNumHits) {
+
                 // Never return results.
                 resultLimitWithCeiling = 0;
             } else if ((resultStart + resultLimit) > maxNumHits) {
+
                 // Only return those results from resultStart to maxNumHits.
                 resultLimitWithCeiling = maxNumHits - resultStart;
             }
+
             // Create ResultsWrapper appropriate for our limit.
             int totalHits = 0;
-            if (collector instanceof TopScoreDocCollector) {
-                totalHits = ((TopScoreDocCollector) collector).getTotalHits();
-            } else {
-                totalHits = ((TopFieldCollector) collector).getTotalHits();
-            }
+            totalHits = collector.getTotalHits();
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents.size() > resultLimitWithCeiling ? documents.subList(0, resultLimitWithCeiling) : documents,
                     (documents.size() > resultLimitWithCeiling) && !((resultStart + resultLimitWithCeiling) >= maxNumHits),
