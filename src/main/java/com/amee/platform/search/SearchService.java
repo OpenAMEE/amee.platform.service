@@ -4,7 +4,6 @@ import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
 import com.amee.domain.item.data.NuDataItem;
 import com.amee.service.data.DataService;
 import com.amee.service.item.DataItemService;
@@ -139,7 +138,7 @@ public class SearchService {
      * @param entities
      * @param dataItemsMap
      */
-    protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, DataItem> dataItemsMap) {
+    protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, NuDataItem> dataItemsMap) {
         Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
         for (String id : dataItemsMap.keySet()) {
             IAMEEEntity entity = dataItemsMap.get(id);
@@ -164,7 +163,7 @@ public class SearchService {
         for (String uid : dataItemsMap.keySet()) {
             IAMEEEntity entity = dataItemsMap.get(uid);
             if (entity.getObjectType().equals(ObjectType.NDI)) {
-                dataItems.put(uid, DataItem.getDataItem(dataItemsMap.get(uid)));
+                dataItems.put(uid, dataItemsMap.get(uid));
             } else {
                 throw new IllegalStateException("An ObjectType of NDI was expected.");
             }
@@ -242,7 +241,7 @@ public class SearchService {
 
     // DataItem search.
 
-    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
+    public ResultsWrapper<NuDataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
         // Create Query.
         BooleanQuery query = null;
         if (!filter.getQueries().isEmpty()) {
@@ -264,7 +263,7 @@ public class SearchService {
      * @param query
      * @return
      */
-    private ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
+    private ResultsWrapper<NuDataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
         // Create Query to find all DIs & NDIs in the DataCategory matching the supplied Query and range.
         BooleanQuery q = new BooleanQuery();
         BooleanQuery typesQuery = new BooleanQuery();
@@ -288,16 +287,16 @@ public class SearchService {
     }
 
     // TODO: Find a way to genericise this and the similar method above for Data Categories.
-    private ResultsWrapper<DataItem> getDataItemResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
-        ResultsWrapper<DataItem> dataItemResultsWrapper = new ResultsWrapper<DataItem>();
+    private ResultsWrapper<NuDataItem> getDataItemResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
+        ResultsWrapper<NuDataItem> dataItemResultsWrapper = new ResultsWrapper<NuDataItem>();
         dataItemResultsWrapper.setTruncated(entityResultsWrapper.isTruncated());
         dataItemResultsWrapper.setResultStart(entityResultsWrapper.getResultStart());
         dataItemResultsWrapper.setResultLimit(entityResultsWrapper.getResultLimit());
         dataItemResultsWrapper.setHits(entityResultsWrapper.getHits());
-        List<DataItem> dataItems = new ArrayList<DataItem>();
+        List<NuDataItem> dataItems = new ArrayList<NuDataItem>();
         for (IAMEEEntity entity : entityResultsWrapper.getResults()) {
-            if (DataItem.class.isAssignableFrom(entity.getClass())) {
-                dataItems.add((DataItem) entity);
+            if (NuDataItem.class.isAssignableFrom(entity.getClass())) {
+                dataItems.add((NuDataItem) entity);
             } else {
                 throw new IllegalStateException("A DataItem was expected.");
             }

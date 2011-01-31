@@ -6,7 +6,6 @@ import com.amee.domain.IMetadataService;
 import com.amee.domain.Metadata;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.item.data.NuDataItem;
@@ -87,7 +86,7 @@ public class MetadataService implements IMetadataService, ApplicationListener {
         loadMetadatas(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
     }
 
-    public void loadMetadatasForDataItems(Collection<DataItem> dataItems) {
+    public void loadMetadatasForDataItems(Collection<NuDataItem> dataItems) {
         loadMetadatas(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
     }
 

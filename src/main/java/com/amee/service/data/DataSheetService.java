@@ -23,14 +23,15 @@ import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
-import com.amee.domain.data.ItemValue;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.NuDataItem;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.domain.sheet.Sheet;
 import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
+import com.amee.service.item.DataItemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,9 @@ public class DataSheetService extends BaseService implements ApplicationListener
 
     @Autowired
     private DataService dataService;
+
+    @Autowired
+    private DataItemService dataItemService;
 
     private CacheHelper cacheHelper = CacheHelper.getInstance();
     private Set<String> eternalPaths = new HashSet<String>();
@@ -113,7 +117,7 @@ public class DataSheetService extends BaseService implements ApplicationListener
     // Choices
 
     @SuppressWarnings(value = "unchecked")
-    public Choices getUserValueChoices(DataItem dataItem, APIVersion apiVersion) {
+    public Choices getUserValueChoices(NuDataItem dataItem, APIVersion apiVersion) {
         List<Choice> userValueChoices = new ArrayList<Choice>();
         for (ItemValueDefinition ivd : dataItem.getItemDefinition().getItemValueDefinitions()) {
             if (ivd.isFromProfile() && ivd.isValidInAPIVersion(apiVersion)) {
@@ -121,9 +125,9 @@ public class DataSheetService extends BaseService implements ApplicationListener
                 String defaultValue = ivd.getValue();
                 // next give DataItem a chance to set the default value, if appropriate
                 if (ivd.isFromData()) {
-                    ItemValue dataItemValue = dataItem.getItemValue(ivd.getPath());
-                    if ((dataItemValue != null) && (dataItemValue.getValue().length() > 0)) {
-                        defaultValue = dataItemValue.getValue();
+                    BaseItemValue dataItemValue = dataItemService.getItemValue(dataItem, ivd.getPath());
+                    if ((dataItemValue != null) && (dataItemValue.getValueAsString().length() > 0)) {
+                        defaultValue = dataItemValue.getValueAsString();
                     }
                 }
                 // create Choice

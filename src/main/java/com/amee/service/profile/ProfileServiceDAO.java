@@ -23,7 +23,6 @@ import com.amee.domain.AMEEStatus;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
 import com.amee.domain.profile.Profile;
-import com.amee.domain.profile.ProfileItem;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -139,13 +138,5 @@ public class ProfileServiceDAO implements Serializable {
      */
     protected void remove(Profile profile) {
         profile.setStatus(AMEEStatus.TRASH);
-    }
-
-    protected void persist(ProfileItem profileItem) {
-        entityManager.persist(profileItem.getAdaptedEntity());
-    }
-
-    protected void remove(ProfileItem profileItem) {
-        profileItem.getAdaptedEntity().setStatus(AMEEStatus.TRASH);
     }
 }

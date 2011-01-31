@@ -21,11 +21,14 @@
  */
 package com.amee.service;
 
-import com.amee.domain.*;
+import com.amee.domain.AMEEStatus;
+import com.amee.domain.IAMEEEntity;
+import com.amee.domain.IAMEEEntityReference;
+import com.amee.domain.ObjectType;
 import com.amee.domain.auth.*;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemDefinition;
+import com.amee.domain.item.data.NuDataItem;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -38,7 +41,7 @@ public class ServiceData {
     public GroupPrincipal GROUP_STANDARD_USER_STANDARD, GROUP_STANDARD_USER_PREMIUM, GROUP_PREMIUM_USER_PREMIUM;
     public ItemDefinition ID_PUBLIC, ID_PREMIUM;
     public DataCategory DC_ROOT, DC_PUBLIC, DC_PUBLIC_SUB, DC_PREMIUM, DC_DEPRECATED;
-    public DataItem DI_PUBLIC, DI_PREMIUM;
+    public NuDataItem DI_PUBLIC, DI_PREMIUM;
     public Permission PERMISSION_1, PERMISSION_2, PERMISSION_3, PERMISSION_4;
     public Map<IAMEEEntityReference, List<Permission>> PRINCIPAL_TO_PERMISSIONS;
     public Map<ObjectType, Long> ID_MAP;
@@ -104,8 +107,8 @@ public class ServiceData {
     }
 
     private void initDataItems() {
-        DI_PUBLIC = new DataItem(DC_PUBLIC, ID_PUBLIC);
-        DI_PREMIUM = new DataItem(DC_PREMIUM, ID_PREMIUM);
+        DI_PUBLIC = new NuDataItem(DC_PUBLIC, ID_PUBLIC);
+        DI_PREMIUM = new NuDataItem(DC_PREMIUM, ID_PREMIUM);
         addEntities(DI_PUBLIC, DI_PREMIUM);
     }
 

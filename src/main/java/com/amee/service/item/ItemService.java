@@ -8,6 +8,8 @@ import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.NuItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.BaseDataItemValue;
+import com.amee.domain.item.profile.BaseProfileItemValue;
 import com.amee.persist.BaseEntity;
 import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
@@ -156,7 +158,7 @@ public abstract class ItemService implements IItemService, ApplicationListener {
      * The key is the value returned by {@link BaseItemValue#getDisplayPath()}.
      *
      * @param item
-     * @return {@link com.amee.domain.data.ItemValueMap}
+     * @return {@link com.amee.domain.data.NuItemValueMap}
      */
     @Override
     public NuItemValueMap getItemValuesMap(BaseItem item) {
@@ -225,6 +227,21 @@ public abstract class ItemService implements IItemService, ApplicationListener {
     @Override
     public void clearItemValues() {
         ITEM_VALUES.get().clear();
+    }
+
+    @Override
+    public StartEndDate getStartDate(BaseItemValue itemValue) {
+        if (BaseProfileItemValue.class.isAssignableFrom(itemValue.getClass())) {
+            return ((BaseProfileItemValue) itemValue).getProfileItem().getStartDate();
+        } else if (BaseDataItemValue.class.isAssignableFrom(itemValue.getClass())) {
+            if (ExternalHistoryValue.class.isAssignableFrom(itemValue.getClass())) {
+                return ((ExternalHistoryValue) itemValue).getStartDate();
+            } else {
+                return new StartEndDate(IDataItemService.EPOCH);
+            }
+        } else {
+            throw new IllegalStateException("A BaseProfileItemValue or BaseDataItemValue instance was expected.");
+        }
     }
 
     protected abstract ItemServiceDAO getDao();

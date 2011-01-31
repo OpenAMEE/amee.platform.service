@@ -4,8 +4,8 @@ import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.ThreadBeanHolder;
 import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
-import com.amee.domain.data.ItemValue;
+import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.NuDataItem;
 import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationService;
@@ -49,7 +49,7 @@ public class SearchIndexer implements Runnable {
         public List<Document> dataItemDocs;
 
         // Current Data Item.
-        public DataItem dataItem;
+        public NuDataItem dataItem;
 
         // Current Data Item Document
         public Document dataItemDoc;
@@ -214,11 +214,11 @@ public class SearchIndexer implements Runnable {
             // Pre-cache metadata and locales for the Data Items.
             metadataService.loadMetadatasForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
             localeService.loadLocaleNamesForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
-            List<DataItem> dataItems = dataService.getDataItems(dataCategory, false);
+            List<NuDataItem> dataItems = dataItemService.getDataItems(dataCategory, false);
             metadataService.loadMetadatasForDataItems(dataItems);
             // Iterate over all Data Items and create Documents.
             documentContext.dataItemDocs = new ArrayList<Document>();
-            for (DataItem dataItem : dataItems) {
+            for (NuDataItem dataItem : dataItems) {
                 documentContext.dataItem = dataItem;
                 // Create new Data Item Document.
                 documentContext.dataItemDoc = getDocumentForDataItem(dataItem);
@@ -266,7 +266,7 @@ public class SearchIndexer implements Runnable {
         return doc;
     }
 
-    protected Document getDocumentForDataItem(DataItem dataItem) {
+    protected Document getDocumentForDataItem(NuDataItem dataItem) {
         Document doc = getDocumentForAMEEEntity(dataItem);
         doc.add(new Field("name", dataItem.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataItem.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
@@ -277,26 +277,26 @@ public class SearchIndexer implements Runnable {
         doc.add(new Field("categoryWikiName", dataItem.getDataCategory().getWikiName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("itemDefinitionUid", dataItem.getItemDefinition().getUid(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("itemDefinitionName", dataItem.getItemDefinition().getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
-        for (ItemValue itemValue : dataItem.getItemValues()) {
+        for (BaseItemValue itemValue : dataItemService.getItemValues(dataItem)) {
             if (itemValue.isUsableValue()) {
                 if (itemValue.getItemValueDefinition().isDrillDown()) {
-                    doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
-                    doc.add(new Field(itemValue.getDisplayPath() + "_drill", itemValue.getValue(), Field.Store.YES, Field.Index.NO));
+                    doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValueAsString().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+                    doc.add(new Field(itemValue.getDisplayPath() + "_drill", itemValue.getValueAsString(), Field.Store.YES, Field.Index.NO));
                 } else {
                     if (itemValue.isDouble()) {
                         try {
-                            doc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValue()).getValue()));
+                            doc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValueAsString()).getValue()));
                         } catch (NumberFormatException e) {
-                            log.warn("getDocumentForDataItem() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValue() + "' for DataItem " + dataItem.toString() + ".");
-                            doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+                            log.warn("getDocumentForDataItem() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValueAsString() + "' for DataItem " + dataItem.toString() + ".");
+                            doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValueAsString().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
                         }
                     } else {
-                        doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+                        doc.add(new Field(itemValue.getDisplayPath(), itemValue.getValueAsString().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
                     }
                 }
             }
         }
-        doc.add(new Field("label", dataItem.getLabel().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+        doc.add(new Field("label", dataItemService.getLabel(dataItem).toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("tags", new SearchService.TagTokenizer(new StringReader(tagService.getTagsCSV(dataItem.getDataCategory()).toLowerCase()))));
         return doc;
     }
@@ -314,20 +314,20 @@ public class SearchIndexer implements Runnable {
     }
 
     protected void handleDataItemValues(DocumentContext ctx) {
-        for (ItemValue itemValue : ctx.dataItem.getItemValues()) {
+        for (BaseItemValue itemValue : dataItemService.getItemValues(ctx.dataItem)) {
             if (itemValue.isUsableValue()) {
                 if (itemValue.getItemValueDefinition().isDrillDown()) {
-                    ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+                    ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValueAsString().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
                 } else {
                     if (itemValue.isDouble()) {
                         try {
-                            ctx.dataItemDoc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValue()).getValue()));
+                            ctx.dataItemDoc.add(new NumericField(itemValue.getDisplayPath()).setDoubleValue(new Amount(itemValue.getValueAsString()).getValue()));
                         } catch (NumberFormatException e) {
-                            log.warn("handleDataItemValues() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValue() + "' for DataItem " + ctx.dataItem.toString() + ".");
-                            ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+                            log.warn("handleDataItemValues() Could not parse '" + itemValue.getDisplayPath() + "' value '" + itemValue.getValueAsString() + "' for DataItem " + ctx.dataItem.toString() + ".");
+                            ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValueAsString().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
                         }
                     } else {
-                        ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValue().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+                        ctx.dataItemDoc.add(new Field(itemValue.getDisplayPath(), itemValue.getValueAsString().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
                     }
                 }
             }
