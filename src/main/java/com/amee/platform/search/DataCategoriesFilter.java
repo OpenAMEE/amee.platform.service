@@ -130,15 +130,18 @@ public class DataCategoriesFilter extends QueryFilter {
 
     @Override
     public Sort getSort() {
-        if (getQueries().isEmpty() ||
-            getQueries().containsKey("uid") ||
-            getQueries().containsKey("path") ||
-            getQueries().containsKey("fullPath") ||
-            getQueries().containsKey("parentUid") ||
-            getQueries().containsKey("itemDefinitionUid")) {
-            return new Sort(new SortField("byWikiName", SortField.STRING));
-        } else {
+        if (getQueries().containsKey("name") ||
+            getQueries().containsKey("wikiName") ||
+            getQueries().containsKey("wikiDoc") ||
+            getQueries().containsKey("provenance") ||
+            getQueries().containsKey("authority") ||
+            getQueries().containsKey("parentWikiName") ||
+            getQueries().containsKey("itemDefinitionName") ||
+            getQueries().containsKey("tags") ||
+            getQueries().containsKey("excTags")) {
             return Sort.RELEVANCE;
+        } else {
+            return new Sort(new SortField("byWikiName", SortField.STRING));
         }
     }
 }
