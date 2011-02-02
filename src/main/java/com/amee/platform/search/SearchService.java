@@ -159,12 +159,12 @@ public class SearchService {
         // Filter based on an allowed query parameter.
         if (!filter.getQueries().isEmpty()) {
             BooleanQuery query = new BooleanQuery();
-            Query excTags = filter.removeExcTags();
-            if (excTags != null) {
-                query.add(excTags, BooleanClause.Occur.MUST_NOT);
-            }
-            for (Query q : filter.getQueries().values()) {
-                query.add(q, BooleanClause.Occur.MUST);
+            for (Map.Entry<String, Query> entry : filter.getQueries().entrySet()) {
+                if (entry.getKey().equals("excTags")) {
+                    query.add(entry.getValue(), BooleanClause.Occur.MUST_NOT);
+                } else {
+                    query.add(entry.getValue(), BooleanClause.Occur.MUST);
+                }
             }
             resultsWrapper = getDataCategories(query, filter);
         } else {
