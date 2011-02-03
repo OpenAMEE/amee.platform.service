@@ -13,6 +13,7 @@ import org.hibernate.FetchMode;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
+import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
@@ -142,6 +143,7 @@ public class TagServiceDAO implements Serializable {
         criteria.add(Restrictions.eq("entityReference.entityType", entity.getObjectType().getName()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.add(Restrictions.ne("t.status", AMEEStatus.TRASH));
+        criteria.addOrder(Order.asc(StringUtils.lowerCase("t.tag")));
         criteria.createAlias("tag", "t");
         criteria.setFetchMode("tag", FetchMode.JOIN);
         criteria.setTimeout(60);
