@@ -232,6 +232,11 @@ public class DefinitionService extends BaseService implements ApplicationListene
         dao.save(returnValueDefinition);
     }
 
+    /**
+     * Set all sibling ReturnValueDefinition defaultType values to false.
+     *
+     * @param returnValueDefinition the ReturnValueDefinition that is the new default type.
+     */
     public void unsetDefaultTypes(ReturnValueDefinition returnValueDefinition) {
         if (returnValueDefinition.isDefaultType()) {
             for (ReturnValueDefinition rvd : returnValueDefinition.getItemDefinition().getReturnValueDefinitions()) {
