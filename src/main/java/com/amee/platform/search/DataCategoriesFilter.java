@@ -1,10 +1,16 @@
 package com.amee.platform.search;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class DataCategoriesFilter extends QueryFilter {
+
+    private static final List<String> sortableFields = Arrays.asList("uid", "path", "fullPath", "parentUid", "itemDefinitionUid");
 
     public DataCategoriesFilter() {
         super();
@@ -130,18 +136,17 @@ public class DataCategoriesFilter extends QueryFilter {
 
     @Override
     public Sort getSort() {
-        if (getQueries().containsKey("name") ||
-            getQueries().containsKey("wikiName") ||
-            getQueries().containsKey("wikiDoc") ||
-            getQueries().containsKey("provenance") ||
-            getQueries().containsKey("authority") ||
-            getQueries().containsKey("parentWikiName") ||
-            getQueries().containsKey("itemDefinitionName") ||
-            getQueries().containsKey("tags") ||
-            getQueries().containsKey("excTags")) {
-            return Sort.RELEVANCE;
-        } else {
+
+        // If there is no filtering, sort by label
+        if (getQueries().isEmpty()) {
             return new Sort(new SortField("byWikiName", SortField.STRING));
+        }
+
+        // If there are only sortable fields, sort by label, otherwise, sort by relevance
+        if (CollectionUtils.subtract(getQueries().keySet(), sortableFields).isEmpty()) {
+            return new Sort(new SortField("byWikiName", SortField.STRING));
+        } else {
+            return Sort.RELEVANCE;
         }
     }
 }
