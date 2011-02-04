@@ -22,12 +22,17 @@ package com.amee.service.data;
 import com.amee.domain.LocaleHolder;
 import com.amee.domain.ValueType;
 import com.amee.domain.cache.CacheableFactory;
-import com.amee.domain.data.*;
+import com.amee.domain.data.DataCategory;
+import com.amee.domain.data.ItemDefinition;
+import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.NuDataItem;
 import com.amee.domain.sheet.Cell;
 import com.amee.domain.sheet.Column;
 import com.amee.domain.sheet.Row;
 import com.amee.domain.sheet.Sheet;
 import com.amee.platform.science.StartEndDate;
+import com.amee.service.item.DataItemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -38,6 +43,7 @@ public class DataSheetFactory implements CacheableFactory {
     private final Log log = LogFactory.getLog(getClass());
 
     private DataService dataService;
+    private DataItemService dataItemService;
     private DataBrowser dataBrowser;
     private String cacheName;
 
@@ -58,7 +64,7 @@ public class DataSheetFactory implements CacheableFactory {
 
         List<Column> columns;
         Row row;
-        ItemValue itemValue;
+        BaseItemValue itemValue;
         Sheet sheet = null;
         ItemDefinition itemDefinition;
         DataCategory dataCategory = dataBrowser.getDataCategory();
@@ -91,15 +97,15 @@ public class DataSheetFactory implements CacheableFactory {
             // create rows and cells
             columns = sheet.getColumns();
             StartEndDate startDate = dataBrowser.getQueryStartDate();
-            for (DataItem dataItem : dataService.getDataItems(dataCategory)) {
+            for (NuDataItem dataItem : dataItemService.getDataItems(dataCategory)) {
                 row = new Row(sheet, dataItem.getUid());
                 row.setLabel("DataItem");
                 for (Column column : columns) {
-                    itemValue = dataItem.getItemValue(column.getName(), startDate);
+                    itemValue = dataItemService.getItemValue(dataItem, column.getName(), startDate);
                     if (itemValue != null) {
-                        new Cell(column, row, itemValue.getValue(), itemValue.getUid(), itemValue.getItemValueDefinition().getValueDefinition().getValueType());
+                        new Cell(column, row, itemValue.getValueAsString(), itemValue.getUid(), itemValue.getItemValueDefinition().getValueDefinition().getValueType());
                     } else if ("label".equalsIgnoreCase(column.getName())) {
-                        new Cell(column, row, dataItem.getLabel(), ValueType.TEXT);
+                        new Cell(column, row, dataItemService.getLabel(dataItem), ValueType.TEXT);
                     } else if ("path".equalsIgnoreCase(column.getName())) {
                         new Cell(column, row, dataItem.getDisplayPath(), ValueType.TEXT);
                     } else if ("uid".equalsIgnoreCase(column.getName())) {
@@ -109,9 +115,9 @@ public class DataSheetFactory implements CacheableFactory {
                     } else if ("modified".equalsIgnoreCase(column.getName())) {
                         new Cell(column, row, dataItem.getModified(), ValueType.DATE);
                     } else if ("startDate".equalsIgnoreCase(column.getName())) {
-                        new Cell(column, row, dataItem.getStartDate(), ValueType.DATE);
+                        new Cell(column, row, dataItemService.getStartDate(dataItem), ValueType.DATE);
                     } else if ("endDate".equalsIgnoreCase(column.getName())) {
-                        new Cell(column, row, dataItem.getEndDate(), ValueType.DATE);
+                        new Cell(column, row, dataItemService.getEndDate(dataItem), ValueType.DATE);
                     } else {
                         // add empty cell
                         new Cell(column, row);

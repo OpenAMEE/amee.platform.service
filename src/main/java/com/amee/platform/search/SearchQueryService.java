@@ -25,6 +25,13 @@ public class SearchQueryService {
     @Autowired
     private LuceneService luceneService;
 
+    /**
+     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
+     * TODO: See https://jira.amee.com/browse/PL-6617
+     *
+     * @param filter
+     * @return
+     */
     protected ResultsWrapper<Document> doSearch(SearchFilter filter) {
         Query primaryQuery;
         // Obtain Query.
@@ -168,6 +175,9 @@ public class SearchQueryService {
 
     /**
      * Removes all DataItem Documents from the index for a DataCategory.
+     * <p/>
+     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
+     * TODO: See https://jira.amee.com/browse/PL-6617
      *
      * @param dataCategory to remove Data Items Documents for
      */

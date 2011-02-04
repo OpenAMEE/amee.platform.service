@@ -20,12 +20,13 @@
 package com.amee.calculation.service;
 
 import com.amee.domain.IDataCategoryReference;
-import com.amee.domain.data.DataItem;
-import com.amee.domain.data.ItemValue;
+import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.NuDataItem;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.service.data.DataService;
 import com.amee.service.data.DrillDownService;
+import com.amee.service.item.DataItemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,9 @@ public class DataFinder implements Serializable {
     private DataService dataService;
 
     @Autowired
+    private DataItemService dataItemService;
+
+    @Autowired
     private DrillDownService drillDownService;
 
     private Date startDate = new Date();
@@ -56,12 +60,12 @@ public class DataFinder implements Serializable {
 
     public String getDataItemValue(String path, String drillDown, String name) {
         String value = null;
-        ItemValue itemValue;
-        DataItem dataItem = getDataItem(path, drillDown);
+        BaseItemValue itemValue;
+        NuDataItem dataItem = getDataItem(path, drillDown);
         if (dataItem != null) {
-            itemValue = dataItem.getItemValue(name);
+            itemValue = dataItemService.getItemValue(dataItem, name);
             if (itemValue != null) {
-                value = itemValue.getValue();
+                value = itemValue.getValueAsString();
             }
         }
         if (log.isDebugEnabled()) {
@@ -70,14 +74,14 @@ public class DataFinder implements Serializable {
         return value;
     }
 
-    public DataItem getDataItem(String path, String drillDown) {
-        DataItem dataItem = null;
+    public NuDataItem getDataItem(String path, String drillDown) {
+        NuDataItem dataItem = null;
         Choices choices;
         IDataCategoryReference dataCategory = getDataCategory(path);
         if (dataCategory != null) {
             choices = drillDownService.getChoices(dataCategory, Choice.parseChoices(drillDown));
             if (choices.getName().equals("uid") && (choices.getChoices().size() > 0)) {
-                dataItem = dataService.getDataItemByUid(
+                dataItem = dataItemService.getItemByUid(
                         choices.getChoices().get(0).getValue());
                 dataItem.setEffectiveStartDate(startDate);
             }

@@ -8,7 +8,6 @@ import com.amee.domain.item.profile.NuProfileItem;
 import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.Profile;
-import com.amee.domain.profile.ProfileItem;
 import com.amee.platform.science.StartEndDate;
 import org.springframework.stereotype.Repository;
 
@@ -66,7 +65,7 @@ public class ProfileItemServiceDAOMock implements ProfileItemServiceDAO {
     }
 
     @Override
-    public boolean equivalentProfileItemExists(ProfileItem profileItem) {
+    public boolean equivalentProfileItemExists(NuProfileItem profileItem) {
         throw new UnsupportedOperationException();
     }
 

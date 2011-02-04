@@ -22,10 +22,14 @@ package com.amee.calculation.service;
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.APIVersion;
 import com.amee.domain.algorithm.Algorithm;
-import com.amee.domain.data.*;
+import com.amee.domain.data.ItemDefinition;
+import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.item.BaseItem;
+import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.UsableValuePredicate;
+import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.profile.NuProfileItem;
 import com.amee.domain.profile.CO2CalculationService;
-import com.amee.domain.profile.ProfileItem;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.AlgorithmRunner;
 import com.amee.platform.science.ExternalValue;
@@ -66,7 +70,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      *
      * @param profileItem - the ProfileItem for which to calculate GHG amounts
      */
-    public void calculate(ProfileItem profileItem) {
+    public void calculate(NuProfileItem profileItem) {
 
         // End marker ProfileItems can only have zero amounts.
         // Calculate amounts for ProfileItem if an Algorithm is available.
@@ -91,7 +95,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param version          - the APIVersion. This is used to determine the correct ItemValueDefinitions to load into the calculation
      * @return the calculated GHG amounts
      */
-    public ReturnValues calculate(DataItem dataItem, Choices userValueChoices, APIVersion version) {
+    public ReturnValues calculate(NuDataItem dataItem, Choices userValueChoices, APIVersion version) {
         Algorithm algorithm = dataItem.getItemDefinition().getAlgorithm(Algorithm.DEFAULT);
         if (algorithm != null) {
             Map<String, Object> values = getValues(dataItem, userValueChoices, version);
@@ -180,7 +184,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param profileItem
      * @return
      */
-    private Map<String, Object> getValues(ProfileItem profileItem) {
+    private Map<String, Object> getValues(NuProfileItem profileItem) {
 
         Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
         Map<String, Object> returnValues = new HashMap<String, Object>();
@@ -190,7 +194,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         profileItem.getItemDefinition().appendInternalValues(values, apiVersion);
 
         // Add DataItem values, filtered by start and end dates of the ProfileItem (factoring in the query date range).
-        DataItem dataItem = profileItem.getDataItem();
+        NuDataItem dataItem = profileItem.getDataItem();
         dataItem.setEffectiveStartDate(profileItem.getEffectiveStartDate());
         dataItem.setEffectiveEndDate(profileItem.getEffectiveEndDate());
         appendInternalValues(dataItem, values);
@@ -216,23 +220,24 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param values - the {@link com.amee.platform.science.InternalValue} collection
      */
     @SuppressWarnings("unchecked")
-    public void appendInternalValues(Item item, Map<ItemValueDefinition, InternalValue> values) {
-        ItemValueMap itemValueMap = item.getItemValuesMap();
-        for (Object path : itemValueMap.keySet()) {
-            // Get all ItemValues with this ItemValueDefinition path.
-            List<ItemValue> itemValues = item.getAllItemValues((String) path);
-            if (itemValues.size() > 1 || itemValues.get(0).getItemValueDefinition().isForceTimeSeries()) {
-                appendTimeSeriesItemValue(item, values, itemValues);
-            } else if (itemValues.size() == 1) {
-                appendSingleValuedItemValue(values, itemValues.get(0));
-            }
-        }
+    public void appendInternalValues(BaseItem item, Map<ItemValueDefinition, InternalValue> values) {
+        // TODO: PL-6618
+//        NuItemValueMap itemValueMap =  item.getItemValuesMap();
+//        for (Object path : itemValueMap.keySet()) {
+//            // Get all ItemValues with this ItemValueDefinition path.
+//            List<BaseItemValue> itemValues = item.getAllItemValues((String) path);
+//            if (itemValues.size() > 1 || itemValues.get(0).getItemValueDefinition().isForceTimeSeries()) {
+//                appendTimeSeriesItemValue(item, values, itemValues);
+//            } else if (itemValues.size() == 1) {
+//                appendSingleValuedItemValue(values, itemValues.get(0));
+//            }
+//        }
     }
 
     // Add a BaseItemValue timeseries to the InternalValue collection.
 
     @SuppressWarnings("unchecked")
-    private void appendTimeSeriesItemValue(Item item, Map<ItemValueDefinition, InternalValue> values, List<ItemValue> itemValues) {
+    private void appendTimeSeriesItemValue(BaseItem item, Map<ItemValueDefinition, InternalValue> values, List<BaseItemValue> itemValues) {
         ItemValueDefinition ivd = itemValues.get(0).getItemValueDefinition();
 
         // Add all BaseItemValues with usable values
@@ -246,11 +251,12 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
     // Add a single-valued BaseItemValue to the InternalValue collection.
 
-    private void appendSingleValuedItemValue(Map<ItemValueDefinition, InternalValue> values, ItemValue itemValue) {
-        if (itemValue.isUsableValue()) {
-            values.put(itemValue.getItemValueDefinition(), new InternalValue(itemValue));
-            log.debug("appendSingleValuedItemValue() - added single value " + itemValue.getPath());
-        }
+    private void appendSingleValuedItemValue(Map<ItemValueDefinition, InternalValue> values, BaseItemValue itemValue) {
+        // TODO: PL-6618
+//        if (itemValue.isUsableValue()) {
+//            values.put(itemValue.getItemValueDefinition(), new InternalValue(itemValue));
+//            log.debug("appendSingleValuedItemValue() - added single value " + itemValue.getPath());
+//        }
     }
 
     /**
@@ -259,7 +265,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param profileItem to be used in finders
      * @param values      to place finders into
      */
-    private void initFinders(ProfileItem profileItem, Map<String, Object> values) {
+    private void initFinders(NuProfileItem profileItem, Map<String, Object> values) {
 
         // Configure and add DataFinder.
         DataFinder dataFinder = (DataFinder) beanFactory.getBean("dataFinder");
@@ -282,7 +288,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
     // Collect all relevant algorithm input values for a DataItem + auth Choices calculation.
 
-    private Map<String, Object> getValues(DataItem dataItem, Choices userValueChoices, APIVersion version) {
+    private Map<String, Object> getValues(NuDataItem dataItem, Choices userValueChoices, APIVersion version) {
 
         Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
         dataItem.getItemDefinition().appendInternalValues(values, version);
@@ -323,24 +329,26 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
                         userValueChoices.containsKey(itemValueDefinition.getPath()) &&
                         itemValueDefinition.isValidInAPIVersion(version)) {
                     // Create transient ProfileItem & ItemValue.
-                    ProfileItem profileItem = new ProfileItem();
-                    ItemValue itemValue = new ItemValue(itemValueDefinition, profileItem, false);
-                    itemValue.setValue(userValueChoices.get(itemValueDefinition.getPath()).getValue());
-                    if (version.isNotVersionOne()) {
-                        if (itemValue.hasUnit() && userValueChoices.containsKey(itemValueDefinition.getPath() + "Unit")) {
-                            itemValue.setUnit(userValueChoices.get(itemValueDefinition.getPath() + "Unit").getValue());
-                        }
-                        if (itemValue.hasPerUnit() && userValueChoices.containsKey(itemValueDefinition.getPath() + "PerUnit")) {
-                            itemValue.setPerUnit(userValueChoices.get(itemValueDefinition.getPath() + "PerUnit").getValue());
-                        }
-                    }
+                    NuProfileItem profileItem = new NuProfileItem();
+                    // TODO: PL-6618
+//                    BaseItemValue itemValue = new BaseItemValue(itemValueDefinition, profileItem, false);
+//                    itemValue.setValue(userValueChoices.get(itemValueDefinition.getPath()).getValue());
+//                    if (version.isNotVersionOne()) {
+//                        if (itemValue.hasUnit() && userValueChoices.containsKey(itemValueDefinition.getPath() + "Unit")) {
+//                            itemValue.setUnit(userValueChoices.get(itemValueDefinition.getPath() + "Unit").getValue());
+//                        }
+//                        if (itemValue.hasPerUnit() && userValueChoices.containsKey(itemValueDefinition.getPath() + "PerUnit")) {
+//                            itemValue.setPerUnit(userValueChoices.get(itemValueDefinition.getPath() + "PerUnit").getValue());
+//                        }
+//                    }
                     // Only add ItemValue value if it is usable.
-                    if (itemValue.isUsableValue()) {
-                        userChoices.put(itemValueDefinition, new InternalValue(itemValue));
-                    }
+//                    if (itemValue.isUsableValue()) {
+//                        userChoices.put(itemValueDefinition, new InternalValue(itemValue));
+//                    }
                 }
             }
-            values.putAll(userChoices);
+            // TODO: PL-6618
+//            values.putAll(userChoices);
         }
     }
 

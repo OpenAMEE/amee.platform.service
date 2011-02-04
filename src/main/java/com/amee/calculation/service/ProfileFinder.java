@@ -21,8 +21,9 @@ package com.amee.calculation.service;
 
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.IDataCategoryReference;
-import com.amee.domain.data.ItemValue;
-import com.amee.domain.profile.ProfileItem;
+import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.service.item.ProfileItemService;
 import com.amee.service.profile.ProfileService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,10 +45,13 @@ public class ProfileFinder implements Serializable {
     private ProfileService profileService;
 
     @Autowired
+    private ProfileItemService profileItemService;
+
+    @Autowired
     private AMEEStatistics ameeStatistics;
 
     private DataFinder dataFinder;
-    private ProfileItem profileItem;
+    private NuProfileItem profileItem;
 
     public ProfileFinder() {
         super();
@@ -55,12 +59,12 @@ public class ProfileFinder implements Serializable {
 
     public String getProfileItemValue(String path, String name) {
         String value = null;
-        ItemValue iv;
-        ProfileItem pi = getProfileItem(path);
+        BaseItemValue iv;
+        NuProfileItem pi = getProfileItem(path);
         if (pi != null) {
-            iv = pi.getItemValue(name);
+            iv = profileItemService.getItemValue(pi, name);
             if (iv != null) {
-                value = iv.getValue();
+                value = iv.getValueAsString();
             }
         }
         if (log.isTraceEnabled()) {
@@ -70,10 +74,10 @@ public class ProfileFinder implements Serializable {
     }
 
     public void setProfileItemValue(String path, String name, String value) {
-        ItemValue iv;
-        ProfileItem pi = getProfileItem(path);
+        BaseItemValue iv;
+        NuProfileItem pi = getProfileItem(path);
         if (pi != null) {
-            iv = pi.getItemValue(name);
+            iv = profileItemService.getItemValue(pi, name);
             if (iv != null) {
                 iv.setValue(value);
                 ameeStatistics.updateProfileItemValue();
@@ -82,9 +86,9 @@ public class ProfileFinder implements Serializable {
     }
 
     public void setProfileItemValue(String name, String value) {
-        ItemValue iv;
+        BaseItemValue iv;
         if (profileItem != null) {
-            iv = profileItem.getItemValue(name);
+            iv = profileItemService.getItemValue(profileItem, name);
             if (iv != null) {
                 iv.setValue(value);
                 ameeStatistics.updateProfileItemValue();
@@ -92,8 +96,8 @@ public class ProfileFinder implements Serializable {
         }
     }
 
-    public ProfileItem getProfileItem(String path) {
-        List<ProfileItem> profileItems = getProfileItems(path);
+    public NuProfileItem getProfileItem(String path) {
+        List<NuProfileItem> profileItems = getProfileItems(path);
         if (profileItems.size() > 0) {
             return profileItems.get(0);
         } else {
@@ -101,10 +105,10 @@ public class ProfileFinder implements Serializable {
         }
     }
 
-    public List<ProfileItem> getProfileItems() {
-        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
+    public List<NuProfileItem> getProfileItems() {
+        List<NuProfileItem> profileItems = new ArrayList<NuProfileItem>();
         if (profileItem != null) {
-            profileItems = profileService.getProfileItems(
+            profileItems = profileItemService.getProfileItems(
                     profileItem.getProfile(),
                     profileItem.getDataCategory(),
                     profileItem.getStartDate());
@@ -112,12 +116,12 @@ public class ProfileFinder implements Serializable {
         return profileItems;
     }
 
-    public List<ProfileItem> getProfileItems(String path) {
-        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
+    public List<NuProfileItem> getProfileItems(String path) {
+        List<NuProfileItem> profileItems = new ArrayList<NuProfileItem>();
         if (profileItem != null) {
             IDataCategoryReference dataCategory = dataFinder.getDataCategory(path);
             if (dataCategory != null) {
-                profileItems = profileService.getProfileItems(
+                profileItems = profileItemService.getProfileItems(
                         profileItem.getProfile(),
                         dataCategory,
                         profileItem.getStartDate());
@@ -130,7 +134,7 @@ public class ProfileFinder implements Serializable {
         this.dataFinder = dataFinder;
     }
 
-    public void setProfileItem(ProfileItem profileItem) {
+    public void setProfileItem(NuProfileItem profileItem) {
         this.profileItem = profileItem;
     }
 }

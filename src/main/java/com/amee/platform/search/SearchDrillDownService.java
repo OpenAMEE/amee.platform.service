@@ -32,6 +32,9 @@ public class SearchDrillDownService extends DrillDownService {
     private LuceneService luceneService;
 
     /**
+     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
+     * TODO: See https://jira.amee.com/browse/PL-6617
+     *
      * @param dataCategory     to perform drill down within
      * @param selections       that have already been made for the drill down
      * @param drillDownChoices that remain to be chosen within the drill down

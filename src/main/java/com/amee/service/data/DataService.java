@@ -20,16 +20,14 @@
 package com.amee.service.data;
 
 import com.amee.base.domain.ResultsWrapper;
-import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
 import com.amee.domain.*;
 import com.amee.domain.cache.CacheHelper;
-import com.amee.domain.data.*;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.data.DataCategory;
+import com.amee.domain.data.ItemDefinition;
 import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
-import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -51,9 +49,6 @@ public class DataService extends BaseService implements IDataService, Applicatio
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
-    private TransactionController transactionController;
-
-    @Autowired
     private InvalidationService invalidationService;
 
     @Autowired
@@ -65,12 +60,7 @@ public class DataService extends BaseService implements IDataService, Applicatio
     @Autowired
     private LocaleService localeService;
 
-    @Autowired
-    private DataItemService dataItemService;
-
     private CacheHelper cacheHelper = CacheHelper.getInstance();
-
-    // Events
 
     public void onApplicationEvent(ApplicationEvent event) {
         if (InvalidationMessage.class.isAssignableFrom(event.getClass())) {
@@ -89,8 +79,6 @@ public class DataService extends BaseService implements IDataService, Applicatio
             }
         }
     }
-
-    // DataCategories
 
     public DataCategory getRootDataCategory() {
         return dao.getRootDataCategory();
@@ -292,17 +280,6 @@ public class DataService extends BaseService implements IDataService, Applicatio
     }
 
     /**
-     * Invalidate a DataCategory fully. This will send an invalidation message via the
-     * InvalidationService and clear the local caches. It was also trigger a re-index of the Data Items.
-     *
-     * @param dataCategory to invalidate
-     */
-    public void invalidateFull(DataCategory dataCategory) {
-        log.info("invalidate() dataCategory: " + dataCategory.getUid());
-        invalidationService.add(dataCategory, "indexDataItems");
-    }
-
-    /**
      * Clears all caches related to the supplied DataCategory.
      *
      * @param dataCategory to clear caches for
@@ -315,201 +292,6 @@ public class DataService extends BaseService implements IDataService, Applicatio
         // TODO: Metadata?
         // TODO: Locales?
         // TODO: What else?
-    }
-
-    // DataItems
-
-    public DataItem getDataItemByIdentifier(DataCategory parent, String path) {
-        DataItem dataItem = null;
-        if (!StringUtils.isBlank(path)) {
-            if (UidGen.INSTANCE_12.isValid(path)) {
-                dataItem = getDataItemByUid(parent, path);
-            }
-            if (dataItem == null) {
-                dataItem = getDataItemByPath(parent, path);
-            }
-        }
-        return dataItem;
-    }
-
-    public DataItem getDataItemByUid(DataCategory parent, String uid) {
-        DataItem dataItem = getDataItemByUid(uid);
-        if ((dataItem != null) && dataItem.getDataCategory().equals(parent)) {
-            return dataItem;
-        } else {
-            return null;
-        }
-    }
-
-    public DataItem getDataItemByUid(String uid) {
-        DataItem dataItem = DataItem.getDataItem(dataItemService.getItemByUid(uid));
-        if (dataItem == null) {
-            dataItem = dao.getDataItemByUid(uid);
-        }
-        if ((dataItem != null) && !dataItem.isTrash()) {
-            checkDataItem(dataItem);
-            return dataItem;
-        } else {
-            return null;
-        }
-    }
-
-    public DataItem getDataItemByPath(DataCategory parent, String path) {
-        DataItem dataItem = DataItem.getDataItem(dataItemService.getDataItemByPath(parent, path));
-        if (dataItem == null) {
-            dataItem = dao.getDataItemByPath(parent, path);
-        }
-        if ((dataItem != null) && !dataItem.isTrash()) {
-            checkDataItem(dataItem);
-            return dataItem;
-        } else {
-            return null;
-        }
-    }
-
-    public Map<String, DataItem> getDataItemMap(Set<Long> dataItemIds, boolean loadValues) {
-        Map<String, DataItem> dataItemMap = new HashMap<String, DataItem>();
-        for (DataItem dataItem : dao.getDataItems(dataItemIds, loadValues)) {
-            dataItemMap.put(dataItem.getUid(), dataItem);
-        }
-        localeService.loadLocaleNamesForDataItems(dataItemMap.values(), true);
-        return dataItemMap;
-    }
-
-    public List<DataItem> getDataItems(Set<Long> dataItemIds) {
-        return getDataItems(dataItemIds, false);
-    }
-
-    public List<DataItem> getDataItems(Set<Long> dataItemIds, boolean loadValues) {
-        List<DataItem> dataItems = new ArrayList<DataItem>();
-        for (DataItem dataItem : dao.getDataItems(dataItemIds, loadValues)) {
-            dataItems.add(dataItem);
-        }
-        localeService.loadLocaleNamesForDataItems(dataItems, true);
-        return dataItems;
-    }
-
-    public List<DataItem> getDataItems(IDataCategoryReference dataCategory) {
-        return getDataItems(dataCategory, true);
-    }
-
-    public List<DataItem> getDataItems(IDataCategoryReference dataCategory, boolean checkDataItems) {
-        Set<String> dataItemUids = new HashSet<String>();
-        List<DataItem> dataItems = new ArrayList<DataItem>();
-        for (NuDataItem nuDataItem : dataItemService.getDataItems(dataCategory)) {
-            dataItemUids.add(nuDataItem.getUid());
-            dataItems.add(DataItem.getDataItem(nuDataItem));
-        }
-        for (DataItem dataItem : dao.getDataItems(dataCategory)) {
-            if (!dataItemUids.contains(dataItem.getUid())) {
-                dataItems.add(dataItem);
-            }
-        }
-        localeService.loadLocaleNamesForDataItems(dataItems, true);
-        return activeDataItems(dataItems, checkDataItems);
-    }
-
-    private List<DataItem> activeDataItems(List<DataItem> dataItems) {
-        return activeDataItems(dataItems, true);
-    }
-
-    private List<DataItem> activeDataItems(List<DataItem> dataItems, boolean checkDataItems) {
-        List<DataItem> activeDataItems = new ArrayList<DataItem>();
-        for (DataItem dataItem : dataItems) {
-            if (!dataItem.isTrash()) {
-                if (checkDataItems) {
-                    checkDataItem(dataItem);
-                }
-                activeDataItems.add(dataItem);
-            }
-        }
-        return activeDataItems;
-    }
-
-    /**
-     * Add to the {@link com.amee.domain.data.DataItem} any {@link com.amee.domain.data.ItemValue}s it is missing.
-     * This will be the case on first persist (this method acting as a reification function), and between GETs if any
-     * new {@link com.amee.domain.data.ItemValueDefinition}s have been added to the underlying
-     * {@link com.amee.domain.data.ItemDefinition}.
-     * <p/>
-     * Any updates to the {@link com.amee.domain.data.DataItem} will be persisted to the database.
-     *
-     * @param dataItem - the DataItem to check
-     */
-    @SuppressWarnings(value = "unchecked")
-    public void checkDataItem(DataItem dataItem) {
-
-        if (dataItem == null) {
-            return;
-        }
-
-        Set<ItemValueDefinition> existingItemValueDefinitions = dataItem.getItemValueDefinitions();
-        Set<ItemValueDefinition> missingItemValueDefinitions = new HashSet<ItemValueDefinition>();
-
-        // find ItemValueDefinitions not currently implemented in this Item
-        for (ItemValueDefinition ivd : dataItem.getItemDefinition().getItemValueDefinitions()) {
-            if (ivd.isFromData()) {
-                if (!existingItemValueDefinitions.contains(ivd)) {
-                    missingItemValueDefinitions.add(ivd);
-                }
-            }
-        }
-
-        // Do we need to add any ItemValueDefinitions?
-        if (missingItemValueDefinitions.size() > 0) {
-
-            // Ensure a transaction has been opened. The implementation of open-session-in-view we are using
-            // does not open transactions for GETs. This method is called for certain GETs.
-            transactionController.begin(true);
-
-            // create missing ItemValues
-            for (ItemValueDefinition ivd : missingItemValueDefinitions) {
-                persist(new ItemValue(ivd, dataItem, ""));
-            }
-
-            // clear caches
-            dataItemService.clearItemValues();
-            invalidate(dataItem.getDataCategory());
-        }
-    }
-
-    public void persist(DataItem dataItem) {
-        persist(dataItem, true);
-    }
-
-    public void persist(DataItem dataItem, boolean checkDataItem) {
-        if (dataItem.isLegacy()) {
-            dao.persist(dataItem);
-        } else {
-            dataItemService.persist(dataItem.getNuEntity());
-        }
-        if (checkDataItem) {
-            checkDataItem(dataItem);
-        }
-    }
-
-    public void remove(DataItem dataItem) {
-        if (dataItem.isLegacy()) {
-            dao.remove(dataItem);
-        } else {
-            dataItemService.remove(dataItem);
-        }
-    }
-
-    // ItemValues.
-
-    public void persist(ItemValue itemValue) {
-        if (!itemValue.isLegacy()) {
-            dataItemService.persist(itemValue.getNuEntity());
-        }
-    }
-
-    public void remove(ItemValue itemValue) {
-        if (itemValue.isLegacy()) {
-            dao.remove(itemValue);
-        } else {
-            dataItemService.remove(itemValue.getNuEntity());
-        }
     }
 
     // API Versions

@@ -7,7 +7,6 @@ import com.amee.domain.item.profile.NuProfileItem;
 import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.Profile;
-import com.amee.domain.profile.ProfileItem;
 import com.amee.platform.science.StartEndDate;
 
 import java.util.Collection;
@@ -32,7 +31,7 @@ public interface ProfileItemServiceDAO extends ItemServiceDAO {
 
     public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, StartEndDate startDate, StartEndDate endDate);
 
-    public boolean equivalentProfileItemExists(ProfileItem profileItem);
+    public boolean equivalentProfileItemExists(NuProfileItem profileItem);
 
     public Collection<Long> getProfileDataCategoryIds(Profile profile);
 

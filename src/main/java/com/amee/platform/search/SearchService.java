@@ -4,7 +4,6 @@ import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
 import com.amee.domain.item.data.NuDataItem;
 import com.amee.service.data.DataService;
 import com.amee.service.item.DataItemService;
@@ -105,6 +104,12 @@ public class SearchService {
 
     // Entity search.
 
+    /**
+     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
+     *
+     * @param filter
+     * @return
+     */
     public ResultsWrapper<IAMEEEntity> getEntities(SearchFilter filter) {
         // Ensure filter.types contains NDI if DI is present.
         if (filter.getTypes().contains(ObjectType.DI)) {
@@ -126,7 +131,14 @@ public class SearchService {
         entities.put(ObjectType.DC, e);
     }
 
-    protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, DataItem> dataItemsMap) {
+    /**
+     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
+     * TODO: See https://jira.amee.com/browse/PL-6617
+     *
+     * @param entities
+     * @param dataItemsMap
+     */
+    protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, NuDataItem> dataItemsMap) {
         Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
         for (String id : dataItemsMap.keySet()) {
             IAMEEEntity entity = dataItemsMap.get(id);
@@ -139,12 +151,19 @@ public class SearchService {
         entities.put(ObjectType.DI, dataItems);
     }
 
+    /**
+     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
+     * TODO: See https://jira.amee.com/browse/PL-6617
+     *
+     * @param entities
+     * @param dataItemsMap
+     */
     protected void addNuDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, NuDataItem> dataItemsMap) {
         Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
         for (String uid : dataItemsMap.keySet()) {
             IAMEEEntity entity = dataItemsMap.get(uid);
             if (entity.getObjectType().equals(ObjectType.NDI)) {
-                dataItems.put(uid, DataItem.getDataItem(dataItemsMap.get(uid)));
+                dataItems.put(uid, dataItemsMap.get(uid));
             } else {
                 throw new IllegalStateException("An ObjectType of NDI was expected.");
             }
@@ -222,7 +241,7 @@ public class SearchService {
 
     // DataItem search.
 
-    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
+    public ResultsWrapper<NuDataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
         // Create Query.
         BooleanQuery query = null;
         if (!filter.getQueries().isEmpty()) {
@@ -235,7 +254,16 @@ public class SearchService {
         return getDataItems(dataCategory, filter, query);
     }
 
-    private ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
+    /**
+     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
+     * TODO: See https://jira.amee.com/browse/PL-6617
+     *
+     * @param dataCategory
+     * @param filter
+     * @param query
+     * @return
+     */
+    private ResultsWrapper<NuDataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
         // Create Query to find all DIs & NDIs in the DataCategory matching the supplied Query and range.
         BooleanQuery q = new BooleanQuery();
         BooleanQuery typesQuery = new BooleanQuery();
@@ -259,16 +287,16 @@ public class SearchService {
     }
 
     // TODO: Find a way to genericise this and the similar method above for Data Categories.
-    private ResultsWrapper<DataItem> getDataItemResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
-        ResultsWrapper<DataItem> dataItemResultsWrapper = new ResultsWrapper<DataItem>();
+    private ResultsWrapper<NuDataItem> getDataItemResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
+        ResultsWrapper<NuDataItem> dataItemResultsWrapper = new ResultsWrapper<NuDataItem>();
         dataItemResultsWrapper.setTruncated(entityResultsWrapper.isTruncated());
         dataItemResultsWrapper.setResultStart(entityResultsWrapper.getResultStart());
         dataItemResultsWrapper.setResultLimit(entityResultsWrapper.getResultLimit());
         dataItemResultsWrapper.setHits(entityResultsWrapper.getHits());
-        List<DataItem> dataItems = new ArrayList<DataItem>();
+        List<NuDataItem> dataItems = new ArrayList<NuDataItem>();
         for (IAMEEEntity entity : entityResultsWrapper.getResults()) {
-            if (DataItem.class.isAssignableFrom(entity.getClass())) {
-                dataItems.add((DataItem) entity);
+            if (NuDataItem.class.isAssignableFrom(entity.getClass())) {
+                dataItems.add((NuDataItem) entity);
             } else {
                 throw new IllegalStateException("A DataItem was expected.");
             }
@@ -279,6 +307,16 @@ public class SearchService {
 
     // General entity search.
 
+    /**
+     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
+     * TODO: See https://jira.amee.com/browse/PL-6617
+     *
+     * @param resultsWrapper
+     * @param loadEntityTags
+     * @param loadMetadata
+     * @param loadItemValues
+     * @return
+     */
     private ResultsWrapper<IAMEEEntity> getEntityResultsWrapper(
             ResultsWrapper<Document> resultsWrapper,
             boolean loadEntityTags,
@@ -330,28 +368,6 @@ public class SearchService {
             // Pre-load Metadatas?
             if (loadMetadata) {
                 metadataService.loadMetadatasForNuDataItems(dataItemsMap.values());
-            }
-        }
-        // Load DataItems (LegacyDataItem).
-        if (entityIds.containsKey(ObjectType.DI)) {
-            // Collate LegacyDataItem IDs.
-            Set<Long> dataItemIds = new HashSet<Long>();
-            if (entityIds.containsKey(ObjectType.DI)) {
-                dataItemIds.addAll(entityIds.get(ObjectType.DI));
-            }
-            // Load the items.
-            Map<String, DataItem> dataItemsMap = dataService.getDataItemMap(dataItemIds, loadItemValues);
-            // Exclude DI duplicates of NDI.
-            for (DataItem dataItem : dataItemsMap.values()) {
-                if (dataItemUids.contains(dataItem.getUid())) {
-                    dataItemsMap.remove(dataItem.getUid());
-                }
-            }
-            // Add to map.
-            addDataItems(entities, dataItemsMap);
-            // Pre-load Metadatas?
-            if (loadMetadata) {
-                metadataService.loadMetadatasForDataItems(dataItemsMap.values());
             }
         }
         // Create result list in relevance order.

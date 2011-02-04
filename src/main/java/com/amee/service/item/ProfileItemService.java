@@ -1,32 +1,49 @@
 package com.amee.service.item;
 
-import com.amee.domain.IDataCategoryReference;
-import com.amee.domain.IProfileItemService;
+import com.amee.base.transaction.TransactionController;
+import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.ItemValue;
+import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.profile.BaseProfileItemValue;
 import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.domain.item.profile.ProfileItemNumberValue;
+import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.Profile;
-import com.amee.domain.profile.ProfileItem;
 import com.amee.platform.science.StartEndDate;
+import com.amee.service.profile.OnlyActiveProfileService;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class ProfileItemService extends ItemService implements IProfileItemService {
 
+    private final Log log = LogFactory.getLog(getClass());
+
+    @Autowired
+    private TransactionController transactionController;
+
     @Autowired
     private ProfileItemServiceDAO dao;
+
+    @Autowired
+    private OnlyActiveProfileService onlyActiveProfileService;
+
+    @Autowired
+    private AMEEStatistics ameeStatistics;
 
     @Override
     public NuProfileItem getItemByUid(String uid) {
         NuProfileItem profileItem = dao.getItemByUid(uid);
+        // If this ProfileItem is trashed then return null. A ProfileItem may be trash if it itself has been
+        // trashed or an owning entity has been trashed.
         if ((profileItem != null) && (!profileItem.isTrash())) {
+            checkProfileItem(profileItem);
             return profileItem;
         } else {
             return null;
@@ -36,9 +53,11 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     @Override
     public boolean hasNonZeroPerTimeValues(NuProfileItem profileItem) {
         for (BaseItemValue biv : getItemValues(profileItem)) {
-            ItemValue iv = ItemValue.getItemValue(biv);
-            if (iv.hasPerTimeUnit() && iv.isNonZero()) {
-                return true;
+            if (ProfileItemNumberValue.class.isAssignableFrom(biv.getClass())) {
+                ProfileItemNumberValue pinv = (ProfileItemNumberValue) biv;
+                if (pinv.hasPerTimeUnit() && pinv.isNonZero()) {
+                    return true;
+                }
             }
         }
         return false;
@@ -48,11 +67,10 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
     @Override
     public boolean isSingleFlight(NuProfileItem profileItem) {
-        for (BaseItemValue biv : getItemValues(profileItem)) {
-            ItemValue iv = ItemValue.getItemValue(biv);
-            if ((iv.getName().startsWith("IATA") && iv.getValue().length() > 0) ||
-                    (iv.getName().startsWith("Lat") && !iv.getValue().equals("-999")) ||
-                    (iv.getName().startsWith("Lon") && !iv.getValue().equals("-999"))) {
+        for (BaseItemValue iv : getItemValues(profileItem)) {
+            if ((iv.getName().startsWith("IATA") && iv.getValueAsString().length() > 0) ||
+                    (iv.getName().startsWith("Lat") && !iv.getValueAsString().equals("-999")) ||
+                    (iv.getName().startsWith("Lon") && !iv.getValueAsString().equals("-999"))) {
                 return true;
             }
         }
@@ -60,17 +78,17 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     /**
-     * Get an {@link com.amee.domain.data.LegacyItemValue} belonging to this Item using some identifier and prevailing datetime context.
+     * Get an {@link BaseItemValue} belonging to this Item using some identifier and prevailing datetime context.
      *
-     * @param identifier - a value to be compared to the path and then the uid of the {@link com.amee.domain.data.LegacyItemValue}s belonging
+     * @param identifier - a value to be compared to the path and then the uid of the {@link BaseItemValue}s belonging
      *                   to this Item.
-     * @return the matched {@link com.amee.domain.data.LegacyItemValue} or NULL if no match is found.
+     * @return the matched {@link BaseItemValue} or NULL if no match is found.
      */
     @Override
     public BaseItemValue getItemValue(BaseItem item, String identifier) {
         if (!NuProfileItem.class.isAssignableFrom(item.getClass()))
             throw new IllegalStateException("A NuProfileItem instance was expected.");
-        return getItemValue(item, identifier, ((NuProfileItem) item).getEffectiveStartDate());
+        return getItemValue(item, identifier, item.getEffectiveStartDate());
     }
 
     @Override
@@ -78,14 +96,46 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
         return dao.getProfileItemCount(profile, dataCategory);
     }
 
-    @Override
-    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate) {
+    /**
+     * Retrieve a list of {@link NuProfileItem}s belonging to a {@link Profile} and {@link DataCategory}
+     * occuring on or immediately proceeding the given date context.
+     *
+     * @param profile      - the {@link Profile} to which the {@link NuProfileItem}s belong
+     * @param dataCategory - the DataCategory containing the ProfileItems
+     * @param profileDate  - the date context
+     * @return the active {@link NuProfileItem} collection
+     */
+    public List<NuProfileItem> getProfileItems(
+            Profile profile,
+            IDataCategoryReference dataCategory,
+            Date profileDate) {
         List<NuProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, profileDate);
         loadItemValuesForItems((List) profileItems);
-        return profileItems;
+        // Order the returned collection by pi.name, di.name and pi.startDate DESC
+        Collections.sort(profileItems, new Comparator<NuProfileItem>() {
+            public int compare(NuProfileItem p1, NuProfileItem p2) {
+                int nd = p1.getName().compareTo(p2.getName());
+                int dnd = p1.getDataItem().getName().compareTo(p2.getDataItem().getName());
+                int sdd = p2.getStartDate().compareTo(p1.getStartDate());
+                if (nd != 0) return nd;
+                if (dnd != 0) return dnd;
+                if (sdd != 0) return sdd;
+                return 0;
+            }
+        });
+        return checkProfileItems(onlyActiveProfileService.getProfileItems(profileItems));
     }
 
-    @Override
+    /**
+     * Retrieve a list of {@link NuProfileItem}s belonging to a {@link Profile} and {@link DataCategory}
+     * occurring between a given date context.
+     *
+     * @param profile      - the {@link Profile} to which the {@link NuProfileItem}s belong
+     * @param dataCategory - the DataCategory containing the ProfileItems
+     * @param startDate    - the start of the date context
+     * @param endDate      - the end of the date context
+     * @return the active {@link NuProfileItem} collection
+     */
     public List<NuProfileItem> getProfileItems(
             Profile profile,
             IDataCategoryReference dataCategory,
@@ -93,11 +143,118 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
             StartEndDate endDate) {
         List<NuProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, startDate, endDate);
         loadItemValuesForItems((List) profileItems);
-        return profileItems;
+        // Order the returned collection by pi.startDate DESC
+        Collections.sort(profileItems, new Comparator<NuProfileItem>() {
+            public int compare(NuProfileItem p1, NuProfileItem p2) {
+                return p2.getStartDate().compareTo(p1.getStartDate());
+            }
+        });
+        return checkProfileItems(profileItems);
+    }
+
+    private List<NuProfileItem> checkProfileItems(List<NuProfileItem> profileItems) {
+        if (log.isDebugEnabled()) {
+            log.debug("checkProfileItems() start");
+        }
+        if (profileItems == null) {
+            return null;
+        }
+        List<NuProfileItem> activeProfileItems = new ArrayList<NuProfileItem>();
+
+        // Remove any trashed ProfileItems
+        for (NuProfileItem profileItem : profileItems) {
+            if (!profileItem.isTrash()) {
+                checkProfileItem(profileItem);
+                activeProfileItems.add(profileItem);
+            }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("checkProfileItems() done (" + activeProfileItems.size() + ")");
+        }
+        return activeProfileItems;
+    }
+
+
+    /**
+     * Add to the {@link NuProfileItem} any {@link com.amee.domain.item.profile.BaseProfileItemValue}s it is missing.
+     * This will be the case on first persist (this method acting as a reification function), and between GETs if any
+     * new {@link com.amee.domain.data.ItemValueDefinition}s have been added to the underlying
+     * {@link com.amee.domain.data.ItemDefinition}.
+     * <p/>
+     * Any updates to the {@link NuProfileItem} will be persisted to the database.
+     *
+     * @param profileItem to check
+     * @return the supplied ProfileItem or null
+     */
+    private NuProfileItem checkProfileItem(NuProfileItem profileItem) {
+
+        if (profileItem == null) {
+            return null;
+        }
+
+        // Get APIVersion via Profile & User.
+        APIVersion apiVersion = profileItem.getProfile().getUser().getAPIVersion();
+
+        // APIVersion apiVersion = profileItem.getProfile().getAPIVersion();
+        Set<ItemValueDefinition> existingItemValueDefinitions = this.getItemValueDefinitionsInUse(profileItem);
+        Set<ItemValueDefinition> missingItemValueDefinitions = new HashSet<ItemValueDefinition>();
+
+        // find ItemValueDefinitions not currently implemented in this Item
+        for (ItemValueDefinition ivd : profileItem.getItemDefinition().getItemValueDefinitions()) {
+            if (ivd.isFromProfile() && ivd.getAPIVersions().contains(apiVersion)) {
+                if (!existingItemValueDefinitions.contains(ivd)) {
+                    missingItemValueDefinitions.add(ivd);
+                }
+            }
+        }
+
+        // Do we need to add any ItemValueDefinitions?
+        if (missingItemValueDefinitions.size() > 0) {
+
+            // Ensure a transaction has been opened. The implementation of open-session-in-view we are using
+            // does not open transactions for GETs. This method is called for certain GETs.
+            transactionController.begin(true);
+
+            // create missing ItemValues
+            for (ItemValueDefinition ivd : missingItemValueDefinitions) {
+                // start default value with value from ItemValueDefinition
+                String defaultValue = ivd.getValue();
+                // next give DataItem a chance to set the default value, if appropriate
+                if (ivd.isFromData()) {
+                    BaseItemValue dataItemValue =
+                            getItemValue(profileItem.getDataItem(), ivd.getPath(), profileItem.getStartDate());
+                    if ((dataItemValue != null) && (dataItemValue.getValueAsString().length() > 0)) {
+                        defaultValue = dataItemValue.getValueAsString();
+                    }
+                }
+                // create missing ItemValue
+                BaseProfileItemValue profileItemValue;
+                if (ivd.getValueDefinition().getValueType().equals(ValueType.INTEGER) ||
+                        ivd.getValueDefinition().getValueType().equals(ValueType.DOUBLE)) {
+                    // Item is a number.
+                    profileItemValue = new ProfileItemNumberValue(ivd, profileItem, defaultValue);
+                } else {
+                    // Item is text.
+                    profileItemValue = new ProfileItemTextValue(ivd, profileItem, defaultValue);
+                }
+                persist(profileItemValue);
+                ameeStatistics.createProfileItemValue();
+            }
+
+            // Clear cache.
+            clearItemValues();
+        }
+
+        return profileItem;
     }
 
     @Override
-    public boolean equivalentProfileItemExists(ProfileItem profileItem) {
+    public boolean isUnique(NuProfileItem pi) {
+        return !equivalentProfileItemExists(pi);
+    }
+
+    @Override
+    public boolean equivalentProfileItemExists(NuProfileItem profileItem) {
         return dao.equivalentProfileItemExists(profileItem);
     }
 
@@ -109,6 +266,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     @Override
     public void persist(NuProfileItem profileItem) {
         dao.persist(profileItem);
+        checkProfileItem(profileItem);
     }
 
     // ItemValues.

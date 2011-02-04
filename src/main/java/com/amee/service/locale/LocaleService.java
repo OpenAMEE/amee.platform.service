@@ -3,7 +3,6 @@ package com.amee.service.locale;
 import com.amee.base.transaction.TransactionEvent;
 import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.DataItem;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.LocaleName;
 import com.amee.domain.item.BaseItemValue;
@@ -128,21 +127,6 @@ public class LocaleService implements ILocaleService, ApplicationListener {
 
     public void loadLocaleNamesForDataCategoryReferences(Collection<IDataCategoryReference> dataCategories) {
         loadLocaleNames(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
-    }
-
-    public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems) {
-        loadLocaleNamesForDataItems(dataItems, true);
-    }
-
-    public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems, boolean loadValues) {
-        loadLocaleNames(ObjectType.DI, new HashSet<IAMEEEntityReference>(dataItems));
-        if (loadValues) {
-            Set<IAMEEEntityReference> itemValueRefs = new HashSet<IAMEEEntityReference>();
-            for (DataItem dataItem : dataItems) {
-                itemValueRefs.addAll(dataItem.getItemValues());
-            }
-            loadLocaleNames(ObjectType.IV, itemValueRefs);
-        }
     }
 
     public void loadLocaleNamesForNuDataItems(Collection<NuDataItem> dataItems) {
