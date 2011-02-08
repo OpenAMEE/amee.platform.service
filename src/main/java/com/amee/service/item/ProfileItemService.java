@@ -7,7 +7,7 @@ import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.BaseProfileItemValue;
-import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.Profile;
@@ -38,8 +38,8 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     private AMEEStatistics ameeStatistics;
 
     @Override
-    public NuProfileItem getItemByUid(String uid) {
-        NuProfileItem profileItem = dao.getItemByUid(uid);
+    public ProfileItem getItemByUid(String uid) {
+        ProfileItem profileItem = dao.getItemByUid(uid);
         // If this ProfileItem is trashed then return null. A ProfileItem may be trash if it itself has been
         // trashed or an owning entity has been trashed.
         if ((profileItem != null) && (!profileItem.isTrash())) {
@@ -51,7 +51,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     @Override
-    public boolean hasNonZeroPerTimeValues(NuProfileItem profileItem) {
+    public boolean hasNonZeroPerTimeValues(ProfileItem profileItem) {
         for (BaseItemValue biv : getItemValues(profileItem)) {
             if (ProfileItemNumberValue.class.isAssignableFrom(biv.getClass())) {
                 ProfileItemNumberValue pinv = (ProfileItemNumberValue) biv;
@@ -66,7 +66,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     //TODO - TEMP HACK - will remove as soon we decide how to handle return units in V1 correctly.
 
     @Override
-    public boolean isSingleFlight(NuProfileItem profileItem) {
+    public boolean isSingleFlight(ProfileItem profileItem) {
         for (BaseItemValue iv : getItemValues(profileItem)) {
             if ((iv.getName().startsWith("IATA") && iv.getValueAsString().length() > 0) ||
                     (iv.getName().startsWith("Lat") && !iv.getValueAsString().equals("-999")) ||
@@ -86,8 +86,8 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
      */
     @Override
     public BaseItemValue getItemValue(BaseItem item, String identifier) {
-        if (!NuProfileItem.class.isAssignableFrom(item.getClass()))
-            throw new IllegalStateException("A NuProfileItem instance was expected.");
+        if (!ProfileItem.class.isAssignableFrom(item.getClass()))
+            throw new IllegalStateException("A ProfileItem instance was expected.");
         return getItemValue(item, identifier, item.getEffectiveStartDate());
     }
 
@@ -97,23 +97,23 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     /**
-     * Retrieve a list of {@link NuProfileItem}s belonging to a {@link Profile} and {@link DataCategory}
+     * Retrieve a list of {@link com.amee.domain.item.profile.ProfileItem}s belonging to a {@link Profile} and {@link DataCategory}
      * occuring on or immediately proceeding the given date context.
      *
-     * @param profile      - the {@link Profile} to which the {@link NuProfileItem}s belong
+     * @param profile      - the {@link Profile} to which the {@link com.amee.domain.item.profile.ProfileItem}s belong
      * @param dataCategory - the DataCategory containing the ProfileItems
      * @param profileDate  - the date context
-     * @return the active {@link NuProfileItem} collection
+     * @return the active {@link com.amee.domain.item.profile.ProfileItem} collection
      */
-    public List<NuProfileItem> getProfileItems(
+    public List<ProfileItem> getProfileItems(
             Profile profile,
             IDataCategoryReference dataCategory,
             Date profileDate) {
-        List<NuProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, profileDate);
+        List<ProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, profileDate);
         loadItemValuesForItems((List) profileItems);
         // Order the returned collection by pi.name, di.name and pi.startDate DESC
-        Collections.sort(profileItems, new Comparator<NuProfileItem>() {
-            public int compare(NuProfileItem p1, NuProfileItem p2) {
+        Collections.sort(profileItems, new Comparator<ProfileItem>() {
+            public int compare(ProfileItem p1, ProfileItem p2) {
                 int nd = p1.getName().compareTo(p2.getName());
                 int dnd = p1.getDataItem().getName().compareTo(p2.getDataItem().getName());
                 int sdd = p2.getStartDate().compareTo(p1.getStartDate());
@@ -127,42 +127,42 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     /**
-     * Retrieve a list of {@link NuProfileItem}s belonging to a {@link Profile} and {@link DataCategory}
+     * Retrieve a list of {@link com.amee.domain.item.profile.ProfileItem}s belonging to a {@link Profile} and {@link DataCategory}
      * occurring between a given date context.
      *
-     * @param profile      - the {@link Profile} to which the {@link NuProfileItem}s belong
+     * @param profile      - the {@link Profile} to which the {@link com.amee.domain.item.profile.ProfileItem}s belong
      * @param dataCategory - the DataCategory containing the ProfileItems
      * @param startDate    - the start of the date context
      * @param endDate      - the end of the date context
-     * @return the active {@link NuProfileItem} collection
+     * @return the active {@link com.amee.domain.item.profile.ProfileItem} collection
      */
-    public List<NuProfileItem> getProfileItems(
+    public List<ProfileItem> getProfileItems(
             Profile profile,
             IDataCategoryReference dataCategory,
             StartEndDate startDate,
             StartEndDate endDate) {
-        List<NuProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, startDate, endDate);
+        List<ProfileItem> profileItems = dao.getProfileItems(profile, dataCategory, startDate, endDate);
         loadItemValuesForItems((List) profileItems);
         // Order the returned collection by pi.startDate DESC
-        Collections.sort(profileItems, new Comparator<NuProfileItem>() {
-            public int compare(NuProfileItem p1, NuProfileItem p2) {
+        Collections.sort(profileItems, new Comparator<ProfileItem>() {
+            public int compare(ProfileItem p1, ProfileItem p2) {
                 return p2.getStartDate().compareTo(p1.getStartDate());
             }
         });
         return checkProfileItems(profileItems);
     }
 
-    private List<NuProfileItem> checkProfileItems(List<NuProfileItem> profileItems) {
+    private List<ProfileItem> checkProfileItems(List<ProfileItem> profileItems) {
         if (log.isDebugEnabled()) {
             log.debug("checkProfileItems() start");
         }
         if (profileItems == null) {
             return null;
         }
-        List<NuProfileItem> activeProfileItems = new ArrayList<NuProfileItem>();
+        List<ProfileItem> activeProfileItems = new ArrayList<ProfileItem>();
 
         // Remove any trashed ProfileItems
-        for (NuProfileItem profileItem : profileItems) {
+        for (ProfileItem profileItem : profileItems) {
             if (!profileItem.isTrash()) {
                 checkProfileItem(profileItem);
                 activeProfileItems.add(profileItem);
@@ -176,17 +176,17 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
 
     /**
-     * Add to the {@link NuProfileItem} any {@link com.amee.domain.item.profile.BaseProfileItemValue}s it is missing.
+     * Add to the {@link com.amee.domain.item.profile.ProfileItem} any {@link com.amee.domain.item.profile.BaseProfileItemValue}s it is missing.
      * This will be the case on first persist (this method acting as a reification function), and between GETs if any
      * new {@link com.amee.domain.data.ItemValueDefinition}s have been added to the underlying
      * {@link com.amee.domain.data.ItemDefinition}.
      * <p/>
-     * Any updates to the {@link NuProfileItem} will be persisted to the database.
+     * Any updates to the {@link com.amee.domain.item.profile.ProfileItem} will be persisted to the database.
      *
      * @param profileItem to check
      * @return the supplied ProfileItem or null
      */
-    private NuProfileItem checkProfileItem(NuProfileItem profileItem) {
+    private ProfileItem checkProfileItem(ProfileItem profileItem) {
 
         if (profileItem == null) {
             return null;
@@ -249,12 +249,12 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     @Override
-    public boolean isUnique(NuProfileItem pi) {
+    public boolean isUnique(ProfileItem pi) {
         return !equivalentProfileItemExists(pi);
     }
 
     @Override
-    public boolean equivalentProfileItemExists(NuProfileItem profileItem) {
+    public boolean equivalentProfileItemExists(ProfileItem profileItem) {
         return dao.equivalentProfileItemExists(profileItem);
     }
 
@@ -264,7 +264,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     }
 
     @Override
-    public void persist(NuProfileItem profileItem) {
+    public void persist(ProfileItem profileItem) {
         dao.persist(profileItem);
         checkProfileItem(profileItem);
     }

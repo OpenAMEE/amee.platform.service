@@ -1,7 +1,7 @@
 package com.amee.service.profile;
 
 import com.amee.domain.item.data.DataItem;
-import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.domain.item.profile.ProfileItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -38,16 +38,16 @@ public class OnlyActiveProfileService {
      * sequence for each dataItem and name.
      *
      * @param profileItems - list to filter
-     * @return the List of active {@link com.amee.domain.item.profile.NuProfileItem}
+     * @return the List of active {@link com.amee.domain.item.profile.ProfileItem}
      */
     @SuppressWarnings("unchecked")
-    public List<NuProfileItem> getProfileItems(List<NuProfileItem> profileItems) {
+    public List<ProfileItem> getProfileItems(List<ProfileItem> profileItems) {
         DataItem di = new DataItem();
         String name = "";
-        List<NuProfileItem> activeProfileItems = new ArrayList<NuProfileItem>();
+        List<ProfileItem> activeProfileItems = new ArrayList<ProfileItem>();
         // The profileItems collection is in name, dataItem, startDate DESC order for we can
         // just select the first entry in the collection for each name/dataItem combination.
-        for (NuProfileItem pi : profileItems) {
+        for (ProfileItem pi : profileItems) {
             if (!name.equals(pi.getName()) || !pi.getDataItem().getId().equals(di.getId())) {
                 activeProfileItems.add(pi);
                 di = pi.getDataItem();

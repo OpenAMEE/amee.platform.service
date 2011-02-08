@@ -25,7 +25,7 @@ import com.amee.domain.APIVersion;
 import com.amee.domain.auth.Group;
 import com.amee.domain.auth.User;
 import com.amee.domain.item.data.DataItem;
-import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.profile.Profile;
 import org.junit.Test;
 
@@ -60,7 +60,7 @@ public class PermissionTest { // extends ServiceTest {
     // @Test
     public void areValidPrincipalsToEntities() {
         assertTrue("Should be a valid principal-to-entity", permissionService.isValidPrincipalToEntity(new Group(), new DataItem()));
-        assertTrue("Should be a valid principal-to-entity", permissionService.isValidPrincipalToEntity(new User(), new NuProfileItem()));
+        assertTrue("Should be a valid principal-to-entity", permissionService.isValidPrincipalToEntity(new User(), new ProfileItem()));
     }
 
     // @Test

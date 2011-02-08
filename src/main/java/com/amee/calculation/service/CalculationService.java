@@ -28,7 +28,7 @@ import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.UsableValuePredicate;
 import com.amee.domain.item.data.DataItem;
-import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.AlgorithmRunner;
@@ -70,7 +70,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      *
      * @param profileItem - the ProfileItem for which to calculate GHG amounts
      */
-    public void calculate(NuProfileItem profileItem) {
+    public void calculate(ProfileItem profileItem) {
 
         // End marker ProfileItems can only have zero amounts.
         // Calculate amounts for ProfileItem if an Algorithm is available.
@@ -184,7 +184,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param profileItem
      * @return
      */
-    private Map<String, Object> getValues(NuProfileItem profileItem) {
+    private Map<String, Object> getValues(ProfileItem profileItem) {
 
         Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
         Map<String, Object> returnValues = new HashMap<String, Object>();
@@ -265,7 +265,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param profileItem to be used in finders
      * @param values      to place finders into
      */
-    private void initFinders(NuProfileItem profileItem, Map<String, Object> values) {
+    private void initFinders(ProfileItem profileItem, Map<String, Object> values) {
 
         // Configure and add DataFinder.
         DataFinder dataFinder = (DataFinder) beanFactory.getBean("dataFinder");
@@ -329,7 +329,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
                         userValueChoices.containsKey(itemValueDefinition.getPath()) &&
                         itemValueDefinition.isValidInAPIVersion(version)) {
                     // Create transient ProfileItem & ItemValue.
-                    NuProfileItem profileItem = new NuProfileItem();
+                    ProfileItem profileItem = new ProfileItem();
                     // TODO: PL-6618
 //                    BaseItemValue itemValue = new BaseItemValue(itemValueDefinition, profileItem, false);
 //                    itemValue.setValue(userValueChoices.get(itemValueDefinition.getPath()).getValue());
