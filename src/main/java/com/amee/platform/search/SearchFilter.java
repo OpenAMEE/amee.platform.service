@@ -8,6 +8,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -69,8 +70,8 @@ public class SearchFilter extends QueryFilter {
         }
     }
 
-    public Query getQuery(ObjectType type1, ObjectType type2) {
-        return getQuery(new HashSet<ObjectType>(Arrays.asList(type1, type2)));
+    public Query getQuery(ObjectType... types) {
+        return getQuery(new HashSet<ObjectType>(Arrays.asList(types)));
     }
 
     public Query getQuery() {

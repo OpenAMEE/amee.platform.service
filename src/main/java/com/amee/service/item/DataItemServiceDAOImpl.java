@@ -47,7 +47,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         return DataItem.class;
     }
 
-    // NuDataItems.
+    // DataItems.
 
     @Override
     @SuppressWarnings(value = "unchecked")

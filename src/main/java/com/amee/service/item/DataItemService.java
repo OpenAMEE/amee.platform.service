@@ -76,12 +76,12 @@ public class DataItemService extends ItemService implements IDataItemService {
     public Map<String, DataItem> getDataItemMap(Set<Long> dataItemIds, boolean loadValues) {
         Map<String, DataItem> dataItemMap = new HashMap<String, DataItem>();
         Set<BaseItemValue> dataItemValues = new HashSet<BaseItemValue>();
-        // Load all NuDataItems and BaseItemValues, if required.
+        // Load all DataItems and BaseItemValues, if required.
         List<DataItem> dataItems = dao.getDataItems(dataItemIds);
         if (loadValues) {
             loadItemValuesForItems((List) dataItems);
         }
-        // Add NuDataItems to map. Add BaseItemValue, if required.
+        // Add DataItems to map. Add BaseItemValue, if required.
         for (DataItem dataItem : dataItems) {
             dataItemMap.put(dataItem.getUid(), dataItem);
             if (loadValues) {

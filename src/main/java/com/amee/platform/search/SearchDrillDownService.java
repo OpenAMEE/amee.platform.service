@@ -32,8 +32,6 @@ public class SearchDrillDownService extends DrillDownService {
     private LuceneService luceneService;
 
     /**
-     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
-     * TODO: See https://jira.amee.com/browse/PL-6617
      *
      * @param dataCategory     to perform drill down within
      * @param selections       that have already been made for the drill down
@@ -47,7 +45,6 @@ public class SearchDrillDownService extends DrillDownService {
             List<Choice> drillDownChoices) {
         // Create Query for Data Items within the given DataCategory matching the supplied selections and drillDownChoices.
         BooleanQuery typesQuery = new BooleanQuery();
-        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
         typesQuery.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.SHOULD);
         BooleanQuery query = new BooleanQuery();
         query.add(typesQuery, BooleanClause.Occur.MUST);
