@@ -4,7 +4,7 @@ import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import com.amee.service.data.DataService;
 import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
@@ -138,7 +138,7 @@ public class SearchService {
      * @param entities
      * @param dataItemsMap
      */
-    protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, NuDataItem> dataItemsMap) {
+    protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, DataItem> dataItemsMap) {
         Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
         for (String id : dataItemsMap.keySet()) {
             IAMEEEntity entity = dataItemsMap.get(id);
@@ -158,7 +158,7 @@ public class SearchService {
      * @param entities
      * @param dataItemsMap
      */
-    protected void addNuDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, NuDataItem> dataItemsMap) {
+    protected void addNuDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, DataItem> dataItemsMap) {
         Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
         for (String uid : dataItemsMap.keySet()) {
             IAMEEEntity entity = dataItemsMap.get(uid);
@@ -241,7 +241,7 @@ public class SearchService {
 
     // DataItem search.
 
-    public ResultsWrapper<NuDataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
+    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
         // Create Query.
         BooleanQuery query = null;
         if (!filter.getQueries().isEmpty()) {
@@ -263,7 +263,7 @@ public class SearchService {
      * @param query
      * @return
      */
-    private ResultsWrapper<NuDataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
+    private ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
         // Create Query to find all DIs & NDIs in the DataCategory matching the supplied Query and range.
         BooleanQuery q = new BooleanQuery();
         BooleanQuery typesQuery = new BooleanQuery();
@@ -287,16 +287,16 @@ public class SearchService {
     }
 
     // TODO: Find a way to genericise this and the similar method above for Data Categories.
-    private ResultsWrapper<NuDataItem> getDataItemResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
-        ResultsWrapper<NuDataItem> dataItemResultsWrapper = new ResultsWrapper<NuDataItem>();
+    private ResultsWrapper<DataItem> getDataItemResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
+        ResultsWrapper<DataItem> dataItemResultsWrapper = new ResultsWrapper<DataItem>();
         dataItemResultsWrapper.setTruncated(entityResultsWrapper.isTruncated());
         dataItemResultsWrapper.setResultStart(entityResultsWrapper.getResultStart());
         dataItemResultsWrapper.setResultLimit(entityResultsWrapper.getResultLimit());
         dataItemResultsWrapper.setHits(entityResultsWrapper.getHits());
-        List<NuDataItem> dataItems = new ArrayList<NuDataItem>();
+        List<DataItem> dataItems = new ArrayList<DataItem>();
         for (IAMEEEntity entity : entityResultsWrapper.getResults()) {
-            if (NuDataItem.class.isAssignableFrom(entity.getClass())) {
-                dataItems.add((NuDataItem) entity);
+            if (DataItem.class.isAssignableFrom(entity.getClass())) {
+                dataItems.add((DataItem) entity);
             } else {
                 throw new IllegalStateException("A DataItem was expected.");
             }
@@ -349,18 +349,18 @@ public class SearchService {
             }
             localeService.loadLocaleNamesForDataCategories(dataCategoriesMap.values());
         }
-        // Load DataItems (NuDataItem).
+        // Load DataItems.
         Set<String> dataItemUids = new HashSet<String>();
         if (entityIds.containsKey(ObjectType.NDI)) {
-            // Collate NuDataItem IDs.
+            // Collate DataItem IDs.
             Set<Long> dataItemIds = new HashSet<Long>();
             if (entityIds.containsKey(ObjectType.NDI)) {
                 dataItemIds.addAll(entityIds.get(ObjectType.NDI));
             }
             // Load the items.
-            Map<String, NuDataItem> dataItemsMap = dataItemService.getDataItemMap(dataItemIds, loadItemValues);
+            Map<String, DataItem> dataItemsMap = dataItemService.getDataItemMap(dataItemIds, loadItemValues);
             // Collect UIDs.
-            for (NuDataItem dataItem : dataItemsMap.values()) {
+            for (DataItem dataItem : dataItemsMap.values()) {
                 dataItemUids.add(dataItem.getUid());
             }
             // Add to map.

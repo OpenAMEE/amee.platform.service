@@ -34,22 +34,22 @@ public class DataItemService extends ItemService implements IDataItemService {
     private DataItemServiceDAO dao;
 
     @Override
-    public List<NuDataItem> getDataItems(IDataCategoryReference dataCategory) {
+    public List<DataItem> getDataItems(IDataCategoryReference dataCategory) {
         return getDataItems(dataCategory, true);
     }
 
     @Override
-    public List<NuDataItem> getDataItems(IDataCategoryReference dataCategory, boolean checkDataItems) {
-        List<NuDataItem> dataItems = new ArrayList<NuDataItem>();
-        for (NuDataItem nuDataItem : dao.getDataItems(dataCategory)) {
-            dataItems.add(nuDataItem);
+    public List<DataItem> getDataItems(IDataCategoryReference dataCategory, boolean checkDataItems) {
+        List<DataItem> dataItems = new ArrayList<DataItem>();
+        for (DataItem dataItem : dao.getDataItems(dataCategory)) {
+            dataItems.add(dataItem);
         }
         return activeDataItems(dataItems, checkDataItems);
     }
 
-    private List<NuDataItem> activeDataItems(List<NuDataItem> dataItems, boolean checkDataItems) {
-        List<NuDataItem> activeDataItems = new ArrayList<NuDataItem>();
-        for (NuDataItem dataItem : dataItems) {
+    private List<DataItem> activeDataItems(List<DataItem> dataItems, boolean checkDataItems) {
+        List<DataItem> activeDataItems = new ArrayList<DataItem>();
+        for (DataItem dataItem : dataItems) {
             if (!dataItem.isTrash()) {
                 if (checkDataItems) {
                     checkDataItem(dataItem);
@@ -64,8 +64,8 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
-        List<NuDataItem> dataItems = dao.getDataItems(dataItemIds);
+    public List<DataItem> getDataItems(Set<Long> dataItemIds) {
+        List<DataItem> dataItems = dao.getDataItems(dataItemIds);
         loadItemValuesForItems((List) dataItems);
         localeService.loadLocaleNamesForNuDataItems(dataItems);
         return dataItems;
@@ -73,16 +73,16 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public Map<String, NuDataItem> getDataItemMap(Set<Long> dataItemIds, boolean loadValues) {
-        Map<String, NuDataItem> dataItemMap = new HashMap<String, NuDataItem>();
+    public Map<String, DataItem> getDataItemMap(Set<Long> dataItemIds, boolean loadValues) {
+        Map<String, DataItem> dataItemMap = new HashMap<String, DataItem>();
         Set<BaseItemValue> dataItemValues = new HashSet<BaseItemValue>();
         // Load all NuDataItems and BaseItemValues, if required.
-        List<NuDataItem> dataItems = dao.getDataItems(dataItemIds);
+        List<DataItem> dataItems = dao.getDataItems(dataItemIds);
         if (loadValues) {
             loadItemValuesForItems((List) dataItems);
         }
         // Add NuDataItems to map. Add BaseItemValue, if required.
-        for (NuDataItem dataItem : dataItems) {
+        for (DataItem dataItem : dataItems) {
             dataItemMap.put(dataItem.getUid(), dataItem);
             if (loadValues) {
                 dataItemValues.addAll(this.getItemValues(dataItem));
@@ -93,8 +93,8 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     @Override
-    public NuDataItem getDataItemByIdentifier(DataCategory parent, String path) {
-        NuDataItem dataItem = null;
+    public DataItem getDataItemByIdentifier(DataCategory parent, String path) {
+        DataItem dataItem = null;
         if (!StringUtils.isBlank(path)) {
             if (UidGen.INSTANCE_12.isValid(path)) {
                 dataItem = getDataItemByUid(parent, path);
@@ -107,8 +107,8 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     @Override
-    public NuDataItem getDataItemByUid(DataCategory parent, String uid) {
-        NuDataItem dataItem = getItemByUid(uid);
+    public DataItem getDataItemByUid(DataCategory parent, String uid) {
+        DataItem dataItem = getItemByUid(uid);
         if ((dataItem != null) && dataItem.getDataCategory().equals(parent)) {
             return dataItem;
         } else {
@@ -117,8 +117,8 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     @Override
-    public NuDataItem getItemByUid(String uid) {
-        NuDataItem dataItem = dao.getItemByUid(uid);
+    public DataItem getItemByUid(String uid) {
+        DataItem dataItem = dao.getItemByUid(uid);
         if ((dataItem != null) && (!dataItem.isTrash())) {
             checkDataItem(dataItem);
             return dataItem;
@@ -128,8 +128,8 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     @Override
-    public NuDataItem getDataItemByPath(DataCategory parent, String path) {
-        NuDataItem dataItem = dao.getDataItemByPath(parent, path);
+    public DataItem getDataItemByPath(DataCategory parent, String path) {
+        DataItem dataItem = dao.getDataItemByPath(parent, path);
         if ((dataItem != null) && !dataItem.isTrash()) {
             checkDataItem(dataItem);
             return dataItem;
@@ -139,7 +139,7 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     @Override
-    public String getLabel(NuDataItem dataItem) {
+    public String getLabel(DataItem dataItem) {
         String label = "";
         BaseItemValue itemValue;
         ItemDefinition itemDefinition = dataItem.getItemDefinition();
@@ -161,17 +161,17 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     /**
-     * Add to the {@link com.amee.domain.item.data.NuDataItem} any {@link com.amee.domain.item.data.BaseDataItemValue}s it is missing.
+     * Add to the {@link com.amee.domain.item.data.DataItem} any {@link com.amee.domain.item.data.BaseDataItemValue}s it is missing.
      * This will be the case on first persist (this method acting as a reification function), and between GETs if any
      * new {@link com.amee.domain.data.ItemValueDefinition}s have been added to the underlying
      * {@link com.amee.domain.data.ItemDefinition}.
      * <p/>
-     * Any updates to the {@link com.amee.domain.item.data.NuDataItem} will be persisted to the database.
+     * Any updates to the {@link com.amee.domain.item.data.DataItem} will be persisted to the database.
      *
      * @param dataItem - the DataItem to check
      */
     @SuppressWarnings(value = "unchecked")
-    public void checkDataItem(NuDataItem dataItem) {
+    public void checkDataItem(DataItem dataItem) {
 
         if (dataItem == null) {
             return;
@@ -229,17 +229,17 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     @Override
-    public void remove(NuDataItem dataItem) {
+    public void remove(DataItem dataItem) {
         dataItem.setStatus(AMEEStatus.TRASH);
     }
 
     @Override
-    public void persist(NuDataItem dataItem) {
+    public void persist(DataItem dataItem) {
         persist(dataItem, true);
     }
 
     @Override
-    public void persist(NuDataItem dataItem, boolean checkDataItem) {
+    public void persist(DataItem dataItem, boolean checkDataItem) {
         dao.persist(dataItem);
         if (checkDataItem) {
             checkDataItem(dataItem);
@@ -257,8 +257,8 @@ public class DataItemService extends ItemService implements IDataItemService {
      */
     @Override
     public BaseItemValue getItemValue(BaseItem item, String identifier) {
-        if (!NuDataItem.class.isAssignableFrom(item.getClass()))
-            throw new IllegalStateException("A NuDataItem instance was expected.");
+        if (!DataItem.class.isAssignableFrom(item.getClass()))
+            throw new IllegalStateException("A DataItem instance was expected.");
         return getItemValue(item, identifier, item.getEffectiveStartDate());
     }
 
@@ -273,12 +273,12 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     @Override
-    public StartEndDate getStartDate(NuDataItem dataItem) {
+    public StartEndDate getStartDate(DataItem dataItem) {
         return null;
     }
 
     @Override
-    public StartEndDate getEndDate(NuDataItem dataItem) {
+    public StartEndDate getEndDate(DataItem dataItem) {
         return null;
     }
 

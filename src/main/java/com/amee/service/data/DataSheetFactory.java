@@ -26,7 +26,7 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import com.amee.domain.sheet.Cell;
 import com.amee.domain.sheet.Column;
 import com.amee.domain.sheet.Row;
@@ -97,7 +97,7 @@ public class DataSheetFactory implements CacheableFactory {
             // create rows and cells
             columns = sheet.getColumns();
             StartEndDate startDate = dataBrowser.getQueryStartDate();
-            for (NuDataItem dataItem : dataItemService.getDataItems(dataCategory)) {
+            for (DataItem dataItem : dataItemService.getDataItems(dataCategory)) {
                 row = new Row(sheet, dataItem.getUid());
                 row.setLabel("DataItem");
                 for (Column column : columns) {

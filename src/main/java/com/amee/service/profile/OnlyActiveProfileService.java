@@ -1,6 +1,6 @@
 package com.amee.service.profile;
 
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import com.amee.domain.item.profile.NuProfileItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,7 +42,7 @@ public class OnlyActiveProfileService {
      */
     @SuppressWarnings("unchecked")
     public List<NuProfileItem> getProfileItems(List<NuProfileItem> profileItems) {
-        NuDataItem di = new NuDataItem();
+        DataItem di = new DataItem();
         String name = "";
         List<NuProfileItem> activeProfileItems = new ArrayList<NuProfileItem>();
         // The profileItems collection is in name, dataItem, startDate DESC order for we can
