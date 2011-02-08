@@ -57,7 +57,7 @@ import java.util.*;
  * the VALUE column. I've opted for option 3 here.
  */
 @Service
-class DrillDownDAO implements Serializable {
+public class DrillDownDAO implements Serializable {
 
     private final Log log = LogFactory.getLog(getClass());
 
