@@ -35,7 +35,7 @@ public class NuDrillDownFactory implements CacheableFactory {
 
     private final Log log = LogFactory.getLog(getClass());
 
-    private NuDrillDownDAO nuDrillDownDao;
+    private DrillDownDAO drillDownDao;
     private IDataCategoryReference dataCategory;
     private List<Choice> selections;
     private List<Choice> drillDownChoices;
@@ -46,12 +46,12 @@ public class NuDrillDownFactory implements CacheableFactory {
     }
 
     public NuDrillDownFactory(
-            NuDrillDownDAO nuDrillDownDao,
+            DrillDownDAO drillDownDao,
             IDataCategoryReference dataCategory,
             List<Choice> selections,
             List<Choice> drillDownChoices) {
         this();
-        this.nuDrillDownDao = nuDrillDownDao;
+        this.drillDownDao = drillDownDao;
         this.dataCategory = dataCategory;
         this.selections = selections;
         this.drillDownChoices = drillDownChoices;
@@ -63,11 +63,11 @@ public class NuDrillDownFactory implements CacheableFactory {
         // have we reached the end of the choices list?
         if (drillDownChoices.size() > 0) {
             // get DataItem value choice list
-            return nuDrillDownDao.getDataItemValueChoices(
+            return drillDownDao.getDataItemValueChoices(
                     dataCategory, drillDownChoices.get(0).getName(), selections);
         } else {
             // get DataItem UID choice list
-            return nuDrillDownDao.getDataItemUIDChoices(dataCategory, selections);
+            return drillDownDao.getDataItemUIDChoices(dataCategory, selections);
         }
     }
 
