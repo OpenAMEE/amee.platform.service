@@ -90,10 +90,6 @@ public class MetadataService implements IMetadataService, ApplicationListener {
         loadMetadatas(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
     }
 
-    public void loadMetadatasForNuDataItems(Collection<DataItem> dataItems) {
-        loadMetadatas(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
-    }
-
     public void loadMetadatasForItemDefinitions(Collection<ItemDefinition> itemDefinitions) {
         loadMetadatas(ObjectType.ID, new HashSet<IAMEEEntityReference>(itemDefinitions));
     }

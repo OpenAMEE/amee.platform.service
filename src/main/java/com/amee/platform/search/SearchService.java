@@ -367,7 +367,7 @@ public class SearchService {
             addNuDataItems(entities, dataItemsMap);
             // Pre-load Metadatas?
             if (loadMetadata) {
-                metadataService.loadMetadatasForNuDataItems(dataItemsMap.values());
+                metadataService.loadMetadatasForDataItems(dataItemsMap.values());
             }
         }
         // Create result list in relevance order.

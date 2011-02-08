@@ -129,11 +129,11 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         loadLocaleNames(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
     }
 
-    public void loadLocaleNamesForNuDataItems(Collection<DataItem> dataItems) {
-        loadLocaleNamesForNuDataItems(dataItems, null);
+    public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems) {
+        loadLocaleNamesForDataItems(dataItems, null);
     }
 
-    public void loadLocaleNamesForNuDataItems(Collection<DataItem> dataItems, Set<BaseItemValue> values) {
+    public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems, Set<BaseItemValue> values) {
         loadLocaleNames(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
         if ((values != null) && (!values.isEmpty())) {
             Set<IAMEEEntityReference> itemValueRefs = new HashSet<IAMEEEntityReference>();

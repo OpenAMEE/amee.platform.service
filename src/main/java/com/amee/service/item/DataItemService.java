@@ -58,7 +58,7 @@ public class DataItemService extends ItemService implements IDataItemService {
             }
         }
         loadItemValuesForItems((List) activeDataItems);
-        localeService.loadLocaleNamesForNuDataItems(activeDataItems);
+        localeService.loadLocaleNamesForDataItems(activeDataItems);
         return activeDataItems;
     }
 
@@ -67,7 +67,7 @@ public class DataItemService extends ItemService implements IDataItemService {
     public List<DataItem> getDataItems(Set<Long> dataItemIds) {
         List<DataItem> dataItems = dao.getDataItems(dataItemIds);
         loadItemValuesForItems((List) dataItems);
-        localeService.loadLocaleNamesForNuDataItems(dataItems);
+        localeService.loadLocaleNamesForDataItems(dataItems);
         return dataItems;
     }
 
@@ -88,7 +88,7 @@ public class DataItemService extends ItemService implements IDataItemService {
                 dataItemValues.addAll(this.getItemValues(dataItem));
             }
         }
-        localeService.loadLocaleNamesForNuDataItems(dataItemMap.values(), dataItemValues);
+        localeService.loadLocaleNamesForDataItems(dataItemMap.values(), dataItemValues);
         return dataItemMap;
     }
 
