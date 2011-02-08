@@ -88,7 +88,6 @@ public class DrillDownService implements Serializable {
 
     public void clearDrillDownCache() {
         cacheHelper.clearCache("DrillDownChoices");
-        cacheHelper.clearCache("NuDrillDownChoices");
     }
 
     @SuppressWarnings("unchecked")
