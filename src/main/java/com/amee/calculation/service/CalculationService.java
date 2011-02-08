@@ -222,7 +222,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     @SuppressWarnings("unchecked")
     public void appendInternalValues(BaseItem item, Map<ItemValueDefinition, InternalValue> values) {
         // TODO: PL-6618
-//        NuItemValueMap itemValueMap =  item.getItemValuesMap();
+//        ItemValueMap itemValueMap =  item.getItemValuesMap();
 //        for (Object path : itemValueMap.keySet()) {
 //            // Get all ItemValues with this ItemValueDefinition path.
 //            List<BaseItemValue> itemValues = item.getAllItemValues((String) path);
