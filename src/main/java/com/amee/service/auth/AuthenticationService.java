@@ -9,13 +9,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class AuthenticationService implements Serializable {
+public class AuthenticationService {
 
     private final static Log log = LogFactory.getLog(AuthenticationService.class);
 
@@ -167,6 +169,7 @@ public class AuthenticationService implements Serializable {
      * @param sampleUser sample User to authenticate against
      * @return the authenticated User
      */
+    @Transactional(propagation = Propagation.REQUIRED, readOnly = true)
     public User authenticate(User sampleUser) {
         // Try to find User based on 'sampleUser' User 'template'.
         User activeUser = getUserByUsername(sampleUser.getUsername());

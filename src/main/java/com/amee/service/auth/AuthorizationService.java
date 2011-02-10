@@ -30,7 +30,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -54,7 +53,7 @@ import java.util.*;
  * - Return authorized (true) if isAuthorized is passed for each entity.
  */
 @Service
-public class AuthorizationService implements Serializable {
+public class AuthorizationService {
 
     private final Log log = LogFactory.getLog(getClass());
 
