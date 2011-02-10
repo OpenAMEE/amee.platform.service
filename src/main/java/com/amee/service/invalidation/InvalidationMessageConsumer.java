@@ -10,6 +10,10 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+/**
+ * Consumes incoming invalidation messages from RabbitMQ and publishes as an {@link InvalidationMessage} into
+ * the Spring container.
+ */
 public class InvalidationMessageConsumer extends TopicMessageConsumer {
 
     private final Log log = LogFactory.getLog(getClass());
@@ -26,6 +30,11 @@ public class InvalidationMessageConsumer extends TopicMessageConsumer {
     @Qualifier("invalidationConsume")
     private ConsumeConfig consumeConfig;
 
+    /**
+     * Publish the incoming invalidation message as an InvalidationMessage.
+     *
+     * @param delivery the incoming message
+     */
     public void handle(QueueingConsumer.Delivery delivery) {
         log.debug("handleDelivery()");
         applicationContext.publishEvent(new InvalidationMessage(this, new String(delivery.getBody())));

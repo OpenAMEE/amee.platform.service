@@ -51,9 +51,13 @@ public class InvalidationService implements ApplicationContextAware, Application
                     log.debug("onApplicationEvent() BEFORE_BEGIN");
                     onBeforeBegin();
                     break;
-                case BEFORE_END:
-                    log.debug("onApplicationEvent() BEFORE_END");
-                    onBeforeEnd();
+                case ROLLBACK:
+                    log.debug("onApplicationEvent() ROLLBACK");
+                    onRollback();
+                    break;
+                case END:
+                    log.debug("onApplicationEvent() END");
+                    onEnd();
                     break;
                 default:
                     // Do nothing!
@@ -95,17 +99,26 @@ public class InvalidationService implements ApplicationContextAware, Application
     }
 
     /**
+     * Clears the invalidationMessages set due to transaction rollback.
+     */
+    public synchronized void onRollback() {
+        log.debug("onRollback()");
+        invalidationMessages.get().clear();
+    }
+
+    /**
      * Triggers entity invalidation. Sends InvalidationMessages into the invalidation topic for
      * the previously added in entities. Called after each request has been handled.
      */
-    public synchronized void onBeforeEnd() {
-        log.debug("onBeforeEnd()");
-        try {
-            for (InvalidationMessage invalidationMessage : invalidationMessages.get()) {
-                invalidate(invalidationMessage);
-            }
-        } finally {
-            invalidationMessages.get().clear();
+    public synchronized void onEnd() {
+        log.debug("onEnd()");
+        // Copy the set of InvalidationMessages.
+        Set<InvalidationMessage> invalidationMessagesCopy = new HashSet<InvalidationMessage>(invalidationMessages.get());
+        // Clear the original set of InvalidationMessages to prevent infinite loop.
+        invalidationMessages.get().clear();
+        // Now iterate over the copied set.
+        for (InvalidationMessage invalidationMessage : invalidationMessagesCopy) {
+            invalidate(invalidationMessage);
         }
     }
 
