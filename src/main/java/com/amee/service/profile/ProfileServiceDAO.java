@@ -33,14 +33,13 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.io.Serializable;
 import java.util.List;
 
 /**
  * Encapsulates all persistence operations for Profiles and Profile Items.
  */
 @Service
-public class ProfileServiceDAO implements Serializable {
+public class ProfileServiceDAO {
 
     private final Log log = LogFactory.getLog(getClass());
 

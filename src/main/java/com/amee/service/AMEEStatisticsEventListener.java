@@ -36,8 +36,8 @@ public class AMEEStatisticsEventListener implements ApplicationListener {
                     // Update statistics.
                     ameeStatistics.resetThread();
                     break;
-                case BEFORE_END:
-                    log.debug("onApplicationEvent() BEFORE_END - {calculationDuration=" + ameeStatistics.getThreadCalculationDuration() + "}");
+                case END:
+                    log.debug("onApplicationEvent() END - {calculationDuration=" + ameeStatistics.getThreadCalculationDuration() + "}");
                     break;
                 default:
                     // Do nothing!

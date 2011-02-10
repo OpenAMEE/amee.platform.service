@@ -21,11 +21,10 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import java.io.Serializable;
 import java.util.*;
 
 @Repository
-public class TagServiceDAO implements Serializable {
+public class TagServiceDAO {
 
     @PersistenceContext
     private EntityManager entityManager;

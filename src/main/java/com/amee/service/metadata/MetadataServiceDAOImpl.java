@@ -13,14 +13,13 @@ import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 @Repository
-public class MetadataServiceDAOImpl implements Serializable, MetadataServiceDAO {
+public class MetadataServiceDAOImpl implements MetadataServiceDAO {
 
     private static final String CACHE_REGION = "query.metadataService";
 
