@@ -26,39 +26,45 @@ public class SearchQueryService {
     private LuceneService luceneService;
 
     /**
-     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
-     * TODO: See https://jira.amee.com/browse/PL-6617
-     *
      * @param filter
      * @return
      */
     protected ResultsWrapper<Document> doSearch(SearchFilter filter) {
         Query primaryQuery;
+
         // Obtain Query.
         primaryQuery = filter.getQuery();
+
         // Get Lucene Documents matching query within page range.
         ResultsWrapper<Document> pagedPrimaryResults = luceneService.doSearch(primaryQuery, filter.getResultStart(), filter.getResultLimit());
+
         // Would we like more results (not truncated)? Are we only searching for Data Categories?
         if (!pagedPrimaryResults.isTruncated() &&
                 filter.getTypes().contains(ObjectType.DC) && filter.getTypes().size() == 1) {
+
             // Attempt to supplement Data Category results with matches on Data Items.
             // Search for Data Items.
             ResultsWrapper<Document> allSecondaryResults =
-                    luceneService.doSearch(filter.getQuery(ObjectType.DI, ObjectType.NDI));
+                    luceneService.doSearch(filter.getQuery(ObjectType.NDI));
+
             // Only handle secondary results if some were found.
             if (!allSecondaryResults.getResults().isEmpty()) {
+
                 // Get all Documents matching primary query (this is a duplicate of the search above).
                 ResultsWrapper<Document> allPrimaryResults = luceneService.doSearch(primaryQuery);
+
                 // Collect primary results Data Category UIDs.
                 List<String> primaryDataCategoryUids = new ArrayList<String>();
                 for (Document d : allPrimaryResults.getResults()) {
                     primaryDataCategoryUids.add(d.getField("entityUid").stringValue());
                 }
+
                 // Collect secondary results Data Category UIDs (minus duplicates of primary Data Categories).
                 List<String> secondaryDataCategoryUids = new ArrayList<String>();
                 for (Document d : allSecondaryResults.getResults()) {
                     Field f = d.getField("categoryUid");
                     if (f != null) {
+
                         // Add the Data Category UID if it is not already present.
                         String uid = d.getField("categoryUid").stringValue();
                         if (!primaryDataCategoryUids.contains(uid) && !secondaryDataCategoryUids.contains(uid)) {
@@ -68,20 +74,25 @@ public class SearchQueryService {
                         log.warn("doSearch() Data Item Document 'categoryUid' Field does not exist for DI: " + d.getField("entityUid"));
                     }
                 }
+
                 // Work out the new resultStart (offset) for the Data Item list.
                 int newResultStart = filter.getResultStart() - pagedPrimaryResults.getHits();
                 if (newResultStart < 0) {
                     newResultStart = 0;
                 }
+
                 // Work out the new resultEnd for the Data Item List.
                 int newResultEnd = newResultStart + filter.getResultLimit() + 1;
                 if (newResultEnd > secondaryDataCategoryUids.size()) {
                     newResultEnd = secondaryDataCategoryUids.size();
                 }
+
                 // Are there Data Categories to add?
                 if (newResultStart > newResultEnd) {
+
                     // No Data Categories, do nothing.
                 } else {
+
                     // There are some Data Categories to add.
                     // Gather Data Category Documents.
                     List<Document> dataCategoryDocuments = new ArrayList<Document>();
@@ -91,12 +102,14 @@ public class SearchQueryService {
                             dataCategoryDocuments.add(document);
                         }
                     }
+
                     // Now add Data Category Documents to main ResultsWrapper.
                     // Fill up ResultsWrapper.results up to a max of the resultLimit.
                     for (Document document : dataCategoryDocuments) {
                         if (pagedPrimaryResults.getResults().size() < filter.getResultLimit()) {
                             pagedPrimaryResults.getResults().add(document);
                         } else {
+
                             // We had to trim the results.
                             pagedPrimaryResults.setTruncated(true);
                         }
@@ -176,16 +189,13 @@ public class SearchQueryService {
     /**
      * Removes all DataItem Documents from the index for a DataCategory.
      * <p/>
-     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
-     * TODO: See https://jira.amee.com/browse/PL-6617
      *
      * @param dataCategory to remove Data Items Documents for
      */
     protected void removeDataItems(DataCategory dataCategory) {
         log.debug("removeDataItems() " + dataCategory.toString());
-        // Prepare Query to search for all LegacyDataItems OR NuDataItems matching the specified category.
+        // Prepare Query to search for all DataItems matching the specified category.
         BooleanQuery typesQuery = new BooleanQuery();
-        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
         typesQuery.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.SHOULD);
         BooleanQuery combinedQuery = new BooleanQuery();
         combinedQuery.add(typesQuery, BooleanClause.Occur.MUST);

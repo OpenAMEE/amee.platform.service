@@ -2,7 +2,7 @@ package com.amee.service.data;
 
 import com.amee.domain.APIVersion;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import com.amee.domain.sheet.Choices;
 import com.amee.domain.sheet.Sheet;
 import com.amee.service.invalidation.InvalidationMessage;
@@ -22,5 +22,5 @@ public interface DataSheetService extends ApplicationListener<InvalidationMessag
 
     void setEternalPaths(Set<String> eternalPaths);
 
-    Choices getUserValueChoices(NuDataItem dataItem, APIVersion apiVersion);
+    Choices getUserValueChoices(DataItem dataItem, APIVersion apiVersion);
 }

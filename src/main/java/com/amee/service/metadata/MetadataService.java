@@ -8,7 +8,7 @@ import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,11 +86,7 @@ public class MetadataService implements IMetadataService, ApplicationListener {
         loadMetadatas(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
     }
 
-    public void loadMetadatasForDataItems(Collection<NuDataItem> dataItems) {
-        loadMetadatas(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
-    }
-
-    public void loadMetadatasForNuDataItems(Collection<NuDataItem> dataItems) {
+    public void loadMetadatasForDataItems(Collection<DataItem> dataItems) {
         loadMetadatas(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
     }
 

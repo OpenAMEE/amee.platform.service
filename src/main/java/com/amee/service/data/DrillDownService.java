@@ -42,9 +42,6 @@ public class DrillDownService {
     @Autowired
     private DrillDownDAO drillDownDao;
 
-    @Autowired
-    private NuDrillDownDAO nuDrillDownDao;
-
     private CacheHelper cacheHelper = CacheHelper.getInstance();
 
     public Choices getChoices(IDataCategoryReference dc, List<Choice> selections) {
@@ -90,7 +87,6 @@ public class DrillDownService {
 
     public void clearDrillDownCache() {
         cacheHelper.clearCache("DrillDownChoices");
-        cacheHelper.clearCache("NuDrillDownChoices");
     }
 
     @SuppressWarnings("unchecked")
@@ -100,7 +96,7 @@ public class DrillDownService {
             List<Choice> drillDownChoices) {
         // Get Choices and sort.
         List<Choice> choices = ((List<Choice>) cacheHelper.getCacheable(
-                new NuDrillDownFactory(nuDrillDownDao, dataCategory, selections, drillDownChoices)));
+                new DrillDownFactory(drillDownDao, dataCategory, selections, drillDownChoices)));
         Collections.sort(choices);
         return choices;
     }

@@ -286,7 +286,7 @@ public class DataServiceDAO {
             Date modifiedUntil) {
         return (List<DataCategory>) entityManager.createQuery(
                 "SELECT DISTINCT di.dataCategory " +
-                        "FROM NuDataItem di " +
+                        "FROM DataItem di " +
                         "WHERE di.modified >= :modifiedSince " +
                         "AND di.modified < :modifiedUntil")
                 .setParameter("modifiedSince", modifiedSince)

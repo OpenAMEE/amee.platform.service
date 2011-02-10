@@ -44,16 +44,16 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
 
     @Override
     public Class getEntityClass() {
-        return NuDataItem.class;
+        return DataItem.class;
     }
 
-    // NuDataItems.
+    // DataItems.
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public List<NuDataItem> getDataItems(IDataCategoryReference dataCategory) {
+    public List<DataItem> getDataItems(IDataCategoryReference dataCategory) {
         Session session = (Session) entityManager.getDelegate();
-        Criteria criteria = session.createCriteria(NuDataItem.class);
+        Criteria criteria = session.createCriteria(DataItem.class);
         criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getEntityId()));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
@@ -61,10 +61,10 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
+    public List<DataItem> getDataItems(Set<Long> dataItemIds) {
         dataItemIds.add(0L);
         Session session = (Session) entityManager.getDelegate();
-        Criteria criteria = session.createCriteria(NuDataItem.class);
+        Criteria criteria = session.createCriteria(DataItem.class);
         criteria.add(Restrictions.in("id", dataItemIds));
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         return criteria.list();
@@ -72,15 +72,15 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public NuDataItem getDataItemByPath(IDataCategoryReference parent, String path) {
-        NuDataItem dataItem = null;
+    public DataItem getDataItemByPath(IDataCategoryReference parent, String path) {
+        DataItem dataItem = null;
         if ((parent != null) && !StringUtils.isBlank(path)) {
             Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(NuDataItem.class);
+            Criteria criteria = session.createCriteria(DataItem.class);
             criteria.add(Restrictions.eq("dataCategory.id", parent.getEntityId()));
             criteria.add(Restrictions.eq("path", path));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-            List<NuDataItem> items = criteria.list();
+            List<DataItem> items = criteria.list();
             if (items.size() == 1) {
                 dataItem = items.get(0);
             } else {
@@ -97,12 +97,12 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      * @return the matching DataItem or null if not found
      */
     @Override
-    public NuDataItem getItemByUid(String uid) {
-        return (NuDataItem) super.getItemByUid(uid);
+    public DataItem getItemByUid(String uid) {
+        return (DataItem) super.getItemByUid(uid);
     }
 
     @Override
-    public void persist(NuDataItem dataItem) {
+    public void persist(DataItem dataItem) {
         entityManager.persist(dataItem);
     }
 
@@ -110,12 +110,12 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
 
     @Override
     public Set<BaseItemValue> getAllItemValues(BaseItem item) {
-        if (!NuDataItem.class.isAssignableFrom(item.getClass())) throw new IllegalStateException();
-        return getDataItemValues((NuDataItem) item);
+        if (!DataItem.class.isAssignableFrom(item.getClass())) throw new IllegalStateException();
+        return getDataItemValues((DataItem) item);
     }
 
     @Override
-    public Set<BaseItemValue> getDataItemValues(NuDataItem dataItem) {
+    public Set<BaseItemValue> getDataItemValues(DataItem dataItem) {
         Set<BaseItemValue> rawItemValues = new HashSet<BaseItemValue>();
         rawItemValues.addAll(getDataItemNumberValues(dataItem));
         rawItemValues.addAll(getDataItemNumberValueHistories(dataItem));
@@ -131,7 +131,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      * @return
      */
     @SuppressWarnings(value = "unchecked")
-    private List<DataItemNumberValueHistory> getDataItemNumberValueHistories(NuDataItem dataItem) {
+    private List<DataItemNumberValueHistory> getDataItemNumberValueHistories(DataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemNumberValueHistory.class);
         criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
@@ -146,7 +146,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      * @return
      */
     @SuppressWarnings(value = "unchecked")
-    private List<DataItemTextValueHistory> getDataItemTextValueHistories(NuDataItem dataItem) {
+    private List<DataItemTextValueHistory> getDataItemTextValueHistories(DataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemTextValueHistory.class);
         criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
@@ -162,7 +162,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      */
     @Override
     @SuppressWarnings(value = "unchecked")
-    public List<DataItemNumberValue> getDataItemNumberValues(NuDataItem dataItem) {
+    public List<DataItemNumberValue> getDataItemNumberValues(DataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemNumberValue.class);
         criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));
@@ -178,7 +178,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
      */
     @Override
     @SuppressWarnings(value = "unchecked")
-    public List<DataItemTextValue> getDataItemTextValues(NuDataItem dataItem) {
+    public List<DataItemTextValue> getDataItemTextValues(DataItem dataItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(DataItemTextValue.class);
         criteria.add(Restrictions.eq("dataItem.id", dataItem.getId()));

@@ -21,7 +21,7 @@ package com.amee.calculation.service;
 
 import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.service.data.DataService;
@@ -60,7 +60,7 @@ public class DataFinder {
     public String getDataItemValue(String path, String drillDown, String name) {
         String value = null;
         BaseItemValue itemValue;
-        NuDataItem dataItem = getDataItem(path, drillDown);
+        DataItem dataItem = getDataItem(path, drillDown);
         if (dataItem != null) {
             itemValue = dataItemService.getItemValue(dataItem, name);
             if (itemValue != null) {
@@ -73,8 +73,8 @@ public class DataFinder {
         return value;
     }
 
-    public NuDataItem getDataItem(String path, String drillDown) {
-        NuDataItem dataItem = null;
+    public DataItem getDataItem(String path, String drillDown) {
+        DataItem dataItem = null;
         Choices choices;
         IDataCategoryReference dataCategory = getDataCategory(path);
         if (dataCategory != null) {

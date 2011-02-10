@@ -5,7 +5,7 @@ import com.amee.domain.IAMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationService;
@@ -172,11 +172,11 @@ public class SearchIndexerImpl implements SearchIndexer {
             // Pre-cache metadata and locales for the Data Items.
             metadataService.loadMetadatasForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
             localeService.loadLocaleNamesForItemValueDefinitions(dataCategory.getItemDefinition().getItemValueDefinitions());
-            List<NuDataItem> dataItems = dataItemService.getDataItems(dataCategory, false);
+            List<DataItem> dataItems = dataItemService.getDataItems(dataCategory, false);
             metadataService.loadMetadatasForDataItems(dataItems);
             // Iterate over all Data Items and create Documents.
             documentContext.dataItemDocs = new ArrayList<Document>();
-            for (NuDataItem dataItem : dataItems) {
+            for (DataItem dataItem : dataItems) {
                 documentContext.dataItem = dataItem;
                 // Create new Data Item Document.
                 documentContext.dataItemDoc = getDocumentForDataItem(dataItem);
@@ -225,7 +225,7 @@ public class SearchIndexerImpl implements SearchIndexer {
         return doc;
     }
 
-    protected Document getDocumentForDataItem(NuDataItem dataItem) {
+    protected Document getDocumentForDataItem(DataItem dataItem) {
         Document doc = getDocumentForAMEEEntity(dataItem);
         doc.add(new Field("name", dataItem.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataItem.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));

@@ -22,7 +22,7 @@ package com.amee.calculation.service;
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.domain.item.profile.ProfileItem;
 import com.amee.service.item.ProfileItemService;
 import com.amee.service.profile.ProfileService;
 import org.apache.commons.logging.Log;
@@ -50,7 +50,7 @@ public class ProfileFinder {
     private AMEEStatistics ameeStatistics;
 
     private DataFinder dataFinder;
-    private NuProfileItem profileItem;
+    private ProfileItem profileItem;
 
     public ProfileFinder() {
         super();
@@ -59,7 +59,7 @@ public class ProfileFinder {
     public String getProfileItemValue(String path, String name) {
         String value = null;
         BaseItemValue iv;
-        NuProfileItem pi = getProfileItem(path);
+        ProfileItem pi = getProfileItem(path);
         if (pi != null) {
             iv = profileItemService.getItemValue(pi, name);
             if (iv != null) {
@@ -74,7 +74,7 @@ public class ProfileFinder {
 
     public void setProfileItemValue(String path, String name, String value) {
         BaseItemValue iv;
-        NuProfileItem pi = getProfileItem(path);
+        ProfileItem pi = getProfileItem(path);
         if (pi != null) {
             iv = profileItemService.getItemValue(pi, name);
             if (iv != null) {
@@ -95,8 +95,8 @@ public class ProfileFinder {
         }
     }
 
-    public NuProfileItem getProfileItem(String path) {
-        List<NuProfileItem> profileItems = getProfileItems(path);
+    public ProfileItem getProfileItem(String path) {
+        List<ProfileItem> profileItems = getProfileItems(path);
         if (profileItems.size() > 0) {
             return profileItems.get(0);
         } else {
@@ -104,8 +104,8 @@ public class ProfileFinder {
         }
     }
 
-    public List<NuProfileItem> getProfileItems() {
-        List<NuProfileItem> profileItems = new ArrayList<NuProfileItem>();
+    public List<ProfileItem> getProfileItems() {
+        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
         if (profileItem != null) {
             profileItems = profileItemService.getProfileItems(
                     profileItem.getProfile(),
@@ -115,8 +115,8 @@ public class ProfileFinder {
         return profileItems;
     }
 
-    public List<NuProfileItem> getProfileItems(String path) {
-        List<NuProfileItem> profileItems = new ArrayList<NuProfileItem>();
+    public List<ProfileItem> getProfileItems(String path) {
+        List<ProfileItem> profileItems = new ArrayList<ProfileItem>();
         if (profileItem != null) {
             IDataCategoryReference dataCategory = dataFinder.getDataCategory(path);
             if (dataCategory != null) {
@@ -133,7 +133,7 @@ public class ProfileFinder {
         this.dataFinder = dataFinder;
     }
 
-    public void setProfileItem(NuProfileItem profileItem) {
+    public void setProfileItem(ProfileItem profileItem) {
         this.profileItem = profileItem;
     }
 }

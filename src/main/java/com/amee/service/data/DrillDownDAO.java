@@ -44,7 +44,7 @@ import java.util.*;
 /**
  * Uses native SQL to perform a 'drill down' into DataItem values.
  * <p/>
- * See {@link DrillDownService} for a description of drill downs.
+ * See {@link com.amee.service.data.DrillDownService} for a description of drill downs.
  * <p/>
  * Note: I was unable to use the JPA EntityManger for this SQL so have used
  * the native Hibernate Session instead. This seems to be due to
@@ -67,8 +67,8 @@ class DrillDownDAO {
     private DataServiceDAO dataServiceDao;
 
     /**
-     * Retrieves a {@link List} of {@link Choice}s containing values for a user to select. The value choices
-     * are appropriate for the current level within the 'drill down' given the supplied {@link DataCategory},
+     * Retrieves a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing values for a user to select. The value choices
+     * are appropriate for the current level within the 'drill down' given the supplied {@link com.amee.domain.data.DataCategory},
      * {@link com.amee.domain.data.ItemValueDefinition) path and selections.
      *
      * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
@@ -119,8 +119,8 @@ class DrillDownDAO {
     }
 
     /**
-     * Retrieves a {@link List} of {@link Choice}s containing values for a user to select. The value choices
-     * are appropriate for the current level within the 'drill down' given the supplied {@link DataCategory},
+     * Retrieves a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing values for a user to select. The value choices
+     * are appropriate for the current level within the 'drill down' given the supplied {@link com.amee.domain.data.DataCategory},
      * {@link com.amee.domain.data.ItemValueDefinition) path and selections.
      *
      * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
@@ -175,7 +175,7 @@ class DrillDownDAO {
         // create SQL
         sql = new StringBuilder();
         sql.append("SELECT UID ");
-        sql.append("FROM ITEM ");
+        sql.append("FROM DATA_ITEM ");
         sql.append("WHERE ID IN (:dataItemIds) ");
         sql.append("AND STATUS != :trash");
 
@@ -210,9 +210,8 @@ class DrillDownDAO {
         // create SQL
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT UID ");
-        sql.append("FROM ITEM ");
-        sql.append("WHERE TYPE = 'DI' ");
-        sql.append("AND STATUS != :trash ");
+        sql.append("FROM DATA_ITEM ");
+        sql.append("WHERE STATUS != :trash ");
         sql.append("AND DATA_CATEGORY_ID = :dataCategoryId ");
         sql.append("AND ITEM_DEFINITION_ID = :itemDefinitionId");
 
@@ -243,9 +242,8 @@ class DrillDownDAO {
         // create SQL
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT ID ");
-        sql.append("FROM ITEM ");
-        sql.append("WHERE TYPE = 'DI' ");
-        sql.append("AND STATUS != :trash ");
+        sql.append("FROM DATA_ITEM ");
+        sql.append("WHERE STATUS != :trash ");
         sql.append("AND DATA_CATEGORY_ID = :dataCategoryId ");
         sql.append("AND ITEM_DEFINITION_ID = :itemDefinitionId");
 
@@ -276,10 +274,17 @@ class DrillDownDAO {
 
         // create SQL
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT DISTINCT VALUE ");
-        sql.append("FROM ITEM_VALUE ");
+        sql.append("(SELECT DISTINCT VALUE ");
+        sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
         sql.append("WHERE ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("AND ITEM_ID IN (:dataItemIds) ");
+        sql.append("AND STATUS != :trash ");
+        sql.append("AND DATA_ITEM_ID IN (:dataItemIds)) ");
+        sql.append("UNION ");
+        sql.append("(SELECT DISTINCT VALUE ");
+        sql.append("FROM DATA_ITEM_TEXT_VALUE ");
+        sql.append("WHERE ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
+        sql.append("AND STATUS != :trash ");
+        sql.append("AND DATA_ITEM_ID IN (:dataItemIds)) ");
         sql.append("ORDER BY LCASE(VALUE) ASC");
 
         // create query
@@ -288,6 +293,7 @@ class DrillDownDAO {
         query.addScalar("VALUE", Hibernate.STRING);
 
         // set parameters
+        query.setInteger("trash", AMEEStatus.TRASH.ordinal());
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
         query.setParameterList("dataItemIds", dataItemIds, Hibernate.LONG);
 
@@ -363,12 +369,19 @@ class DrillDownDAO {
 
         // create SQL
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT ITEM_ID ID ");
-        sql.append("FROM ITEM_VALUE ");
-        sql.append("WHERE ITEM_ID IN (:dataItemIds) ");
+        sql.append("(SELECT DATA_ITEM_ID ID ");
+        sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
+        sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
         sql.append("AND STATUS != :trash ");
         sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("AND VALUE = :value");
+        sql.append("AND VALUE = :value) ");
+        sql.append("UNION ");
+        sql.append("(SELECT DATA_ITEM_ID ID ");
+        sql.append("FROM DATA_ITEM_TEXT_VALUE ");
+        sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
+        sql.append("AND STATUS != :trash ");
+        sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
+        sql.append("AND VALUE = :value)");
 
         // create query
         Session session = (Session) entityManager.getDelegate();
@@ -397,12 +410,18 @@ class DrillDownDAO {
 
         // Create SQL.
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT iv.ITEM_ID ID ");
-        sql.append("FROM ITEM_VALUE iv, LOCALE_NAME ln ");
-        sql.append("WHERE iv.ITEM_ID IN (:dataItemIds) ");
-        sql.append("AND iv.STATUS != :trash ");
-        sql.append("AND iv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("AND ln.ENTITY_TYPE='IV' AND ln.ENTITY_ID = iv.ID AND LOCALE = :locale AND ln.NAME = :value");
+        sql.append("(SELECT dinv.DATA_ITEM_ID ID ");
+        sql.append("FROM DATA_ITEM_NUMBER_VALUE dinv, LOCALE_NAME ln ");
+        sql.append("WHERE dinv.DATA_ITEM_ID IN (:dataItemIds) ");
+        sql.append("AND dinv.STATUS != :trash ");
+        sql.append("AND dinv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId) ");
+        sql.append("UNION ");
+        sql.append("(SELECT ditv.DATA_ITEM_ID ID ");
+        sql.append("FROM DATA_ITEM_TEXT_VALUE ditv, LOCALE_NAME ln ");
+        sql.append("WHERE ditv.DATA_ITEM_ID IN (:dataItemIds) ");
+        sql.append("AND ditv.STATUS != :trash ");
+        sql.append("AND ditv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
+        sql.append("AND ln.ENTITY_TYPE='DITV' AND ln.ENTITY_ID = ditv.ID AND LOCALE = :locale AND ln.NAME = :value)");
 
         // Create query.
         Session session = (Session) entityManager.getDelegate();

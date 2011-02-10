@@ -27,8 +27,8 @@ import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.UsableValuePredicate;
-import com.amee.domain.item.data.NuDataItem;
-import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.domain.item.data.DataItem;
+import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.AlgorithmRunner;
@@ -69,7 +69,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      *
      * @param profileItem - the ProfileItem for which to calculate GHG amounts
      */
-    public void calculate(NuProfileItem profileItem) {
+    public void calculate(ProfileItem profileItem) {
 
         // End marker ProfileItems can only have zero amounts.
         // Calculate amounts for ProfileItem if an Algorithm is available.
@@ -94,7 +94,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param version          - the APIVersion. This is used to determine the correct ItemValueDefinitions to load into the calculation
      * @return the calculated GHG amounts
      */
-    public ReturnValues calculate(NuDataItem dataItem, Choices userValueChoices, APIVersion version) {
+    public ReturnValues calculate(DataItem dataItem, Choices userValueChoices, APIVersion version) {
         Algorithm algorithm = dataItem.getItemDefinition().getAlgorithm(Algorithm.DEFAULT);
         if (algorithm != null) {
             Map<String, Object> values = getValues(dataItem, userValueChoices, version);
@@ -183,7 +183,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param profileItem
      * @return
      */
-    private Map<String, Object> getValues(NuProfileItem profileItem) {
+    private Map<String, Object> getValues(ProfileItem profileItem) {
 
         Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
         Map<String, Object> returnValues = new HashMap<String, Object>();
@@ -193,7 +193,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         profileItem.getItemDefinition().appendInternalValues(values, apiVersion);
 
         // Add DataItem values, filtered by start and end dates of the ProfileItem (factoring in the query date range).
-        NuDataItem dataItem = profileItem.getDataItem();
+        DataItem dataItem = profileItem.getDataItem();
         dataItem.setEffectiveStartDate(profileItem.getEffectiveStartDate());
         dataItem.setEffectiveEndDate(profileItem.getEffectiveEndDate());
         appendInternalValues(dataItem, values);
@@ -221,7 +221,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     @SuppressWarnings("unchecked")
     public void appendInternalValues(BaseItem item, Map<ItemValueDefinition, InternalValue> values) {
         // TODO: PL-6618
-//        NuItemValueMap itemValueMap =  item.getItemValuesMap();
+//        ItemValueMap itemValueMap =  item.getItemValuesMap();
 //        for (Object path : itemValueMap.keySet()) {
 //            // Get all ItemValues with this ItemValueDefinition path.
 //            List<BaseItemValue> itemValues = item.getAllItemValues((String) path);
@@ -264,7 +264,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param profileItem to be used in finders
      * @param values      to place finders into
      */
-    private void initFinders(NuProfileItem profileItem, Map<String, Object> values) {
+    private void initFinders(ProfileItem profileItem, Map<String, Object> values) {
 
         // Configure and add DataFinder.
         DataFinder dataFinder = (DataFinder) beanFactory.getBean("dataFinder");
@@ -287,7 +287,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
     // Collect all relevant algorithm input values for a DataItem + auth Choices calculation.
 
-    private Map<String, Object> getValues(NuDataItem dataItem, Choices userValueChoices, APIVersion version) {
+    private Map<String, Object> getValues(DataItem dataItem, Choices userValueChoices, APIVersion version) {
 
         Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
         dataItem.getItemDefinition().appendInternalValues(values, version);
@@ -328,7 +328,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
                         userValueChoices.containsKey(itemValueDefinition.getPath()) &&
                         itemValueDefinition.isValidInAPIVersion(version)) {
                     // Create transient ProfileItem & ItemValue.
-                    NuProfileItem profileItem = new NuProfileItem();
+                    ProfileItem profileItem = new ProfileItem();
                     // TODO: PL-6618
 //                    BaseItemValue itemValue = new BaseItemValue(itemValueDefinition, profileItem, false);
 //                    itemValue.setValue(userValueChoices.get(itemValueDefinition.getPath()).getValue());

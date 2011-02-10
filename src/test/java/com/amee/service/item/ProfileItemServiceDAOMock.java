@@ -4,7 +4,7 @@ import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.profile.NuProfileItem;
+import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.Profile;
@@ -20,7 +20,7 @@ import java.util.Set;
 public class ProfileItemServiceDAOMock implements ProfileItemServiceDAO {
 
     @Override
-    public NuProfileItem getItemByUid(String uid) {
+    public ProfileItem getItemByUid(String uid) {
         return null;
     }
 
@@ -35,17 +35,17 @@ public class ProfileItemServiceDAOMock implements ProfileItemServiceDAO {
     }
 
     @Override
-    public Set<BaseItemValue> getProfileItemValues(NuProfileItem profileItem) {
+    public Set<BaseItemValue> getProfileItemValues(ProfileItem profileItem) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<ProfileItemNumberValue> getProfileItemNumberValues(NuProfileItem profileItem) {
+    public List<ProfileItemNumberValue> getProfileItemNumberValues(ProfileItem profileItem) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<ProfileItemTextValue> getProfileItemTextValues(NuProfileItem profileItem) {
+    public List<ProfileItemTextValue> getProfileItemTextValues(ProfileItem profileItem) {
         throw new UnsupportedOperationException();
     }
 
@@ -55,17 +55,17 @@ public class ProfileItemServiceDAOMock implements ProfileItemServiceDAO {
     }
 
     @Override
-    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate) {
+    public List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<NuProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, StartEndDate startDate, StartEndDate endDate) {
+    public List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, StartEndDate startDate, StartEndDate endDate) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean equivalentProfileItemExists(NuProfileItem profileItem) {
+    public boolean equivalentProfileItemExists(ProfileItem profileItem) {
         throw new UnsupportedOperationException();
     }
 
@@ -80,7 +80,7 @@ public class ProfileItemServiceDAOMock implements ProfileItemServiceDAO {
     }
 
     @Override
-    public void persist(NuProfileItem profileItem) {
+    public void persist(ProfileItem profileItem) {
         throw new UnsupportedOperationException();
     }
 }

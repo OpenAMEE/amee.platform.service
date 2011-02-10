@@ -26,7 +26,7 @@ import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.domain.sheet.Sheet;
@@ -119,7 +119,7 @@ public class DataSheetServiceImpl extends BaseService implements DataSheetServic
 
     @Override
     @SuppressWarnings(value = "unchecked")
-    public Choices getUserValueChoices(NuDataItem dataItem, APIVersion apiVersion) {
+    public Choices getUserValueChoices(DataItem dataItem, APIVersion apiVersion) {
         List<Choice> userValueChoices = new ArrayList<Choice>();
         for (ItemValueDefinition ivd : dataItem.getItemDefinition().getItemValueDefinitions()) {
             if (ivd.isFromProfile() && ivd.isValidInAPIVersion(apiVersion)) {

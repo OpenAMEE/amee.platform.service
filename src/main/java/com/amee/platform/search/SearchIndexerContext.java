@@ -1,6 +1,6 @@
 package com.amee.platform.search;
 
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import org.apache.lucene.document.Document;
 
 import java.util.List;
@@ -20,7 +20,7 @@ public class SearchIndexerContext {
     public List<Document> dataItemDocs;
 
     // Current Data Item.
-    public NuDataItem dataItem;
+    public DataItem dataItem;
 
     // Current Data Item Document
     public Document dataItemDoc;

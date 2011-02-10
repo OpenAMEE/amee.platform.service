@@ -5,7 +5,7 @@ import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.IDataItemService;
 import com.amee.domain.IItemService;
 import com.amee.domain.data.ItemValueDefinition;
-import com.amee.domain.data.NuItemValueMap;
+import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.BaseDataItemValue;
@@ -153,16 +153,16 @@ public abstract class ItemService implements IItemService, ApplicationListener {
     }
 
     /**
-     * Return an {@link com.amee.domain.data.NuItemValueMap} of {@link com.amee.domain.item.BaseItemValue}s belonging
+     * Return an {@link com.amee.domain.data.ItemValueMap} of {@link com.amee.domain.item.BaseItemValue}s belonging
      * to the supplied item.
      * The key is the value returned by {@link BaseItemValue#getDisplayPath()}.
      *
      * @param item
-     * @return {@link com.amee.domain.data.NuItemValueMap}
+     * @return {@link com.amee.domain.data.ItemValueMap}
      */
     @Override
-    public NuItemValueMap getItemValuesMap(BaseItem item) {
-        NuItemValueMap itemValuesMap = new NuItemValueMap();
+    public ItemValueMap getItemValuesMap(BaseItem item) {
+        ItemValueMap itemValuesMap = new ItemValueMap();
         for (BaseItemValue itemValue : getActiveItemValues(item)) {
             itemValuesMap.put(itemValue.getDisplayPath(), itemValue);
         }

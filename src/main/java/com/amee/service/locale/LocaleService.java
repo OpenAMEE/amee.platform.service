@@ -6,7 +6,7 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.LocaleName;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,11 +129,11 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         loadLocaleNames(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
     }
 
-    public void loadLocaleNamesForNuDataItems(Collection<NuDataItem> dataItems) {
-        loadLocaleNamesForNuDataItems(dataItems, null);
+    public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems) {
+        loadLocaleNamesForDataItems(dataItems, null);
     }
 
-    public void loadLocaleNamesForNuDataItems(Collection<NuDataItem> dataItems, Set<BaseItemValue> values) {
+    public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems, Set<BaseItemValue> values) {
         loadLocaleNames(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
         if ((values != null) && (!values.isEmpty())) {
             Set<IAMEEEntityReference> itemValueRefs = new HashSet<IAMEEEntityReference>();

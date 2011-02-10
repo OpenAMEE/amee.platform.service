@@ -3,9 +3,9 @@ package com.amee.service.item;
 import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.data.DataItem;
 import com.amee.domain.item.data.DataItemNumberValue;
 import com.amee.domain.item.data.DataItemTextValue;
-import com.amee.domain.item.data.NuDataItem;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
@@ -16,17 +16,17 @@ import java.util.Set;
 public class DataItemServiceDAOMock implements DataItemServiceDAO {
 
     @Override
-    public List<NuDataItem> getDataItems(IDataCategoryReference dataCategory) {
+    public List<DataItem> getDataItems(IDataCategoryReference dataCategory) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<NuDataItem> getDataItems(Set<Long> dataItemIds) {
+    public List<DataItem> getDataItems(Set<Long> dataItemIds) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public NuDataItem getItemByUid(String uid) {
+    public DataItem getItemByUid(String uid) {
         return null;
     }
 
@@ -46,27 +46,27 @@ public class DataItemServiceDAOMock implements DataItemServiceDAO {
     }
 
     @Override
-    public Set<BaseItemValue> getDataItemValues(NuDataItem dataItem) {
+    public Set<BaseItemValue> getDataItemValues(DataItem dataItem) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<DataItemNumberValue> getDataItemNumberValues(NuDataItem dataItem) {
+    public List<DataItemNumberValue> getDataItemNumberValues(DataItem dataItem) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public List<DataItemTextValue> getDataItemTextValues(NuDataItem dataItem) {
+    public List<DataItemTextValue> getDataItemTextValues(DataItem dataItem) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void persist(NuDataItem dataItem) {
+    public void persist(DataItem dataItem) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public NuDataItem getDataItemByPath(IDataCategoryReference parent, String path) {
+    public DataItem getDataItemByPath(IDataCategoryReference parent, String path) {
         throw new UnsupportedOperationException();
     }
 }

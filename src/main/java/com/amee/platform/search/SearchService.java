@@ -4,7 +4,7 @@ import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.item.data.NuDataItem;
+import com.amee.domain.item.data.DataItem;
 import com.amee.service.data.DataService;
 import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
@@ -105,16 +105,11 @@ public class SearchService {
     // Entity search.
 
     /**
-     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
-     *
      * @param filter
      * @return
      */
     public ResultsWrapper<IAMEEEntity> getEntities(SearchFilter filter) {
-        // Ensure filter.types contains NDI if DI is present.
-        if (filter.getTypes().contains(ObjectType.DI)) {
-            filter.getTypes().add(ObjectType.NDI);
-        }
+
         // Do search and fetch Lucene documents.
         return getEntityResultsWrapper(
                 searchQueryService.doSearch(filter),
@@ -132,33 +127,10 @@ public class SearchService {
     }
 
     /**
-     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
-     * TODO: See https://jira.amee.com/browse/PL-6617
-     *
      * @param entities
      * @param dataItemsMap
      */
-    protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, NuDataItem> dataItemsMap) {
-        Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
-        for (String id : dataItemsMap.keySet()) {
-            IAMEEEntity entity = dataItemsMap.get(id);
-            if (entity.getObjectType().equals(ObjectType.DI)) {
-                dataItems.put(id, dataItemsMap.get(id));
-            } else {
-                throw new IllegalStateException("An ObjectType of DI was expected.");
-            }
-        }
-        entities.put(ObjectType.DI, dataItems);
-    }
-
-    /**
-     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
-     * TODO: See https://jira.amee.com/browse/PL-6617
-     *
-     * @param entities
-     * @param dataItemsMap
-     */
-    protected void addNuDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, NuDataItem> dataItemsMap) {
+    protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, DataItem> dataItemsMap) {
         Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
         for (String uid : dataItemsMap.keySet()) {
             IAMEEEntity entity = dataItemsMap.get(uid);
@@ -241,7 +213,7 @@ public class SearchService {
 
     // DataItem search.
 
-    public ResultsWrapper<NuDataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
+    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
         // Create Query.
         BooleanQuery query = null;
         if (!filter.getQueries().isEmpty()) {
@@ -255,19 +227,16 @@ public class SearchService {
     }
 
     /**
-     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
-     * TODO: See https://jira.amee.com/browse/PL-6617
-     *
      * @param dataCategory
      * @param filter
      * @param query
      * @return
      */
-    private ResultsWrapper<NuDataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
-        // Create Query to find all DIs & NDIs in the DataCategory matching the supplied Query and range.
+    private ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
+
+        // Create Query to find all NDIs in the DataCategory matching the supplied Query and range.
         BooleanQuery q = new BooleanQuery();
         BooleanQuery typesQuery = new BooleanQuery();
-        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
         typesQuery.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.SHOULD);
         q.add(typesQuery, BooleanClause.Occur.MUST);
         q.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);
@@ -287,16 +256,16 @@ public class SearchService {
     }
 
     // TODO: Find a way to genericise this and the similar method above for Data Categories.
-    private ResultsWrapper<NuDataItem> getDataItemResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
-        ResultsWrapper<NuDataItem> dataItemResultsWrapper = new ResultsWrapper<NuDataItem>();
+    private ResultsWrapper<DataItem> getDataItemResultsWrapper(ResultsWrapper<IAMEEEntity> entityResultsWrapper) {
+        ResultsWrapper<DataItem> dataItemResultsWrapper = new ResultsWrapper<DataItem>();
         dataItemResultsWrapper.setTruncated(entityResultsWrapper.isTruncated());
         dataItemResultsWrapper.setResultStart(entityResultsWrapper.getResultStart());
         dataItemResultsWrapper.setResultLimit(entityResultsWrapper.getResultLimit());
         dataItemResultsWrapper.setHits(entityResultsWrapper.getHits());
-        List<NuDataItem> dataItems = new ArrayList<NuDataItem>();
+        List<DataItem> dataItems = new ArrayList<DataItem>();
         for (IAMEEEntity entity : entityResultsWrapper.getResults()) {
-            if (NuDataItem.class.isAssignableFrom(entity.getClass())) {
-                dataItems.add((NuDataItem) entity);
+            if (DataItem.class.isAssignableFrom(entity.getClass())) {
+                dataItems.add((DataItem) entity);
             } else {
                 throw new IllegalStateException("A DataItem was expected.");
             }
@@ -308,9 +277,6 @@ public class SearchService {
     // General entity search.
 
     /**
-     * TODO: This method should be modified to remove use of ObjectType.DI once the index is cleaned of legacy entities.
-     * TODO: See https://jira.amee.com/browse/PL-6617
-     *
      * @param resultsWrapper
      * @param loadEntityTags
      * @param loadMetadata
@@ -322,6 +288,7 @@ public class SearchService {
             boolean loadEntityTags,
             boolean loadMetadata,
             boolean loadItemValues) {
+
         // Collate entityIds against entityTypes.
         Map<ObjectType, Set<Long>> entityIds = new HashMap<ObjectType, Set<Long>>();
         for (Document document : resultsWrapper.getResults()) {
@@ -334,12 +301,15 @@ public class SearchService {
             }
             idSet.add(entityId);
         }
+
         // Collate AMEEEntities.
         Map<ObjectType, Map<String, IAMEEEntity>> entities = new HashMap<ObjectType, Map<String, IAMEEEntity>>();
+
         // Load DataCategories.
         if (entityIds.containsKey(ObjectType.DC)) {
             Map<String, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(entityIds.get(ObjectType.DC));
             addDataCategories(entities, dataCategoriesMap);
+
             // Pre-loading of EntityTags, LocaleNames & DataCategories.
             if (loadEntityTags) {
                 tagService.loadEntityTagsForDataCategories(dataCategoriesMap.values());
@@ -349,43 +319,41 @@ public class SearchService {
             }
             localeService.loadLocaleNamesForDataCategories(dataCategoriesMap.values());
         }
-        // Load DataItems (NuDataItem).
+
+        // Load DataItems.
         Set<String> dataItemUids = new HashSet<String>();
         if (entityIds.containsKey(ObjectType.NDI)) {
-            // Collate NuDataItem IDs.
+
+            // Collate DataItem IDs.
             Set<Long> dataItemIds = new HashSet<Long>();
-            if (entityIds.containsKey(ObjectType.NDI)) {
-                dataItemIds.addAll(entityIds.get(ObjectType.NDI));
-            }
+            dataItemIds.addAll(entityIds.get(ObjectType.NDI));
+
             // Load the items.
-            Map<String, NuDataItem> dataItemsMap = dataItemService.getDataItemMap(dataItemIds, loadItemValues);
+            Map<String, DataItem> dataItemsMap = dataItemService.getDataItemMap(dataItemIds, loadItemValues);
+
             // Collect UIDs.
-            for (NuDataItem dataItem : dataItemsMap.values()) {
+            for (DataItem dataItem : dataItemsMap.values()) {
                 dataItemUids.add(dataItem.getUid());
             }
+
             // Add to map.
-            addNuDataItems(entities, dataItemsMap);
+            addDataItems(entities, dataItemsMap);
+
             // Pre-load Metadatas?
             if (loadMetadata) {
-                metadataService.loadMetadatasForNuDataItems(dataItemsMap.values());
+                metadataService.loadMetadatasForDataItems(dataItemsMap.values());
             }
         }
+
         // Create result list in relevance order.
         List<IAMEEEntity> results = new ArrayList<IAMEEEntity>();
         for (Document document : resultsWrapper.getResults()) {
             String entityUid = document.getField("entityUid").stringValue();
             ObjectType entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
-            // Do we need to make NDI override DI?
-            if (entityType.equals(ObjectType.DI)) {
-                entityType = ObjectType.NDI;
-            }
+
             // First attempt to find the result.
             IAMEEEntity result = entities.containsKey(entityType) ? entities.get(entityType).get(entityUid) : null;
-            // If we failed to find an NDI, or we already have an NDI with the same identity   look for a DI instead.
-            if (((result == null) || results.contains(result)) && (entityType.equals(ObjectType.NDI))) {
-                // Second attempt to find the result.
-                result = entities.containsKey(ObjectType.DI) ? entities.get(ObjectType.DI).get(entityUid) : null;
-            }
+
             // If we have a result and it is not a duplicate, add to the results list.
             if (result != null) {
                 if (!results.contains(result)) {
