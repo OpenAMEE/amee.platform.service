@@ -39,7 +39,6 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -57,7 +56,7 @@ import java.util.*;
  * the VALUE column. I've opted for option 3 here.
  */
 @Service
-class NuDrillDownDAO implements Serializable {
+class NuDrillDownDAO {
 
     private final Log log = LogFactory.getLog(getClass());
 

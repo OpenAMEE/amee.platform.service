@@ -28,14 +28,13 @@ import com.amee.domain.sheet.Choices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 @Service
-public class DrillDownService implements Serializable {
+public class DrillDownService {
 
     @Autowired
     private DataServiceDAO dataServiceDao;

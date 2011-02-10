@@ -36,11 +36,10 @@ import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.util.*;
 
 @Repository
-public class DataServiceDAO implements Serializable {
+public class DataServiceDAO {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -224,9 +223,9 @@ public class DataServiceDAO implements Serializable {
     protected ResultsWrapper<DataCategory> getDataCategories(int resultStart, int resultLimit) {
         // Create Query, apply start and limit if relevant.
         Query query = entityManager.createQuery(
-            "FROM DataCategory " +
-            "WHERE status != :trash " +
-            "ORDER BY LOWER(wikiName) ASC");
+                "FROM DataCategory " +
+                        "WHERE status != :trash " +
+                        "ORDER BY LOWER(wikiName) ASC");
         query.setParameter("trash", AMEEStatus.TRASH);
         query.setHint("org.hibernate.cacheable", true);
         query.setHint("org.hibernate.cacheRegion", CACHE_REGION);
