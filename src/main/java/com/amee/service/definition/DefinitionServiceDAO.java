@@ -43,11 +43,10 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import java.io.Serializable;
 import java.util.List;
 
 @Service
-public class DefinitionServiceDAO implements Serializable {
+public class DefinitionServiceDAO {
 
     private final Log log = LogFactory.getLog(getClass());
 
