@@ -31,13 +31,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 @Scope("prototype")
-public class ProfileFinder implements Serializable {
+public class ProfileFinder {
 
     private final Log log = LogFactory.getLog(getClass());
 

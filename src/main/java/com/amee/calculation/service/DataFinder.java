@@ -33,12 +33,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.io.Serializable;
 import java.util.Date;
 
 @Component
 @Scope("prototype")
-public class DataFinder implements Serializable {
+public class DataFinder {
 
     private final Log log = LogFactory.getLog(getClass());
 

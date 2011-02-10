@@ -46,13 +46,12 @@ import org.springframework.stereotype.Service;
 import sun.org.mozilla.javascript.internal.JavaScriptException;
 
 import javax.script.ScriptException;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
-public class CalculationService implements CO2CalculationService, BeanFactoryAware, Serializable {
+public class CalculationService implements CO2CalculationService, BeanFactoryAware {
 
     private final Log log = LogFactory.getLog(getClass());
     private final Log scienceLog = LogFactory.getLog("science");
