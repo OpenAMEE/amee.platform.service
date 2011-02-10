@@ -5,13 +5,12 @@ import com.amee.domain.Metadata;
 import com.amee.domain.ObjectType;
 import org.springframework.stereotype.Repository;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 @Repository
-public class MetadataServiceDAOMock implements Serializable, MetadataServiceDAO {
+public class MetadataServiceDAOMock implements MetadataServiceDAO {
 
     @Override
     @SuppressWarnings(value = "unchecked")
