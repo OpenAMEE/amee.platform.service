@@ -24,31 +24,22 @@ package com.amee.service.auth;
 import com.amee.domain.auth.AccessSpecification;
 import com.amee.domain.auth.AuthorizationContext;
 import com.amee.domain.auth.PermissionEntry;
-import com.amee.service.ServiceData;
+import com.amee.service.ServiceTest;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 
-
-// TODO: PL-6618
-// @RunWith(SpringJUnit4ClassRunner.class)
-public class AuthorizationTest { //  extends ServiceTest {
-
-    @Test
-    public void x() {
-
-    }
-
+@RunWith(SpringJUnit4ClassRunner.class)
+public class AuthorizationTest extends ServiceTest {
 
     @Autowired
     private AuthorizationService authorizationService;
 
-    // TODO: PL-6618
-    ServiceData serviceData;
-
-    // @Test
+    @Test
     public void standardUserViewPublicDataCategory() {
         AuthorizationContext authorizationContext = new AuthorizationContext();
         authorizationContext.addPrincipal(serviceData.GROUP_STANDARD);
@@ -58,7 +49,7 @@ public class AuthorizationTest { //  extends ServiceTest {
         assertTrue("Standard user should be able to view public data category.", authorizationService.isAuthorized(authorizationContext));
     }
 
-    // @Test
+    @Test
     public void standardUserViewPublicDataCategorySub() {
         AuthorizationContext authorizationContext = new AuthorizationContext();
         authorizationContext.addPrincipal(serviceData.GROUP_STANDARD);
@@ -69,7 +60,7 @@ public class AuthorizationTest { //  extends ServiceTest {
         assertTrue("Standard user should be able to view public data sub category.", authorizationService.isAuthorized(authorizationContext));
     }
 
-    // @Test
+    @Test
     public void standardUserNotViewPremiumDataCategory() {
         AuthorizationContext authorizationContext = new AuthorizationContext();
         authorizationContext.addPrincipal(serviceData.GROUP_STANDARD);
@@ -79,7 +70,7 @@ public class AuthorizationTest { //  extends ServiceTest {
         assertFalse("Standard user should not be able to view premium data category.", authorizationService.isAuthorized(authorizationContext));
     }
 
-    // @Test
+    @Test
     public void standardUserNotDeletePremiumDataCategory() {
         AuthorizationContext authorizationContext = new AuthorizationContext();
         authorizationContext.addPrincipal(serviceData.GROUP_STANDARD);
@@ -89,7 +80,7 @@ public class AuthorizationTest { //  extends ServiceTest {
         assertFalse("Standard user should not be able to view premium data category.", authorizationService.isAuthorized(authorizationContext));
     }
 
-    // @Test
+    @Test
     public void premiumUserModifyPremiumDataCategory() {
         AuthorizationContext authorizationContext = new AuthorizationContext();
         authorizationContext.addPrincipal(serviceData.GROUP_STANDARD);
@@ -100,7 +91,7 @@ public class AuthorizationTest { //  extends ServiceTest {
         assertTrue("Premium user should be able to modify premium data category.", authorizationService.isAuthorized(authorizationContext));
     }
 
-    // @Test
+    @Test
     public void superUserDeletePremiumDataCategory() {
         AuthorizationContext authorizationContext = new AuthorizationContext();
         authorizationContext.addPrincipal(serviceData.USER_SUPER);
@@ -109,7 +100,7 @@ public class AuthorizationTest { //  extends ServiceTest {
         assertTrue("Super user should be able to delete premium data category.", authorizationService.isAuthorized(authorizationContext));
     }
 
-    // @Test
+    @Test
     public void userViewDeprecatedDataCategory() {
         AuthorizationContext authorizationContext = new AuthorizationContext();
         authorizationContext.addPrincipal(serviceData.GROUP_STANDARD);
@@ -119,7 +110,7 @@ public class AuthorizationTest { //  extends ServiceTest {
         assertTrue("User should be able to view deprecated data category.", authorizationService.isAuthorized(authorizationContext));
     }
 
-    // @Test
+    @Test
     public void userNotViewDeprecatedDataCategory() {
         AuthorizationContext authorizationContext = new AuthorizationContext();
         authorizationContext.addPrincipal(serviceData.GROUP_STANDARD);

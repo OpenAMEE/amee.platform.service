@@ -55,7 +55,7 @@ public class LuceneServiceMock implements LuceneService {
 
     @Override
     public ResultsWrapper<Document> doSearch(Query query, int resultStart, int resultLimit, int maxNumHits, Sort sortField) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException();
     }
 
     @Override

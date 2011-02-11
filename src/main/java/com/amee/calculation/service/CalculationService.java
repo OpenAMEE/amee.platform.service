@@ -21,20 +21,26 @@ package com.amee.calculation.service;
 
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.APIVersion;
+import com.amee.domain.ValueType;
 import com.amee.domain.algorithm.Algorithm;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.UsableValuePredicate;
 import com.amee.domain.item.data.DataItem;
+import com.amee.domain.item.profile.BaseProfileItemValue;
 import com.amee.domain.item.profile.ProfileItem;
+import com.amee.domain.item.profile.ProfileItemNumberValue;
+import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.AlgorithmRunner;
 import com.amee.platform.science.ExternalValue;
 import com.amee.platform.science.InternalValue;
 import com.amee.platform.science.ReturnValues;
+import com.amee.service.item.DataItemService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,6 +64,9 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
     @Autowired
     private AMEEStatistics ameeStatistics;
+
+    @Autowired
+    private DataItemService dataItemService;
 
     private AlgorithmRunner algorithmRunner = new AlgorithmRunner();
 
@@ -220,17 +229,16 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      */
     @SuppressWarnings("unchecked")
     public void appendInternalValues(BaseItem item, Map<ItemValueDefinition, InternalValue> values) {
-        // TODO: PL-6618
-//        ItemValueMap itemValueMap =  item.getItemValuesMap();
-//        for (Object path : itemValueMap.keySet()) {
-//            // Get all ItemValues with this ItemValueDefinition path.
-//            List<BaseItemValue> itemValues = item.getAllItemValues((String) path);
-//            if (itemValues.size() > 1 || itemValues.get(0).getItemValueDefinition().isForceTimeSeries()) {
-//                appendTimeSeriesItemValue(item, values, itemValues);
-//            } else if (itemValues.size() == 1) {
-//                appendSingleValuedItemValue(values, itemValues.get(0));
-//            }
-//        }
+        ItemValueMap itemValueMap = dataItemService.getItemValuesMap(item);
+        for (Object path : itemValueMap.keySet()) {
+            // Get all ItemValues with this ItemValueDefinition path.
+            List<BaseItemValue> itemValues = dataItemService.getAllItemValues(item, (String) path);
+            if (itemValues.size() > 1 || itemValues.get(0).getItemValueDefinition().isForceTimeSeries()) {
+                appendTimeSeriesItemValue(item, values, itemValues);
+            } else if (itemValues.size() == 1) {
+                appendSingleValuedItemValue(values, itemValues.get(0));
+            }
+        }
     }
 
     // Add a BaseItemValue timeseries to the InternalValue collection.
@@ -251,11 +259,10 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     // Add a single-valued BaseItemValue to the InternalValue collection.
 
     private void appendSingleValuedItemValue(Map<ItemValueDefinition, InternalValue> values, BaseItemValue itemValue) {
-        // TODO: PL-6618
-//        if (itemValue.isUsableValue()) {
-//            values.put(itemValue.getItemValueDefinition(), new InternalValue(itemValue));
-//            log.debug("appendSingleValuedItemValue() - added single value " + itemValue.getPath());
-//        }
+        if (itemValue.isUsableValue()) {
+            values.put(itemValue.getItemValueDefinition(), new InternalValue(itemValue));
+            log.debug("appendSingleValuedItemValue() - added single value " + itemValue.getPath());
+        }
     }
 
     /**
@@ -329,25 +336,31 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
                         itemValueDefinition.isValidInAPIVersion(version)) {
                     // Create transient ProfileItem & ItemValue.
                     ProfileItem profileItem = new ProfileItem();
-                    // TODO: PL-6618
-//                    BaseItemValue itemValue = new BaseItemValue(itemValueDefinition, profileItem, false);
-//                    itemValue.setValue(userValueChoices.get(itemValueDefinition.getPath()).getValue());
-//                    if (version.isNotVersionOne()) {
-//                        if (itemValue.hasUnit() && userValueChoices.containsKey(itemValueDefinition.getPath() + "Unit")) {
-//                            itemValue.setUnit(userValueChoices.get(itemValueDefinition.getPath() + "Unit").getValue());
-//                        }
-//                        if (itemValue.hasPerUnit() && userValueChoices.containsKey(itemValueDefinition.getPath() + "PerUnit")) {
-//                            itemValue.setPerUnit(userValueChoices.get(itemValueDefinition.getPath() + "PerUnit").getValue());
-//                        }
-//                    }
+                    BaseProfileItemValue profileItemValue;
+                    if (itemValueDefinition.getValueDefinition().getValueType().equals(ValueType.INTEGER) ||
+                            itemValueDefinition.getValueDefinition().getValueType().equals(ValueType.DOUBLE)) {
+                        // Item is a number.
+                        ProfileItemNumberValue pinv = new ProfileItemNumberValue(itemValueDefinition, profileItem, userValueChoices.get(itemValueDefinition.getPath()).getValue());
+                        if (version.isNotVersionOne()) {
+                            if (userValueChoices.containsKey(itemValueDefinition.getPath() + "Unit")) {
+                                pinv.setUnit(userValueChoices.get(itemValueDefinition.getPath() + "Unit").getValue());
+                            }
+                            if (userValueChoices.containsKey(itemValueDefinition.getPath() + "PerUnit")) {
+                                pinv.setPerUnit(userValueChoices.get(itemValueDefinition.getPath() + "PerUnit").getValue());
+                            }
+                        }
+                        profileItemValue = pinv;
+                    } else {
+                        // Item is text.
+                        profileItemValue = new ProfileItemTextValue(itemValueDefinition, profileItem, userValueChoices.get(itemValueDefinition.getPath()).getValue());
+                    }
                     // Only add ItemValue value if it is usable.
-//                    if (itemValue.isUsableValue()) {
-//                        userChoices.put(itemValueDefinition, new InternalValue(itemValue));
-//                    }
+                    if (profileItemValue.isUsableValue()) {
+                        userChoices.put(itemValueDefinition, new InternalValue(profileItemValue));
+                    }
                 }
             }
-            // TODO: PL-6618
-//            values.putAll(userChoices);
+            values.putAll(userChoices);
         }
     }
 

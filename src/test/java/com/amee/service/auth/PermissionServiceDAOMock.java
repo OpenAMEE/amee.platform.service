@@ -21,13 +21,12 @@
  */
 package com.amee.service.auth;
 
-import com.amee.domain.AMEEEntity;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.auth.Permission;
 import com.amee.service.ServiceData;
-import org.springframework.stereotype.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -4,40 +4,25 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
+    <!-- This is an example of creating a mock bean with Mockito. The class name needs to be an interface. -->
+    <!--<bean id="permissionServiceDAO" class="org.mockito.Mockito" factory-method="mock">-->
+    <!--<constructor-arg value="com.amee.service.auth.PermissionServiceDAO"/>-->
+    <!--</bean>-->
+
     <bean class="com.amee.service.ServiceData"/>
 
     <bean class="com.amee.service.auth.PermissionService"/>
 
-    <bean id="permissionServiceDao" class="com.amee.service.auth.PermissionServiceDAOMock"/>
-
     <bean class="com.amee.service.auth.AuthorizationService"/>
+
+    <bean id="permissionServiceDao" class="com.amee.service.auth.PermissionServiceDAOMock"/>
 
     <bean class="com.amee.service.events.PublisherService"/>
 
     <bean class="com.amee.service.events.SubscriberService"/>
 
-    <bean class="com.amee.service.locale.LocaleService"/>
-
-    <bean id="localeServiceDAO" class="com.amee.service.locale.LocaleServiceDAOMock"/>
-
-    <bean class="com.amee.service.metadata.MetadataService"/>
-
-    <bean id="metadataServiceDAO" class="com.amee.service.metadata.MetadataServiceDAOMock"/>
-
-    <bean class="com.amee.calculation.service.CalculationService"/>
-
-    <bean id="ameeStatistics" class="com.amee.domain.AMEEStatistics"/>
-
     <bean id="searchQueryService" class="com.amee.platform.search.SearchQueryService"/>
 
     <bean id="luceneService" class="com.amee.platform.search.LuceneServiceMock"/>
-
-    <bean id="dataItemServiceDAO" class="com.amee.service.item.DataItemServiceDAOMock"/>
-
-    <bean class="com.amee.service.item.DataItemService"/>
-
-    <bean id="profileItemServiceDAO" class="com.amee.service.item.ProfileItemServiceDAOMock"/>
-
-    <bean class="com.amee.service.item.ProfileItemService"/>
 
 </beans>

@@ -2,17 +2,18 @@ package com.amee.service.item;
 
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
-import com.amee.domain.AMEEStatus;
-import com.amee.domain.IDataCategoryReference;
-import com.amee.domain.IDataItemService;
-import com.amee.domain.ValueType;
+import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
-import com.amee.domain.item.data.*;
+import com.amee.domain.item.data.BaseDataItemValue;
+import com.amee.domain.item.data.DataItem;
+import com.amee.domain.item.data.DataItemNumberValue;
+import com.amee.domain.item.data.DataItemTextValue;
 import com.amee.domain.sheet.Choice;
+import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.StartEndDate;
 import com.amee.service.data.DataService;
 import org.apache.commons.lang.StringUtils;
@@ -160,6 +161,27 @@ public class DataItemService extends ItemService implements IDataItemService {
         return label;
     }
 
+    @Override
+    public Choices getUserValueChoices(DataItem dataItem, APIVersion apiVersion) {
+        List<Choice> userValueChoices = new ArrayList<Choice>();
+        for (ItemValueDefinition ivd : dataItem.getItemDefinition().getItemValueDefinitions()) {
+            if (ivd.isFromProfile() && ivd.isValidInAPIVersion(apiVersion)) {
+                // start default value with value from ItemValueDefinition
+                String defaultValue = ivd.getValue();
+                // next give DataItem a chance to set the default value, if appropriate
+                if (ivd.isFromData()) {
+                    BaseItemValue dataItemValue = getItemValue(dataItem, ivd.getPath());
+                    if ((dataItemValue != null) && (dataItemValue.getValueAsString().length() > 0)) {
+                        defaultValue = dataItemValue.getValueAsString();
+                    }
+                }
+                // create Choice
+                userValueChoices.add(new Choice(ivd.getPath(), defaultValue));
+            }
+        }
+        return new Choices("userValueChoices", userValueChoices);
+    }
+
     /**
      * Add to the {@link com.amee.domain.item.data.DataItem} any {@link com.amee.domain.item.data.BaseDataItemValue}s it is missing.
      * This will be the case on first persist (this method acting as a reification function), and between GETs if any
@@ -196,28 +218,17 @@ public class DataItemService extends ItemService implements IDataItemService {
             // does not open transactions for GETs. This method is called for certain GETs.
             transactionController.begin(true);
 
-            // TODO: PL-6618 - Hard-coded here.
-            boolean isHistory = false;
-
             // create missing ItemValues
             for (ItemValueDefinition ivd : missingItemValueDefinitions) {
                 BaseDataItemValue itemValue;
-                // Create a nu style value.
+                // Create a value.
                 if (ivd.getValueDefinition().getValueType().equals(ValueType.INTEGER) ||
                         ivd.getValueDefinition().getValueType().equals(ValueType.DOUBLE)) {
                     // Item is a number.
-                    if (isHistory) {
-                        itemValue = new DataItemNumberValueHistory(ivd, dataItem);
-                    } else {
-                        itemValue = new DataItemNumberValue(ivd, dataItem);
-                    }
+                    itemValue = new DataItemNumberValue(ivd, dataItem);
                 } else {
                     // Item is text.
-                    if (isHistory) {
-                        itemValue = new DataItemTextValueHistory(ivd, dataItem, "");
-                    } else {
-                        itemValue = new DataItemTextValue(ivd, dataItem, "");
-                    }
+                    itemValue = new DataItemTextValue(ivd, dataItem, "");
                 }
                 persist(itemValue);
             }

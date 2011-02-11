@@ -24,10 +24,7 @@ import com.amee.domain.APIVersion;
 import com.amee.domain.ObjectType;
 import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.ItemValueDefinition;
-import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItem;
-import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.domain.sheet.Sheet;
 import com.amee.service.BaseService;
@@ -39,9 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -118,24 +113,8 @@ public class DataSheetServiceImpl extends BaseService implements DataSheetServic
     // Choices
 
     @Override
-    @SuppressWarnings(value = "unchecked")
+    @Deprecated
     public Choices getUserValueChoices(DataItem dataItem, APIVersion apiVersion) {
-        List<Choice> userValueChoices = new ArrayList<Choice>();
-        for (ItemValueDefinition ivd : dataItem.getItemDefinition().getItemValueDefinitions()) {
-            if (ivd.isFromProfile() && ivd.isValidInAPIVersion(apiVersion)) {
-                // start default value with value from ItemValueDefinition
-                String defaultValue = ivd.getValue();
-                // next give DataItem a chance to set the default value, if appropriate
-                if (ivd.isFromData()) {
-                    BaseItemValue dataItemValue = dataItemService.getItemValue(dataItem, ivd.getPath());
-                    if ((dataItemValue != null) && (dataItemValue.getValueAsString().length() > 0)) {
-                        defaultValue = dataItemValue.getValueAsString();
-                    }
-                }
-                // create Choice
-                userValueChoices.add(new Choice(ivd.getPath(), defaultValue));
-            }
-        }
-        return new Choices("userValueChoices", userValueChoices);
+        return dataItemService.getUserValueChoices(dataItem, apiVersion);
     }
 }

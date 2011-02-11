@@ -21,7 +21,6 @@
  */
 package com.amee.service.auth;
 
-import com.amee.domain.AMEEEntity;
 import com.amee.domain.IAMEEEntity;
 import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.auth.Permission;
