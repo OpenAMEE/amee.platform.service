@@ -37,12 +37,12 @@ public class LocaleService implements ILocaleService, ApplicationListener {
             TransactionEvent te = (TransactionEvent) e;
             switch (te.getType()) {
                 case BEFORE_BEGIN:
-                    log.debug("onApplicationEvent() BEFORE_BEGIN");
+                    log.trace("onApplicationEvent() BEFORE_BEGIN");
                     // Reset thread bound data.
                     clearLocaleNames();
                     break;
                 case END:
-                    log.debug("onApplicationEvent() END");
+                    log.trace("onApplicationEvent() END");
                     // Reset thread bound data.
                     clearLocaleNames();
                     break;

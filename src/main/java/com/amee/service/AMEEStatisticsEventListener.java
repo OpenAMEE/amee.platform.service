@@ -22,22 +22,22 @@ public class AMEEStatisticsEventListener implements ApplicationListener {
             TransactionEvent te = (TransactionEvent) e;
             switch (te.getType()) {
                 case BEFORE_BEGIN:
-                    log.debug("onApplicationEvent() BEFORE_BEGIN");
+                    log.trace("onApplicationEvent() BEFORE_BEGIN");
                     // Reset thread bound statistics.
                     ameeStatistics.resetThread();
                     break;
                 case COMMIT:
-                    log.debug("onApplicationEvent() COMMIT");
+                    log.trace("onApplicationEvent() COMMIT");
                     // Update statistics.
                     ameeStatistics.commitThread();
                     break;
                 case ROLLBACK:
-                    log.debug("onApplicationEvent() ROLLBACK");
+                    log.trace("onApplicationEvent() ROLLBACK");
                     // Update statistics.
                     ameeStatistics.resetThread();
                     break;
                 case END:
-                    log.debug("onApplicationEvent() END - {calculationDuration=" + ameeStatistics.getThreadCalculationDuration() + "}");
+                    log.trace("onApplicationEvent() END - {calculationDuration=" + ameeStatistics.getThreadCalculationDuration() + "}");
                     break;
                 default:
                     // Do nothing!

@@ -69,7 +69,7 @@ public class DefinitionServiceImpl extends BaseService implements DefinitionServ
     public void onApplicationEvent(InvalidationMessage invalidationMessage) {
         if ((invalidationMessage.isLocal() || invalidationMessage.isFromOtherInstance()) &&
                 invalidationMessage.getObjectType().equals(ObjectType.ID)) {
-            log.debug("onApplicationEvent() Handling InvalidationMessage.");
+            log.trace("onApplicationEvent() Handling InvalidationMessage.");
             ItemDefinition itemDefinition = getItemDefinitionByUid(invalidationMessage.getEntityUid());
             if (itemDefinition != null) {
                 clearCaches(itemDefinition);

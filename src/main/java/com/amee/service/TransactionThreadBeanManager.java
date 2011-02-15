@@ -49,7 +49,7 @@ public class TransactionThreadBeanManager implements ApplicationListener {
             TransactionEvent te = (TransactionEvent) e;
             switch (te.getType()) {
                 case BEFORE_BEGIN:
-                    log.debug("onApplicationEvent() BEFORE_BEGIN");
+                    log.trace("onApplicationEvent() BEFORE_BEGIN");
                     // Clear the ThreadBeanHolder at the start of each transaction.
                     ThreadBeanHolder.clear();
                     // Store commonly used services.
@@ -61,7 +61,7 @@ public class TransactionThreadBeanManager implements ApplicationListener {
                     ThreadBeanHolder.set(CO2CalculationService.class, calculationService);
                     break;
                 case END:
-                    log.debug("onApplicationEvent() END");
+                    log.trace("onApplicationEvent() END");
                     // Clear the ThreadBeanHolder at the end of each transaction.
                     ThreadBeanHolder.clear();
                     break;

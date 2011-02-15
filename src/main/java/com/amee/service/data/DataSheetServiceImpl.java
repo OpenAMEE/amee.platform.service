@@ -64,7 +64,7 @@ public class DataSheetServiceImpl extends BaseService implements DataSheetServic
     public void onApplicationEvent(InvalidationMessage invalidationMessage) {
         if ((invalidationMessage.isLocal() || invalidationMessage.isFromOtherInstance()) &&
                 invalidationMessage.getObjectType().equals(ObjectType.DC)) {
-            log.debug("onApplicationEvent() Handling InvalidationMessage.");
+            log.trace("onApplicationEvent() Handling InvalidationMessage.");
             DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid(), null);
             if (dataCategory != null) {
                 clearCaches(dataCategory);

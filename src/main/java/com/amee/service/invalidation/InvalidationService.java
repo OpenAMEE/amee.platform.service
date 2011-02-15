@@ -48,15 +48,15 @@ public class InvalidationService implements ApplicationContextAware, Application
             TransactionEvent te = (TransactionEvent) e;
             switch (te.getType()) {
                 case BEFORE_BEGIN:
-                    log.debug("onApplicationEvent() BEFORE_BEGIN");
+                    log.trace("onApplicationEvent() BEFORE_BEGIN");
                     onBeforeBegin();
                     break;
                 case ROLLBACK:
-                    log.debug("onApplicationEvent() ROLLBACK");
+                    log.trace("onApplicationEvent() ROLLBACK");
                     onRollback();
                     break;
                 case END:
-                    log.debug("onApplicationEvent() END");
+                    log.trace("onApplicationEvent() END");
                     onEnd();
                     break;
                 default:
@@ -71,7 +71,7 @@ public class InvalidationService implements ApplicationContextAware, Application
      * We do this as the Thread may have been pooled before this execution.
      */
     public synchronized void onBeforeBegin() {
-        log.debug("onBeforeBegin()");
+        log.trace("onBeforeBegin()");
         invalidationMessages.get().clear();
     }
 
@@ -82,7 +82,7 @@ public class InvalidationService implements ApplicationContextAware, Application
      * @param entity to invalidate caches for
      */
     public synchronized void add(IAMEEEntityReference entity) {
-        log.debug("add()");
+        log.trace("add()");
         invalidationMessages.get().add(new InvalidationMessage(this, entity));
     }
 
@@ -94,7 +94,7 @@ public class InvalidationService implements ApplicationContextAware, Application
      * @param options invalidation options
      */
     public synchronized void add(IAMEEEntityReference entity, String options) {
-        log.debug("add()");
+        log.trace("add()");
         invalidationMessages.get().add(new InvalidationMessage(this, entity, options));
     }
 
@@ -102,7 +102,7 @@ public class InvalidationService implements ApplicationContextAware, Application
      * Clears the invalidationMessages set due to transaction rollback.
      */
     public synchronized void onRollback() {
-        log.debug("onRollback()");
+        log.trace("onRollback()");
         invalidationMessages.get().clear();
     }
 
@@ -111,7 +111,7 @@ public class InvalidationService implements ApplicationContextAware, Application
      * the previously added in entities. Called after each request has been handled.
      */
     public synchronized void onEnd() {
-        log.debug("onEnd()");
+        log.trace("onEnd()");
         // Copy the set of InvalidationMessages.
         Set<InvalidationMessage> invalidationMessagesCopy = new HashSet<InvalidationMessage>(invalidationMessages.get());
         // Clear the original set of InvalidationMessages to prevent infinite loop.
