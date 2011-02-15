@@ -19,16 +19,19 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericField;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.TermQuery;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class SearchIndexerImpl implements SearchIndexer {
 
@@ -70,8 +73,10 @@ public class SearchIndexerImpl implements SearchIndexer {
     // The DataCategory currently being indexed.
     private DataCategory dataCategory;
 
-    // Flag indicating that the current DataCategory is new.
-    private boolean newCategory = false;
+    /**
+     * Was the index cleared on start?
+     */
+    private boolean indexCleared = false;
 
     @AMEETransaction
     @Transactional(propagation = Propagation.REQUIRED, readOnly = true)
@@ -99,7 +104,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      */
     protected void updateDataCategory() {
         if (!dataCategory.isTrash()) {
-            Document document = searchQueryService.getDocument(dataCategory);
+            Document document = searchQueryService.getDocument(dataCategory, true);
             if (document != null) {
                 Field modifiedField = document.getField("entityModified");
                 if (modifiedField != null) {
@@ -119,7 +124,6 @@ public class SearchIndexerImpl implements SearchIndexer {
                 }
             } else {
                 searchLog.info(documentContext.dataCategoryUid + "|DataCategory not in index, adding for the first time.");
-                newCategory = true;
                 documentContext.handleDataItems = true;
                 handleDataCategory();
             }
@@ -133,19 +137,19 @@ public class SearchIndexerImpl implements SearchIndexer {
     }
 
     /**
-     * Add a Document for the supplied DataCategory to the Lucene index.
+     * Add Documents for the supplied Data Category and any associated Data Items to the Lucene index.
      */
     protected void handleDataCategory() {
         log.debug("handleDataCategory() " + dataCategory.toString());
-        // Get Data Category Document.
-        Document dataCategoryDoc = getDocumentForDataCategory(dataCategory);
         // Handle Data Items (Create, store & update documents).
         if (documentContext.handleDataItems) {
             handleDataItems();
         }
-        // Are we handling a new Data Category?
-        if (!newCategory) {
-            // Store / update the Data Category Document.
+        // Get Data Category Document.
+        Document dataCategoryDoc = getDocumentForDataCategory(dataCategory);
+        // Are we working with an existing index?
+        if (!indexCleared) {
+            // Update the Data Category Document (remove old Documents).
             luceneService.updateDocument(
                     dataCategoryDoc,
                     new Term("entityType", ObjectType.DC.getName()),
@@ -187,8 +191,9 @@ public class SearchIndexerImpl implements SearchIndexer {
             // Clear caches.
             metadataService.clearMetadatas();
             localeService.clearLocaleNames();
-            // Ensure we clear existing DataItem Documents for this Data Category (only if the category is not new).
-            if (!newCategory) {
+            // Are we working with an existing index?
+            if (!indexCleared) {
+                // Clear existing Data ItemItem Documents for this DataCategory.
                 searchQueryService.removeDataItems(dataCategory);
             }
             // Add the new Data Item Documents to the index (if any).
@@ -294,6 +299,87 @@ public class SearchIndexerImpl implements SearchIndexer {
         }
     }
 
+    /**
+     * Checks Data Items for the current Data Category for inconsistency in the index. This is a convenience
+     * wrapper for the areDataCategoryDataItemsInconsistent(List<DataItem>) method below.
+     *
+     * @return true if the index is inconsistent, otherwise false
+     */
+    protected boolean areDataCategoryDataItemsInconsistent() {
+        return areDataCategoryDataItemsInconsistent(dataItemService.getDataItems(dataCategory, false));
+    }
+
+    /**
+     * Checks Data Items for the current Data Category for inconsistency in the index. The index is
+     * inconsistent if the number of database and index Data Items is different or the most recently
+     * modified timestamp for the database Data Items and index Data Items are different.
+     *
+     * @param dataItems to check
+     * @return true if the index is inconsistent, otherwise false
+     */
+    protected boolean areDataCategoryDataItemsInconsistent(List<DataItem> dataItems) {
+
+        // Create Query for all Data Items within the current DataCategory.
+        BooleanQuery query = new BooleanQuery();
+        query.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.MUST);
+        query.add(new TermQuery(new Term("categoryUid", dataCategory.getEntityUid())), BooleanClause.Occur.MUST);
+
+        // Do search. Very high maxNumHits to cope with large Data Categories.
+        List<Document> results = luceneService.doSearch(query, 100000).getResults();
+
+        // First: Are the correct number of Data Items in the index?
+        if (dataItems.size() != results.size()) {
+            log.warn("isDataCategoryCorrupt() Inconsistent DataItem count (DB=" + dataItems.size() + ", Index=" + results.size() + ")");
+            return true;
+        }
+
+        // Second: Check to see if modified timestamps of the most recently updated items
+        // match. If they do, we consider the index to correctly reflect the db.
+
+        // Sort the DataItems by modified timestamp.
+        Collections.sort(dataItems, new Comparator<DataItem>() {
+            public int compare(DataItem di1, DataItem di2) {
+                return di1.getModified().compareTo(di2.getModified());
+            }
+        });
+
+        // Get the most recently modified DataItem.
+        DataItem mostRecentDataItem = dataItems.get(dataItems.size() - 1);
+        Date dataItemModified = mostRecentDataItem.getModified();
+
+        // Sort the DataItem documents by modified timestamp.
+        try {
+            Collections.sort(results, new Comparator<Document>() {
+                public int compare(Document doc1, Document doc2) {
+                    // Find modified fields.
+                    Field doc1Mf = doc1.getField("entityModified");
+                    Field doc2Mf = doc2.getField("entityModified");
+                    // All docs should have a valid entityModified.
+                    if (doc1Mf == null || doc2Mf == null) {
+                        // Trigger a rebuild if this is not the case.
+                        throw new RuntimeException("areDataCategoryDataItemsInconsistent() A null entityModified of DataItem detected.");
+                    } else {
+                        // Compare the modified values.
+                        DateTime doc1Mod = DATE_TO_SECOND.parseDateTime(doc1Mf.stringValue());
+                        DateTime doc2Mod = DATE_TO_SECOND.parseDateTime(doc2Mf.stringValue());
+                        return doc1Mod.compareTo(doc2Mod);
+                    }
+                }
+            });
+        } catch (RuntimeException e) {
+            // Trigger a rebuild on error. Was the entityModified missing?
+            return true;
+        }
+
+        // Get the most recent Data Item document.
+        Document mostRecentDocument = results.get(results.size() - 1);
+        Field modField = mostRecentDocument.getField("entityModified");
+        Date dataItemDocumentModified = DATE_TO_SECOND.parseDateTime(modField.stringValue()).toDate();
+
+        // Inconsistent if the actual Data Item and Data Item Document have different modified timestamps.
+        return !dataItemModified.equals(dataItemDocumentModified);
+    }
+
     public static long getCount() {
         return COUNT;
     }
@@ -309,4 +395,10 @@ public class SearchIndexerImpl implements SearchIndexer {
     public void setDocumentContext(SearchIndexerContext documentContext) {
         this.documentContext = documentContext;
     }
+
+    @Value("#{ systemProperties['amee.clearIndex'] }")
+    public void setIndexCleared(Boolean indexCleared) {
+        this.indexCleared = indexCleared;
+    }
+
 }

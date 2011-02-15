@@ -213,6 +213,10 @@ public class SearchService {
 
     // DataItem search.
 
+    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory) {
+        return getDataItems(dataCategory, new DataItemsFilter());
+    }
+
     public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
         // Create Query.
         BooleanQuery query = null;
@@ -249,7 +253,9 @@ public class SearchService {
                         luceneService.doSearch(
                                 q,
                                 filter.getResultStart(),
-                                filter.getResultLimit(), LuceneServiceImpl.MAX_NUM_HITS, filter.getSort()),
+                                filter.getResultLimit(),
+                                LuceneServiceImpl.MAX_NUM_HITS,
+                                filter.getSort()),
                         filter.isLoadEntityTags(),
                         filter.isLoadMetadatas(),
                         filter.isLoadDataItemValues()));

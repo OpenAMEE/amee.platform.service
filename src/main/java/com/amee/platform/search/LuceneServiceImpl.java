@@ -133,16 +133,21 @@ public class LuceneServiceImpl implements LuceneService {
      * @param query       to search with
      * @param resultStart 0 based index of first result
      * @param resultLimit results limit
-     * @param maxNumHits maximum number of hits to return
-     * @param sortField Sort object to sort by. This field must be indexed but not tokenized.
+     * @param maxNumHits  maximum number of hits to return
+     * @param sortField   Sort object to sort by. This field must be indexed but not tokenized.
      * @return a List of Lucene Documents
      */
     @Override
     public ResultsWrapper<Document> doSearch(Query query, final int resultStart, final int resultLimit, final int maxNumHits, Sort sortField) {
+
         rLock.lock();
+
         try {
+
+            // Log time.
             log.info("doSearch() query='" + query.toString() + "', resultStart=" + resultStart + ", resultLimit=" + resultLimit);
             long start = System.currentTimeMillis();
+
             // Cannot go above maxNumHits.
             int numHits = resultStart + resultLimit;
             if (numHits > maxNumHits) {
@@ -169,26 +174,26 @@ public class LuceneServiceImpl implements LuceneService {
             // Trim resultLimit if we're close to maxNumHits.
             int resultLimitWithCeiling = resultLimit;
             if (resultStart >= maxNumHits) {
-
                 // Never return results.
                 resultLimitWithCeiling = 0;
             } else if ((resultStart + resultLimit) > maxNumHits) {
-
                 // Only return those results from resultStart to maxNumHits.
                 resultLimitWithCeiling = maxNumHits - resultStart;
             }
 
             // Create ResultsWrapper appropriate for our limit.
-            int totalHits = 0;
-            totalHits = collector.getTotalHits();
+            int totalHits = collector.getTotalHits();
             ResultsWrapper<Document> results = new ResultsWrapper<Document>(
                     documents.size() > resultLimitWithCeiling ? documents.subList(0, resultLimitWithCeiling) : documents,
                     (documents.size() > resultLimitWithCeiling) && !((resultStart + resultLimitWithCeiling) >= maxNumHits),
                     resultStart,
                     resultLimit,
                     totalHits > maxNumHits ? maxNumHits : totalHits);
+
+            // Log time and return.
             log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
+
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
