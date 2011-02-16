@@ -95,7 +95,8 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
                 ctx.dataCategoryUid = dataCategory.getUid();
                 ctx.handleDataCategories = indexDataCategories;
                 ctx.handleDataItems = invalidationMessage.hasOption("indexDataItems");
-                addDataCategoryContext(ctx);
+                ctx.checkDataItems = invalidationMessage.hasOption("checkDataItems");
+                addSearchIndexerContext(ctx);
             }
         }
     }
@@ -124,7 +125,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
             SearchIndexerContext ctx = new SearchIndexerContext();
             ctx.dataCategoryUid = dataCategory.getUid();
             ctx.handleDataCategories = indexDataCategories;
-            addDataCategoryContext(ctx);
+            addSearchIndexerContext(ctx);
         }
     }
 
@@ -143,7 +144,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
             ctx.dataCategoryUid = dataCategory.getUid();
             ctx.handleDataCategories = indexDataCategories;
             ctx.handleDataItems = true;
-            addDataCategoryContext(ctx);
+            addSearchIndexerContext(ctx);
         }
     }
 
@@ -247,7 +248,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
         context.dataCategoryUid = dataCategoryUid;
         context.handleDataCategories = indexDataCategories;
         context.handleDataItems = indexDataItems;
-        addDataCategoryContext(context);
+        addSearchIndexerContext(context);
     }
 
     /**
@@ -255,7 +256,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      *
      * @param context {@link SearchIndexerContext} to add to the queue
      */
-    protected synchronized void addDataCategoryContext(SearchIndexerContext context) {
+    protected synchronized void addSearchIndexerContext(SearchIndexerContext context) {
         if (context != null) {
             if (!searchIndexerContextQueue.contains(context)) {
                 log.debug("addDataCategoryContext() Adding: " + context.dataCategoryUid);
@@ -306,7 +307,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
                     // Failed to execute the SearchIndexerRunner as the Data Category
                     // is already being indexed. Now we add the SearchIndexerContext back
                     // into the queue so it gets another chance to be executed.
-                    addDataCategoryContext(searchIndexerContext);
+                    addSearchIndexerContext(searchIndexerContext);
                 }
                 break;
             } catch (TaskRejectedException e) {

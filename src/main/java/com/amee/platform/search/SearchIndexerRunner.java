@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,7 +16,7 @@ public class SearchIndexerRunner implements Runnable {
     // A Set of Data Category UIDs that are currently being executed. This is used by the execute method
     // to ensure the same category is not indexed concurrently whilst allowing later indexing attempts
     // to eventually succeed.
-    private final static Set<String> CURRENT_CATEGORY_UIDS = Collections.synchronizedSet(new HashSet<String>());
+    private final static Set<String> CURRENT_CATEGORY_UIDS = new HashSet<String>();
 
     @Autowired
     private SearchIndexer searchIndexer;
@@ -35,10 +34,12 @@ public class SearchIndexerRunner implements Runnable {
     @Override
     public void run() {
         try {
-            searchIndexer.setDocumentContext(searchIndexerContext);
-            searchIndexer.handleDocumentContext();
+            searchIndexer.setSearchIndexerContext(searchIndexerContext);
+            searchIndexer.handleSearchIndexerContext();
         } finally {
-            CURRENT_CATEGORY_UIDS.remove(searchIndexerContext.dataCategoryUid);
+            synchronized (CURRENT_CATEGORY_UIDS) {
+                CURRENT_CATEGORY_UIDS.remove(searchIndexerContext.dataCategoryUid);
+            }
         }
     }
 

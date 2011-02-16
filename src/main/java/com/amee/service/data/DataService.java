@@ -65,6 +65,10 @@ public interface DataService extends ApplicationListener<InvalidationMessage> {
 
     boolean isDataCategoryUniqueByWikiName(DataCategory dataCategory);
 
+    public Date getDataCategoryModifiedDeep(DataCategory dataCategory);
+
+    public Date getDataItemsModifiedDeep(DataCategory dataCategory);
+
     void persist(DataCategory dataCategory);
 
     void remove(DataCategory dataCategory);

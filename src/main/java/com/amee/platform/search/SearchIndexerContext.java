@@ -18,8 +18,11 @@ public class SearchIndexerContext {
     // Should All Data Categories be updated regardless of modification date?
     public boolean handleDataCategories = false;
 
-    // Should Data Item documents be handled when handling a Data Category.
+    // Should DataItem documents be handled when handling a DataCategory.
     public boolean handleDataItems = false;
+
+    // Should DataItem documents be checked in detail.
+    public boolean checkDataItems = false;
 
     // Work-in-progress List of Data Item Documents.
     public List<Document> dataItemDocs;

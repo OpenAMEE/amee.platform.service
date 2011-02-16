@@ -29,6 +29,7 @@ import com.amee.domain.data.ItemDefinition;
 import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
+import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -52,13 +53,16 @@ public class DataServiceImpl extends BaseService implements DataService, IDataSe
     private InvalidationService invalidationService;
 
     @Autowired
-    private DataServiceDAO dao;
-
-    @Autowired
     private DrillDownService drillDownService;
 
     @Autowired
     private LocaleService localeService;
+
+    @Autowired
+    private DataItemService dataItemService;
+
+    @Autowired
+    private DataServiceDAO dao;
 
     private CacheHelper cacheHelper = CacheHelper.getInstance();
 
@@ -278,6 +282,44 @@ public class DataServiceImpl extends BaseService implements DataService, IDataSe
     @Override
     public boolean isDataCategoryUniqueByWikiName(DataCategory dataCategory) {
         return dao.isDataCategoryUniqueByWikiName(dataCategory);
+    }
+
+    /**
+     * Fetch the most recent modified timestamp of all entities the supplied DataCategory relates to. Will check the
+     * DataCategory, ItemDefinitions, ItemValueDefinitions, DataItems and ItemValues.
+     *
+     * @param dataCategory to fetch timestamp for
+     * @return the most recent modified timestamp for the DataCategory and related entities
+     */
+    public Date getDataCategoryModifiedDeep(DataCategory dataCategory) {
+        // Get the modified dates for all related entities.
+        Date dataCategoryModified = dataCategory.getModified();
+        Date dataItemsModified = getDataItemsModifiedDeep(dataCategory);
+        // Work out which date is the latest.
+        Date modified = IDataItemService.EPOCH;
+        modified = dataCategoryModified.after(modified) ? dataCategoryModified : modified;
+        modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
+        // Now we have the most recent modified timestamp of all entities related to this DataCategory.
+        return modified;
+    }
+
+    /**
+     * Fetch the most recent modified timestamp of all entities the supplied DataCategory relates to. Will check the
+     * ItemDefinitions, ItemValueDefinitions, DataItems.
+     *
+     * @param dataCategory to fetch timestamp for
+     * @return the most recent modified timestamp for the DataCategory and related entities
+     */
+    public Date getDataItemsModifiedDeep(DataCategory dataCategory) {
+        // Get the modified dates for all related entities.
+        Date dataItemsModified = dataItemService.getDataItemsModified(dataCategory);
+        Date definitionsModified = dataCategory.getItemDefinition().getModifiedDeep();
+        // Work out which date is the latest.
+        Date modified = IDataItemService.EPOCH;
+        modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
+        modified = definitionsModified.after(modified) ? definitionsModified : modified;
+        // Now we have the most recent modified timestamp of all entities related to this DataCategory.
+        return modified;
     }
 
     @Override

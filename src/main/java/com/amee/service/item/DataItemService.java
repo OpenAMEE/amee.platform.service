@@ -35,6 +35,11 @@ public class DataItemService extends ItemService implements IDataItemService {
     private DataItemServiceDAO dao;
 
     @Override
+    public long getDataItemCount(IDataCategoryReference dataCategory) {
+        return dao.getDataItemCount(dataCategory);
+    }
+
+    @Override
     public List<DataItem> getDataItems(IDataCategoryReference dataCategory) {
         return getDataItems(dataCategory, true);
     }
@@ -237,6 +242,22 @@ public class DataItemService extends ItemService implements IDataItemService {
             clearItemValues();
             dataService.invalidate(dataItem.getDataCategory());
         }
+    }
+
+    /**
+     * Returns the most recent modified timestamp of DataItems for the supplied DataCategory. Will return the
+     * date of the epoch if there are no matching DataItems.
+     *
+     * @param dataCategory to get modified timestamp for
+     * @return most recent modified timestamp or the epoch value if not available.
+     */
+    @Override
+    public Date getDataItemsModified(DataCategory dataCategory) {
+        Date modified = dao.getDataItemsModified(dataCategory);
+        if (modified == null) {
+            modified = IDataItemService.EPOCH;
+        }
+        return modified;
     }
 
     @Override
