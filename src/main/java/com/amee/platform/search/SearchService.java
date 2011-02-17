@@ -2,11 +2,11 @@ package com.amee.platform.search;
 
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.IAMEEEntity;
+import com.amee.domain.IDataItemService;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.data.DataItem;
 import com.amee.service.data.DataService;
-import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
 import com.amee.service.tag.TagService;
@@ -85,7 +85,7 @@ public class SearchService {
     private DataService dataService;
 
     @Autowired
-    private DataItemService dataItemService;
+    private IDataItemService dataItemService;
 
     @Autowired
     private MetadataService metadataService;

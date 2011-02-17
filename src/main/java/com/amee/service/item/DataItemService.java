@@ -15,7 +15,7 @@ import com.amee.domain.item.data.DataItemTextValue;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.StartEndDate;
-import com.amee.service.data.DataService;
+import com.amee.service.invalidation.InvalidationService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,7 +29,7 @@ public class DataItemService extends ItemService implements IDataItemService {
     private TransactionController transactionController;
 
     @Autowired
-    private DataService dataService;
+    private InvalidationService invalidationService;
 
     @Autowired
     private DataItemServiceDAO dao;
@@ -240,7 +240,7 @@ public class DataItemService extends ItemService implements IDataItemService {
 
             // clear caches
             clearItemValues();
-            dataService.invalidate(dataItem.getDataCategory());
+            invalidationService.invalidate(dataItem.getDataCategory());
         }
     }
 

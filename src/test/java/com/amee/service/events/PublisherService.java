@@ -1,13 +1,12 @@
 package com.amee.service.events;
 
-import com.amee.service.BaseService;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Service;
 
 @Service
-public class PublisherService extends BaseService implements ApplicationContextAware {
+public class PublisherService implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
 

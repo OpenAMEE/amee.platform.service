@@ -2,6 +2,7 @@ package com.amee.platform.search;
 
 import com.amee.base.transaction.AMEETransaction;
 import com.amee.domain.IAMEEEntity;
+import com.amee.domain.IDataItemService;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItemValue;
@@ -9,7 +10,6 @@ import com.amee.domain.item.data.DataItem;
 import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationService;
-import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
 import com.amee.service.tag.TagService;
@@ -51,7 +51,7 @@ public class SearchIndexerImpl implements SearchIndexer {
     private DataService dataService;
 
     @Autowired
-    private DataItemService dataItemService;
+    private IDataItemService dataItemService;
 
     @Autowired
     private MetadataService metadataService;
@@ -109,7 +109,7 @@ public class SearchIndexerImpl implements SearchIndexer {
     /**
      * Update or remove Data Category & Data Items from the search index.
      */
-    protected void updateDataCategory() {
+    private void updateDataCategory() {
         if (!dataCategory.isTrash()) {
             Document document = searchQueryService.getDocument(dataCategory, true);
             if (document != null) {
@@ -133,7 +133,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      *
      * @param document of the current DataCategory
      */
-    protected void checkDataCategoryDocument(Document document) {
+    private void checkDataCategoryDocument(Document document) {
         boolean doUpdate = false;
         // Has a re-index been requested?
         if (documentContext.handleDataCategories || documentContext.handleDataItems) {
@@ -181,7 +181,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param document Lucene Document to check
      * @return true if the Lucene Document has an documentModified field.
      */
-    protected boolean isDocumentModifiedFieldAvailable(Document document) {
+    private boolean isDocumentModifiedFieldAvailable(Document document) {
         return document.getField("documentModified") != null;
     }
 
@@ -191,7 +191,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param document to extract modified date from
      * @return modified {@link DateTime}
      */
-    protected DateTime getDocumentModified(Document document) {
+    private DateTime getDocumentModified(Document document) {
         Field modifiedField = document.getField("documentModified");
         return DATE_TO_SECOND.parseDateTime(modifiedField.stringValue());
     }
@@ -203,7 +203,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param document Document to check
      * @return true if the DataCategory Document is out-of-date for the DataCategory
      */
-    protected boolean isDocumentOutOfDateForDataCategory(Document document) {
+    private boolean isDocumentOutOfDateForDataCategory(Document document) {
         DateTime modifiedInIndex = getDocumentModified(document);
         DateTime modifiedInDatabase =
                 new DateTime(dataService.getDataCategoryModifiedDeep(dataCategory)).withMillisOfSecond(0);
@@ -217,7 +217,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param document Document to check
      * @return true if the DataCategory Document is out-of-date for the DataItems
      */
-    protected boolean isDocumentOutOfDateForDataItems(Document document) {
+    private boolean isDocumentOutOfDateForDataItems(Document document) {
         DateTime modifiedInIndex = getDocumentModified(document);
         DateTime modifiedInDatabase =
                 new DateTime(dataService.getDataItemsModifiedDeep(dataCategory)).withMillisOfSecond(0);
@@ -227,7 +227,7 @@ public class SearchIndexerImpl implements SearchIndexer {
     /**
      * Add Documents for the supplied Data Category and any associated Data Items to the Lucene index.
      */
-    protected void handleDataCategory() {
+    private void handleDataCategory() {
         log.debug("handleDataCategory() " + dataCategory.toString());
         // Handle Data Items (Create, store & update documents).
         if (documentContext.handleDataItems) {
@@ -255,7 +255,7 @@ public class SearchIndexerImpl implements SearchIndexer {
     /**
      * Create all DataItem documents for the supplied DataCategory.
      */
-    protected void handleDataItems() {
+    private void handleDataItems() {
         documentContext.dataItemDoc = null;
         documentContext.dataItemDocs = null;
         // There are only Data Items for a Data Category if there is an Item Definition.
@@ -302,7 +302,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param dataCategory DataCategory to create Document for
      * @return the Document
      */
-    protected Document getDocumentForDataCategory(DataCategory dataCategory) {
+    private Document getDocumentForDataCategory(DataCategory dataCategory) {
         Document doc = getDocumentForAMEEEntity(dataCategory);
         doc.add(new Field("name", dataCategory.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataCategory.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
@@ -330,7 +330,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param dataItem DataItem to create Document for
      * @return the Document
      */
-    protected Document getDocumentForDataItem(DataItem dataItem) {
+    private Document getDocumentForDataItem(DataItem dataItem) {
         Document doc = getDocumentForAMEEEntity(dataItem);
         doc.add(new Field("name", dataItem.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataItem.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
@@ -372,7 +372,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param entity IAMEEEntity to create Document for
      * @return the Document
      */
-    protected Document getDocumentForAMEEEntity(IAMEEEntity entity) {
+    private Document getDocumentForAMEEEntity(IAMEEEntity entity) {
         Document doc = new Document();
         doc.add(new Field("entityType", entity.getObjectType().getName(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("entityId", entity.getId().toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
@@ -391,7 +391,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      *
      * @param context the current SearchIndexerContext
      */
-    protected void handleDataItemValues(SearchIndexerContext context) {
+    private void handleDataItemValues(SearchIndexerContext context) {
         for (BaseItemValue itemValue : dataItemService.getItemValues(context.dataItem)) {
             if (itemValue.isUsableValue()) {
                 if (itemValue.getItemValueDefinition().isDrillDown()) {
@@ -419,7 +419,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      *
      * @return true if the index is inconsistent, otherwise false
      */
-    protected boolean areDataCategoryDataItemsInconsistent() {
+    private boolean areDataCategoryDataItemsInconsistent() {
 
         // Create Query for all Data Items within the current DataCategory.
         BooleanQuery query = new BooleanQuery();
@@ -482,7 +482,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      *
      * @return List of DataItems
      */
-    protected List<DataItem> getDataItems() {
+    private List<DataItem> getDataItems() {
         if (dataItems == null) {
             dataItems = dataItemService.getDataItems(dataCategory, false);
         }
@@ -521,5 +521,4 @@ public class SearchIndexerImpl implements SearchIndexer {
     public void setIndexCleared(Boolean indexCleared) {
         this.indexCleared = indexCleared;
     }
-
 }

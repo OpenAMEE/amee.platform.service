@@ -21,15 +21,14 @@ package com.amee.service.data;
 
 import com.amee.base.transaction.AMEETransaction;
 import com.amee.domain.APIVersion;
+import com.amee.domain.IDataItemService;
 import com.amee.domain.ObjectType;
 import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.data.DataItem;
 import com.amee.domain.sheet.Choices;
 import com.amee.domain.sheet.Sheet;
-import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
-import com.amee.service.item.DataItemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +42,7 @@ import java.util.Set;
  * A Service for managing data Sheets. This is a Spring bean configured in /conf/applicationContext.xml. See the
  * config file for the list of eternalPaths.
  */
-public class DataSheetServiceImpl extends BaseService implements DataSheetService {
+public class DataSheetServiceImpl implements DataSheetService {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -51,7 +50,7 @@ public class DataSheetServiceImpl extends BaseService implements DataSheetServic
     private DataService dataService;
 
     @Autowired
-    private DataItemService dataItemService;
+    private IDataItemService dataItemService;
 
     private CacheHelper cacheHelper = CacheHelper.getInstance();
     private Set<String> eternalPaths = new HashSet<String>();

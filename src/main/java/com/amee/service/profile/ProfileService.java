@@ -6,7 +6,6 @@ import com.amee.domain.auth.User;
 import com.amee.domain.cache.CacheableFactory;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.sheet.Sheet;
-import com.amee.service.BaseService;
 import com.amee.service.data.DataService;
 import com.amee.service.item.ProfileItemService;
 import org.apache.commons.lang.StringUtils;
@@ -41,7 +40,7 @@ import java.util.Set;
  * Website http://www.amee.cc
  */
 @Service
-public class ProfileService extends BaseService {
+public class ProfileService {
 
     private final Log log = LogFactory.getLog(getClass());
 

@@ -692,7 +692,6 @@ public class LuceneServiceImpl implements LuceneService {
      * @return true if the last snapshot was taken longer than the most recent write
      */
     private boolean isSnapshotDue() {
-
         // Unless this is the master index this test will always return false.
         return lastWriteTime > getLastSnapshotTime();
     }

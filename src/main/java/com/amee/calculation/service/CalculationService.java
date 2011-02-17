@@ -21,6 +21,7 @@ package com.amee.calculation.service;
 
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.APIVersion;
+import com.amee.domain.IDataItemService;
 import com.amee.domain.ValueType;
 import com.amee.domain.algorithm.Algorithm;
 import com.amee.domain.data.ItemDefinition;
@@ -40,7 +41,6 @@ import com.amee.platform.science.AlgorithmRunner;
 import com.amee.platform.science.ExternalValue;
 import com.amee.platform.science.InternalValue;
 import com.amee.platform.science.ReturnValues;
-import com.amee.service.item.DataItemService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -66,7 +66,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     private AMEEStatistics ameeStatistics;
 
     @Autowired
-    private DataItemService dataItemService;
+    private IDataItemService dataItemService;
 
     private AlgorithmRunner algorithmRunner = new AlgorithmRunner();
 

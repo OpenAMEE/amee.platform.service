@@ -34,7 +34,6 @@ import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ReturnValueDefinition;
 import com.amee.platform.search.ItemDefinitionsFilter;
-import com.amee.service.BaseService;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
@@ -48,7 +47,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service("definitionService")
-public class DefinitionServiceImpl extends BaseService implements DefinitionService {
+public class DefinitionServiceImpl implements DefinitionService {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -183,15 +182,14 @@ public class DefinitionServiceImpl extends BaseService implements DefinitionServ
     @Override
     public void clearCaches(ItemDefinition itemDefinition) {
         log.info("clearCaches() itemDefinition: " + itemDefinition.getUid());
+        // Invalidate the ItemDefinition itself.
         dao.invalidate(itemDefinition);
-        // TODO: Include trashed IVDs.
+        // Clear all ItemValueDefinitions from the cache.
         for (ItemValueDefinition itemValueDefinition : itemDefinition.getItemValueDefinitions()) {
-            // TODO: Call service method instead.
             dao.invalidate(itemValueDefinition);
         }
-        // TODO: Include trashed RVDs.
+        // Clear all ReturnValueDefinitions from the cache.
         for (ReturnValueDefinition returnValueDefinition : itemDefinition.getReturnValueDefinitions()) {
-            // TODO: Call service method instead.
             dao.invalidate(returnValueDefinition);
         }
         // TODO: Algorithms.

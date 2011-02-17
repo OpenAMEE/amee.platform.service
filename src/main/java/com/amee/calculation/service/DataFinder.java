@@ -20,13 +20,13 @@
 package com.amee.calculation.service;
 
 import com.amee.domain.IDataCategoryReference;
+import com.amee.domain.IDataItemService;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItem;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.service.data.DataService;
 import com.amee.service.data.DrillDownService;
-import com.amee.service.item.DataItemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +45,7 @@ public class DataFinder {
     private DataService dataService;
 
     @Autowired
-    private DataItemService dataItemService;
+    private IDataItemService dataItemService;
 
     @Autowired
     private DrillDownService drillDownService;

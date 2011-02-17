@@ -73,8 +73,6 @@ public interface DataService extends ApplicationListener<InvalidationMessage> {
 
     void remove(DataCategory dataCategory);
 
-    void invalidate(DataCategory dataCategory);
-
     void clearCaches(DataCategory dataCategory);
 
     public List<APIVersion> getAPIVersions();
