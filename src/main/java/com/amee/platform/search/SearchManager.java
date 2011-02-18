@@ -8,4 +8,6 @@ public interface SearchManager extends ApplicationListener<InvalidationMessage> 
     public void update();
 
     public void updateAll();
+
+    public void updateLoop();
 }

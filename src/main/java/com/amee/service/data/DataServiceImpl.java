@@ -26,7 +26,6 @@ import com.amee.domain.*;
 import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
-import com.amee.service.BaseService;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
 import com.amee.service.locale.LocaleService;
@@ -44,7 +43,7 @@ import java.util.*;
  * Primary service interface to Data Resources.
  */
 @Service("dataService")
-public class DataServiceImpl extends BaseService implements DataService, IDataService {
+public class DataServiceImpl implements DataService, IDataService {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -52,13 +51,16 @@ public class DataServiceImpl extends BaseService implements DataService, IDataSe
     private InvalidationService invalidationService;
 
     @Autowired
-    private DataServiceDAO dao;
-
-    @Autowired
     private DrillDownService drillDownService;
 
     @Autowired
     private LocaleService localeService;
+
+    @Autowired
+    private IDataItemService dataItemService;
+
+    @Autowired
+    private DataServiceDAOImpl dao;
 
     private CacheHelper cacheHelper = CacheHelper.getInstance();
 
@@ -68,7 +70,7 @@ public class DataServiceImpl extends BaseService implements DataService, IDataSe
     public void onApplicationEvent(InvalidationMessage invalidationMessage) {
         if ((invalidationMessage.isLocal() || invalidationMessage.isFromOtherInstance()) &&
                 invalidationMessage.getObjectType().equals(ObjectType.DC)) {
-            log.debug("onApplicationEvent() Handling InvalidationMessage.");
+            log.trace("onApplicationEvent() Handling InvalidationMessage.");
             DataCategory dataCategory = getDataCategoryByUid(invalidationMessage.getEntityUid(), null);
             if (dataCategory != null) {
                 clearCaches(dataCategory);
@@ -280,6 +282,47 @@ public class DataServiceImpl extends BaseService implements DataService, IDataSe
         return dao.isDataCategoryUniqueByWikiName(dataCategory);
     }
 
+    /**
+     * Fetch the most recent modified timestamp of all entities the supplied DataCategory relates to. Will check the
+     * DataCategory, ItemDefinitions, ItemValueDefinitions, DataItems and ItemValues.
+     *
+     * @param dataCategory to fetch timestamp for
+     * @return the most recent modified timestamp for the DataCategory and related entities
+     */
+    @Override
+    public Date getDataCategoryModifiedDeep(DataCategory dataCategory) {
+        // Get the modified dates for all related entities.
+        Date dataCategoryModified = dataCategory.getModified();
+        Date dataItemsModified = getDataItemsModifiedDeep(dataCategory);
+        // Work out which date is the latest.
+        Date modified = IDataItemService.EPOCH;
+        modified = dataCategoryModified.after(modified) ? dataCategoryModified : modified;
+        modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
+        // Now we have the most recent modified timestamp of all entities related to this DataCategory.
+        return modified;
+    }
+
+    /**
+     * Fetch the most recent modified timestamp of all entities the supplied DataCategory relates to. Will check the
+     * ItemDefinitions, ItemValueDefinitions, DataItems.
+     *
+     * @param dataCategory to fetch timestamp for
+     * @return the most recent modified timestamp for the DataCategory and related entities
+     */
+    @Override
+    public Date getDataItemsModifiedDeep(DataCategory dataCategory) {
+        // Get the modified dates for all related entities.
+        Date dataItemsModified = dataItemService.getDataItemsModified(dataCategory);
+        Date definitionsModified =
+                dataCategory.isItemDefinitionPresent() ? dataCategory.getItemDefinition().getModifiedDeep() : IDataItemService.EPOCH;
+        // Work out which date is the latest.
+        Date modified = IDataItemService.EPOCH;
+        modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
+        modified = definitionsModified.after(modified) ? definitionsModified : modified;
+        // Now we have the most recent modified timestamp of all entities related to this DataCategory.
+        return modified;
+    }
+
     @Override
     public void persist(DataCategory dataCategory) {
         dao.persist(dataCategory);
@@ -288,18 +331,6 @@ public class DataServiceImpl extends BaseService implements DataService, IDataSe
     @Override
     public void remove(DataCategory dataCategory) {
         dao.remove(dataCategory);
-    }
-
-    /**
-     * Invalidate a DataCategory. This will send an invalidation message via the
-     * InvalidationService and clear the local caches.
-     *
-     * @param dataCategory to invalidate
-     */
-    @Override
-    public void invalidate(DataCategory dataCategory) {
-        log.info("invalidate() dataCategory: " + dataCategory.getUid());
-        invalidationService.add(dataCategory);
     }
 
     /**

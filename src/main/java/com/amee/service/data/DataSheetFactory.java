@@ -19,6 +19,7 @@
  */
 package com.amee.service.data;
 
+import com.amee.domain.IDataItemService;
 import com.amee.domain.LocaleHolder;
 import com.amee.domain.ValueType;
 import com.amee.domain.cache.CacheableFactory;
@@ -32,7 +33,6 @@ import com.amee.domain.sheet.Column;
 import com.amee.domain.sheet.Row;
 import com.amee.domain.sheet.Sheet;
 import com.amee.platform.science.StartEndDate;
-import com.amee.service.item.DataItemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -43,7 +43,7 @@ public class DataSheetFactory implements CacheableFactory {
     private final Log log = LogFactory.getLog(getClass());
 
     private DataService dataService;
-    private DataItemService dataItemService;
+    private IDataItemService dataItemService;
     private DataBrowser dataBrowser;
     private String cacheName;
 

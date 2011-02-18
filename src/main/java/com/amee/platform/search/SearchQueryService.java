@@ -128,27 +128,69 @@ public class SearchQueryService {
      * @return Document matching entity or null
      */
     protected Document getDocument(AMEEEntity entity) {
-        return getDocument(entity.getObjectType(), entity.getUid());
+        return getDocument(entity, false);
     }
 
     /**
-     * Find a single Lucene Document that matches the supplied entity.
+     * Find a single Lucene Document that matches the supplied entity. Optionally allow for duplicate
+     * documents to be removed via the removeIfDuplicated parameter.
+     *
+     * @param entity             to search for
+     * @param removeIfDuplicated remove documents in index if there duplicate matches
+     * @return Document matching entity or null
+     */
+    protected Document getDocument(AMEEEntity entity, boolean removeIfDuplicated) {
+        return getDocument(entity.getObjectType(), entity.getUid(), removeIfDuplicated);
+    }
+
+    /**
+     * Find a single Lucene Document that matches the supplied entity. Will remove any documents that are
+     * found to be duplicates of each other.
      *
      * @param objectType of entity to search for
      * @param uid        if entity to search for
      * @return Document matching entity or null
      */
     protected Document getDocument(ObjectType objectType, String uid) {
+        return getDocument(objectType, uid, false);
+    }
+
+    /**
+     * Find a single Lucene Document that matches the supplied entity. Will remove any documents that are
+     * found to be duplicates of each other. Optionally allow for duplicate documents to be removed via
+     * the removeIfDuplicated parameter.
+     *
+     * @param objectType         of entity to search for
+     * @param uid                if entity to search for
+     * @param removeIfDuplicated remove documents in index if there duplicate matches
+     * @return Document matching entity or null
+     */
+    protected Document getDocument(ObjectType objectType, String uid, boolean removeIfDuplicated) {
+        // Create query for entityType and entityUid.
         BooleanQuery query = new BooleanQuery();
         query.add(new TermQuery(new Term("entityType", objectType.getName())), BooleanClause.Occur.MUST);
         query.add(new TermQuery(new Term("entityUid", uid)), BooleanClause.Occur.MUST);
+        // Get results for query.
         ResultsWrapper<Document> resultsWrapper = luceneService.doSearch(query, 0, 1);
-        if (resultsWrapper.isTruncated()) {
-            log.warn("getDocument() Entity in index more than once: " + objectType + "_" + uid);
-        }
-        if (!resultsWrapper.getResults().isEmpty()) {
-            return resultsWrapper.getResults().get(0);
+        // We only expect a single result.
+        if (!resultsWrapper.isTruncated()) {
+            if (!resultsWrapper.getResults().isEmpty()) {
+                // A single result was found.
+                return resultsWrapper.getResults().get(0);
+            } else {
+                // No result found.
+                return null;
+            }
         } else {
+            // Duplicate documents found. Should we remove them?
+            if (removeIfDuplicated) {
+                // More than one result! Delete them all.
+                log.warn("getDocument() Removing duplicate index entries: " + objectType + "_" + uid);
+                remove(objectType, uid);
+            } else {
+                // Just warn about the duplicates.
+                log.warn("getDocument() Found duplicate index entries: " + objectType + "_" + uid);
+            }
             return null;
         }
     }

@@ -15,7 +15,7 @@ import com.amee.domain.item.data.DataItemTextValue;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.StartEndDate;
-import com.amee.service.data.DataService;
+import com.amee.service.invalidation.InvalidationService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,10 +29,15 @@ public class DataItemService extends ItemService implements IDataItemService {
     private TransactionController transactionController;
 
     @Autowired
-    private DataService dataService;
+    private InvalidationService invalidationService;
 
     @Autowired
     private DataItemServiceDAO dao;
+
+    @Override
+    public long getDataItemCount(IDataCategoryReference dataCategory) {
+        return dao.getDataItemCount(dataCategory);
+    }
 
     @Override
     public List<DataItem> getDataItems(IDataCategoryReference dataCategory) {
@@ -235,8 +240,24 @@ public class DataItemService extends ItemService implements IDataItemService {
 
             // clear caches
             clearItemValues();
-            dataService.invalidate(dataItem.getDataCategory());
+            invalidationService.invalidate(dataItem.getDataCategory());
         }
+    }
+
+    /**
+     * Returns the most recent modified timestamp of DataItems for the supplied DataCategory. Will return the
+     * date of the epoch if there are no matching DataItems.
+     *
+     * @param dataCategory to get modified timestamp for
+     * @return most recent modified timestamp or the epoch value if not available.
+     */
+    @Override
+    public Date getDataItemsModified(DataCategory dataCategory) {
+        Date modified = dao.getDataItemsModified(dataCategory);
+        if (modified == null) {
+            modified = IDataItemService.EPOCH;
+        }
+        return modified;
     }
 
     @Override

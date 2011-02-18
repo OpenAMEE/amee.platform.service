@@ -11,19 +11,17 @@ import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class SearchManagerImpl implements SearchManager, ApplicationContextAware {
 
@@ -40,10 +38,6 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
 
     @Autowired
     private LuceneService luceneService;
-
-    @Autowired
-    @Qualifier("searchIndexerTaskExecutor")
-    private TaskExecutor taskExecutor;
 
     /**
      * Is this instance the master index node? There can be only one!
@@ -75,6 +69,20 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      */
     private String dataCategoryPathPrefix = null;
 
+
+    /**
+     * A {@link Queue} of {@link SearchIndexerContext}s waiting to be sent to a {@link SearchIndexer}. The
+     * queue will only contain one {@link SearchIndexerContext} per Data Category.
+     */
+    private Queue<SearchIndexerContext> queue = new ConcurrentLinkedQueue<SearchIndexerContext>();
+
+    /**
+     * A {@link CountDownLatch} for managing the processing loop for the queue.
+     * <p/>
+     * The initial default latch has a countdown value of zero so it does not wait on first use.
+     */
+    private CountDownLatch queueLatch = new CountDownLatch(0);
+
     // Used to obtain SearchIndexer instances.
     private ApplicationContext applicationContext;
 
@@ -88,14 +96,15 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
                 !invalidationMessage.isLocal() &&
                 invalidationMessage.getObjectType().equals(ObjectType.DC) &&
                 !invalidationMessage.hasOption("dataCategoryIndexed")) {
-            log.debug("onApplicationEvent() Handling InvalidationMessage.");
+            log.trace("onApplicationEvent() Handling InvalidationMessage.");
             DataCategory dataCategory = dataService.getDataCategoryByUid(invalidationMessage.getEntityUid(), null);
             if (dataCategory != null) {
                 SearchIndexerContext ctx = new SearchIndexerContext();
                 ctx.dataCategoryUid = dataCategory.getUid();
                 ctx.handleDataCategories = indexDataCategories;
                 ctx.handleDataItems = invalidationMessage.hasOption("indexDataItems");
-                updateDataCategory(ctx);
+                ctx.checkDataItems = invalidationMessage.hasOption("checkDataItems");
+                addSearchIndexerContext(ctx);
             }
         }
     }
@@ -114,7 +123,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      * Update all Data Categories in the search index which have been modified in
      * the last one hour segment.
      */
-    protected void updateCategories() {
+    private void updateCategories() {
         log.debug("updateCategories()");
         DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesModifiedWithin(
@@ -124,7 +133,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
             SearchIndexerContext ctx = new SearchIndexerContext();
             ctx.dataCategoryUid = dataCategory.getUid();
             ctx.handleDataCategories = indexDataCategories;
-            updateDataCategory(ctx);
+            addSearchIndexerContext(ctx);
         }
     }
 
@@ -132,7 +141,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      * Update all Data Categories & Data Items in the search index where the
      * Data Items have been modified in the last one hour segment.
      */
-    protected void updateDataItems() {
+    private void updateDataItems() {
         log.debug("updateDataItems()");
         DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesForDataItemsModifiedWithin(
@@ -143,11 +152,39 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
             ctx.dataCategoryUid = dataCategory.getUid();
             ctx.handleDataCategories = indexDataCategories;
             ctx.handleDataItems = true;
-            updateDataCategory(ctx);
+            addSearchIndexerContext(ctx);
         }
     }
 
     // Index & Document management.
+
+    /**
+     * Loops until the application stops (is interrupted). Calls consumeQueue, after
+     * a 10 second sleep OR the queue latch has been signalled, to handle any waiting {@link SearchIndexerContext}s.
+     */
+    public void updateLoop() {
+        log.info("updateLoop() Begin.");
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                log.debug("updateLoop() Waiting.");
+                // Wait until:
+                //  * 10 seconds have elapsed OR
+                //  * the queue latch reaches zero (this thread has been signalled).
+                if (queueLatch.await(10, TimeUnit.SECONDS)) {
+                    // Consume the queue.
+                    consumeQueue();
+                }
+            } catch (InterruptedException e) {
+                log.debug("updateLoop() Interrupted.");
+                return;
+            } catch (Exception e) {
+                log.error("updateLoop() Caught Exception: " + e.getMessage(), e);
+            } catch (Throwable t) {
+                log.error("updateLoop() Caught Throwable: " + t.getMessage(), t);
+            }
+        }
+        log.info("updateLoop() End.");
+    }
 
     /**
      * Will update or create the whole search index.
@@ -173,7 +210,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
     /**
      * Add all DataCategories to the index.
      */
-    protected void buildDataCategories() {
+    private void buildDataCategories() {
         log.info("handleDataCategories()");
         Set<String> dataCategoryUids = getDataCategoryUids();
         buildDataCategories(dataCategoryUids);
@@ -184,7 +221,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      *
      * @return Set of Data Category UIDs
      */
-    protected Set<String> getDataCategoryUids() {
+    private Set<String> getDataCategoryUids() {
         log.debug("getDataCategoryUids()");
         // Iterate over all DataCategories and gather DataCategory UIDs.
         Set<String> dataCategoryUids = new HashSet<String>();
@@ -204,53 +241,117 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      *
      * @param dataCategoryUids UIDs of Data Categories to index.
      */
-    protected void buildDataCategories(Set<String> dataCategoryUids) {
+    private void buildDataCategories(Set<String> dataCategoryUids) {
         log.info("handleDataCategories()");
         for (String uid : dataCategoryUids) {
             buildDataCategory(uid);
         }
     }
 
-    protected void buildDataCategory(String dataCategoryUid) {
+    /**
+     * Create a {@link SearchIndexerContext} for the supplied Data Category UID and submit this to the queue.
+     *
+     * @param dataCategoryUid Data Category UID
+     */
+    private void buildDataCategory(String dataCategoryUid) {
         log.info("buildDataCategory()");
-        SearchIndexerContext ctx = new SearchIndexerContext();
-        ctx.dataCategoryUid = dataCategoryUid;
-        ctx.handleDataCategories = indexDataCategories;
-        ctx.handleDataItems = indexDataItems;
-        updateDataCategory(ctx);
+        SearchIndexerContext context = new SearchIndexerContext();
+        context.dataCategoryUid = dataCategoryUid;
+        context.handleDataCategories = indexDataCategories;
+        context.handleDataItems = indexDataItems;
+        addSearchIndexerContext(context);
     }
 
     // Task submission.
 
-    protected void updateDataCategory(SearchIndexerContext searchIndexerContext) {
-        // Create SearchIndexerRunner.
-        SearchIndexerRunner searchIndexerRunner = applicationContext.getBean(SearchIndexerRunner.class);
-        searchIndexerRunner.setDocumentContext(searchIndexerContext);
-        // Keep attempting to add searchIndexerRunner to Executor.
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                taskExecutor.execute(searchIndexerRunner);
-                break;
-            } catch (TaskRejectedException e) {
-                log.info("updateDataCategory() Sleeping for a short while.");
-                try {
-                    // Sleep for a while when executor is full.
-                    Thread.sleep(500 + RANDOM.nextInt(10000));
-                } catch (InterruptedException e1) {
-                    // Give up.
-                    log.warn("updateDataCategory() Caught InterruptedException: " + e1.getMessage());
-                    break;
-                }
+    /**
+     * Add a {@link SearchIndexerContext} to the queue, but only if there is not an equivalent object already present.
+     *
+     * @param context {@link SearchIndexerContext} to add to the queue
+     */
+    private synchronized void addSearchIndexerContext(SearchIndexerContext context) {
+        if (context != null) {
+            // Never allow equivalent SearchIndexerContexts to exist in the queue.
+            if (!queue.contains(context)) {
+                log.debug("addDataCategoryContext() Adding: " + context.dataCategoryUid);
+                queue.add(context);
+                // Signal the queue loop thread to process the queue.
+                signalViaQueueLatch();
+            } else {
+                log.debug("addDataCategoryContext() Skipping: " + context.dataCategoryUid);
             }
         }
     }
+
+    /**
+     * Loops over the queue and sends waiting {@link SearchIndexerContext}s to be
+     * processed by {@link SearchIndexer}s. There are no items in the queue this will return immediately. The
+     * queue latch will always be reset at the end of this method call.
+     */
+    private void consumeQueue() {
+        if (!queue.isEmpty()) {
+            log.debug("consumeQueue() Consuming.");
+            Iterator<SearchIndexerContext> iterator = queue.iterator();
+            while (iterator.hasNext()) {
+                SearchIndexerContext next = iterator.next();
+                if (next != null) {
+                    iterator.remove();
+                    log.debug("consumeQueue() Removed: " + next.dataCategoryUid);
+                    submitForExecution(next);
+                }
+            }
+        } else {
+            log.debug("consumeQueue() Nothing to consume.");
+        }
+        // Having processed the queue we can reset the queue latch.
+        resetQueueLatch();
+    }
+
+    /**
+     * Update the DataCategory in the index using a SearchIndexerRunner for the supplied SearchIndexerContext.
+     *
+     * @param searchIndexerContext a context for the SearchIndexer
+     */
+    private void submitForExecution(SearchIndexerContext searchIndexerContext) {
+        // Create SearchIndexerRunner.
+        SearchIndexerRunner searchIndexerRunner = applicationContext.getBean(SearchIndexerRunner.class);
+        searchIndexerRunner.setSearchIndexerContext(searchIndexerContext);
+        // Attempt to execute the SearchIndexerRunner
+        try {
+            // The SearchIndexerRunner can be rejected if an equivalent SearchIndexerContext is
+            // currently being processed.
+            if (!searchIndexerRunner.execute()) {
+                // Failed to execute the SearchIndexerRunner as the Data Category
+                // is already being indexed. Now we add the SearchIndexerContext back
+                // into the queue so it gets another chance to be executed.
+                addSearchIndexerContext(searchIndexerContext);
+            }
+        } catch (TaskRejectedException e) {
+            log.debug("submitForExecution() Task was rejected: " + searchIndexerContext.dataCategoryUid);
+        }
+    }
+
+    /**
+     * Reset the queue latch with a new {@link CountDownLatch} with a countdown value of 1.
+     */
+    private synchronized void resetQueueLatch() {
+        queueLatch = new CountDownLatch(1);
+    }
+
+    /**
+     * Signal the queue looping thread via the {@link CountDownLatch}. This will trigger immediate
+     * processing of the  queue.
+     */
+    private synchronized void signalViaQueueLatch() {
+        queueLatch.countDown();
+    }
+
+    // Properties.
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
-
-    // Properties.
 
     @Value("#{ systemProperties['amee.masterIndex'] }")
     public void setMasterIndex(Boolean masterIndex) {

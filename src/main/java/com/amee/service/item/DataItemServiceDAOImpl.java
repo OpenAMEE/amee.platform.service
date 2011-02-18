@@ -21,6 +21,7 @@ package com.amee.service.item;
 
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.IDataCategoryReference;
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.*;
@@ -29,13 +30,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
+import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataItemServiceDAO {
@@ -48,6 +47,20 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
     }
 
     // DataItems.
+
+    /**
+     * Return a count of non-trashed DataItems for the given IDataCategoryReference.
+     *
+     * @param dataCategory to count DataItems for
+     * @return count of DataItems
+     */
+    public long getDataItemCount(IDataCategoryReference dataCategory) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataItem.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getEntityId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        return (Long) criteria.setProjection(Projections.rowCount()).uniqueResult();
+    }
 
     @Override
     @SuppressWarnings(value = "unchecked")
@@ -88,6 +101,19 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
             }
         }
         return dataItem;
+    }
+
+    /**
+     * Returns the most recent modified timestamp of DataItems for the supplied DataCategory.
+     *
+     * @param dataCategory to get modified timestamp for
+     * @return most recent modified timestamp
+     */
+    public Date getDataItemsModified(DataCategory dataCategory) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(DataItem.class);
+        criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getEntityId()));
+        return (Date) criteria.setProjection(Projections.max("modified")).uniqueResult();
     }
 
     /**

@@ -2,11 +2,11 @@ package com.amee.platform.search;
 
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.IAMEEEntity;
+import com.amee.domain.IDataItemService;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.data.DataItem;
 import com.amee.service.data.DataService;
-import com.amee.service.item.DataItemService;
 import com.amee.service.locale.LocaleService;
 import com.amee.service.metadata.MetadataService;
 import com.amee.service.tag.TagService;
@@ -85,7 +85,7 @@ public class SearchService {
     private DataService dataService;
 
     @Autowired
-    private DataItemService dataItemService;
+    private IDataItemService dataItemService;
 
     @Autowired
     private MetadataService metadataService;
@@ -213,6 +213,10 @@ public class SearchService {
 
     // DataItem search.
 
+    public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory) {
+        return getDataItems(dataCategory, new DataItemsFilter());
+    }
+
     public ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter) {
         // Create Query.
         BooleanQuery query = null;
@@ -249,7 +253,9 @@ public class SearchService {
                         luceneService.doSearch(
                                 q,
                                 filter.getResultStart(),
-                                filter.getResultLimit(), LuceneServiceImpl.MAX_NUM_HITS, filter.getSort()),
+                                filter.getResultLimit(),
+                                LuceneServiceImpl.MAX_NUM_HITS,
+                                filter.getSort()),
                         filter.isLoadEntityTags(),
                         filter.isLoadMetadatas(),
                         filter.isLoadDataItemValues()));

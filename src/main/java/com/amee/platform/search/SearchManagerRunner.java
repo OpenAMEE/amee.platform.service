@@ -21,6 +21,7 @@ public class SearchManagerRunner implements Runnable, SmartLifecycle {
     @Override
     public void run() {
         searchManager.updateAll();
+        searchManager.updateLoop();
     }
 
     @Override
