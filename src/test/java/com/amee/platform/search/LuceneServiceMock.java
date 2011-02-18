@@ -101,17 +101,12 @@ public class LuceneServiceMock implements LuceneService {
     }
 
     @Override
-    public void unlockIndex() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void closeEverything() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void clearIndex() {
+    public void prepareIndex() {
         throw new UnsupportedOperationException();
     }
 
@@ -132,6 +127,16 @@ public class LuceneServiceMock implements LuceneService {
 
     @Override
     public void takeSnapshot() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean getClearIndex() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setClearIndex(Boolean clearIndex) {
         throw new UnsupportedOperationException();
     }
 

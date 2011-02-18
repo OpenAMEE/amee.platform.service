@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.channels.ClosedByInterruptException;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -80,6 +81,11 @@ public class LuceneServiceImpl implements LuceneService {
      * Is this instance the master index node? There can be only one!
      */
     private boolean masterIndex = false;
+
+    /**
+     * Should the search index be cleared on application start?
+     */
+    private boolean clearIndex = false;
 
     /**
      * Should index snapshots be created? Only required for replication.
@@ -194,6 +200,8 @@ public class LuceneServiceImpl implements LuceneService {
             log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
 
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -246,6 +254,8 @@ public class LuceneServiceImpl implements LuceneService {
                     documents.size() > maxNumHits);
             log.info("doSearch() Duration: " + (System.currentTimeMillis() - start));
             return results;
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -260,6 +270,8 @@ public class LuceneServiceImpl implements LuceneService {
         try {
             getIndexWriter().addDocument(document);
             getIndexWriter().commit();
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -280,6 +292,8 @@ public class LuceneServiceImpl implements LuceneService {
                 getIndexWriter().addDocument(document);
             }
             getIndexWriter().commit();
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -311,6 +325,8 @@ public class LuceneServiceImpl implements LuceneService {
             getIndexWriter().deleteDocuments(q);
             getIndexWriter().addDocument(document);
             getIndexWriter().commit();
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -341,6 +357,8 @@ public class LuceneServiceImpl implements LuceneService {
         try {
             getIndexWriter().deleteDocuments(q);
             getIndexWriter().commit();
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -353,10 +371,21 @@ public class LuceneServiceImpl implements LuceneService {
     }
 
     /**
-     * Clear the Lucene index.
+     * Prepare the Lucene index. Unlock it and potentially clear it, depending on the amee.clearIndex system
+     * property
      */
     @Override
-    public void clearIndex() {
+    public void prepareIndex() {
+        unlockIndex();
+        if (clearIndex) {
+            clearIndex();
+        }
+    }
+
+    /**
+     * Clear the Lucene index.
+     */
+    private void clearIndex() {
         if (!masterIndex) return;
         wLock.lock();
         try {
@@ -369,6 +398,8 @@ public class LuceneServiceImpl implements LuceneService {
             // Close the index.
             indexWriter.commit();
             indexWriter.close();
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -383,8 +414,7 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * Unlocks the Lucene index. Useful following JVM crashes.
      */
-    @Override
-    public void unlockIndex() {
+    private void unlockIndex() {
         wLock.lock();
         try {
             if (IndexReader.indexExists(getDirectory())) {
@@ -395,6 +425,8 @@ public class LuceneServiceImpl implements LuceneService {
             }
         } catch (LockReleaseFailedException e) {
             log.warn("unlockIndex() Caught LockReleaseFailedException: " + e.getMessage());
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -441,6 +473,8 @@ public class LuceneServiceImpl implements LuceneService {
                 if (searcher == null) {
                     try {
                         searcher = new IndexSearcher(getDirectory(), true);
+                    } catch (ClosedByInterruptException e) {
+                        throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
                     } catch (IOException e) {
                         throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
                     }
@@ -468,6 +502,8 @@ public class LuceneServiceImpl implements LuceneService {
                 // Set the Searcher to null means a new instance will be created later in getSearcher().
                 searcher = null;
             }
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
@@ -481,6 +517,8 @@ public class LuceneServiceImpl implements LuceneService {
         try {
             searcher.close();
             searcher = null;
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
@@ -494,6 +532,8 @@ public class LuceneServiceImpl implements LuceneService {
         try {
             lastSearcher.close();
             lastSearcher = null;
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
@@ -527,6 +567,8 @@ public class LuceneServiceImpl implements LuceneService {
                     if (directory == null) {
                         directory = FSDirectory.open(new File(lucenePath));
                     }
+                } catch (ClosedByInterruptException e) {
+                    throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
                 } catch (IOException e) {
                     throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
                 }
@@ -543,6 +585,8 @@ public class LuceneServiceImpl implements LuceneService {
         try {
             directory.close();
             directory = null;
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
@@ -583,6 +627,8 @@ public class LuceneServiceImpl implements LuceneService {
                     getAnalyzer(),
                     create,
                     IndexWriter.MaxFieldLength.UNLIMITED);
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
@@ -604,6 +650,8 @@ public class LuceneServiceImpl implements LuceneService {
                 log.info("flush() Index already optimized.");
             }
             log.info("flush() Done.");
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             log.error("flush() Caught IOException: " + e.getMessage(), e);
         } finally {
@@ -624,6 +672,8 @@ public class LuceneServiceImpl implements LuceneService {
             flush();
             indexWriter.close();
             indexWriter = null;
+        } catch (ClosedByInterruptException e) {
+            throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
         }
@@ -657,6 +707,8 @@ public class LuceneServiceImpl implements LuceneService {
                 p.waitFor();
                 // If we get here then the snapshot completed.
                 log.info("takeSnapshot() Done.");
+            } catch (ClosedByInterruptException e) {
+                throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
             } catch (IOException e) {
                 log.error("takeSnapshot() Caught IOException: " + e.getMessage(), e);
             } catch (InterruptedException e) {
@@ -721,6 +773,17 @@ public class LuceneServiceImpl implements LuceneService {
     @Value("#{ systemProperties['amee.masterIndex'] }")
     public void setMasterIndex(Boolean masterIndex) {
         this.masterIndex = masterIndex;
+    }
+
+    @Override
+    public boolean getClearIndex() {
+        return clearIndex;
+    }
+
+    @Override
+    @Value("#{ systemProperties['amee.clearIndex'] }")
+    public void setClearIndex(Boolean clearIndex) {
+        this.clearIndex = clearIndex;
     }
 
     @Value("#{ systemProperties['amee.snapshotEnabled'] }")

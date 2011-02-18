@@ -28,11 +28,9 @@ public interface LuceneService {
 
     public void addDocuments(Collection<Document> documents);
 
-    public void unlockIndex();
-
     public void closeEverything();
 
-    public void clearIndex();
+    public void prepareIndex();
 
     public void addDocument(Document document);
 
@@ -41,4 +39,8 @@ public interface LuceneService {
     public void flush();
 
     public void takeSnapshot();
+
+    public boolean getClearIndex();
+
+    public void setClearIndex(Boolean clearIndex);
 }

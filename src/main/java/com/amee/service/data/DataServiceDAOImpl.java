@@ -137,7 +137,7 @@ public class DataServiceDAOImpl implements DataServiceDAO {
             } else {
                 // Special handling required when more than one DataCategory is found.
                 if (dataCategories.size() > 1) {
-                    log.warn("getDataCategoryByWikiName() More than one DataCategory found: " + wikiName);
+                    log.debug("getDataCategoryByWikiName() More than one DataCategory found: " + wikiName);
                     // Sort the DataCategories by modification date (descending).
                     Collections.sort(dataCategories,
                             Collections.reverseOrder(

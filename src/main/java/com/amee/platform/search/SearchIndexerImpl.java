@@ -26,7 +26,6 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,11 +79,6 @@ public class SearchIndexerImpl implements SearchIndexer {
     // The DataItems for the current DataCategory.
     private List<DataItem> dataItems;
 
-    /**
-     * Was the index cleared on start?
-     */
-    private boolean indexCleared = false;
-
     @AMEETransaction
     @Transactional(propagation = Propagation.REQUIRED, readOnly = true)
     public void handleSearchIndexerContext() {
@@ -97,6 +91,9 @@ public class SearchIndexerImpl implements SearchIndexer {
             } else {
                 searchLog.warn(documentContext.dataCategoryUid + "|DataCategory not found.");
             }
+        } catch (LuceneServiceException e) {
+            searchLog.warn(documentContext.dataCategoryUid + "|Abandoned processing DataCategory.");
+            log.warn("run() Caught LuceneServiceException: " + e.getMessage());
         } catch (Throwable t) {
             searchLog.error(documentContext.dataCategoryUid + "|Error processing DataCategory.");
             log.error("run() Caught Throwable: " + t.getMessage(), t);
@@ -236,7 +233,7 @@ public class SearchIndexerImpl implements SearchIndexer {
         // Get Data Category Document.
         Document dataCategoryDoc = getDocumentForDataCategory(dataCategory);
         // Are we working with an existing index?
-        if (!indexCleared) {
+        if (!luceneService.getClearIndex()) {
             // Update the Data Category Document (remove old Documents).
             luceneService.updateDocument(
                     dataCategoryDoc,
@@ -280,7 +277,7 @@ public class SearchIndexerImpl implements SearchIndexer {
             metadataService.clearMetadatas();
             localeService.clearLocaleNames();
             // Are we working with an existing index?
-            if (!indexCleared) {
+            if (!luceneService.getClearIndex()) {
                 // Clear existing Data ItemItem Documents for this DataCategory.
                 searchQueryService.removeDataItems(dataCategory);
             }
@@ -515,10 +512,5 @@ public class SearchIndexerImpl implements SearchIndexer {
     @Override
     public void setSearchIndexerContext(SearchIndexerContext documentContext) {
         this.documentContext = documentContext;
-    }
-
-    @Value("#{ systemProperties['amee.clearIndex'] }")
-    public void setIndexCleared(Boolean indexCleared) {
-        this.indexCleared = indexCleared;
     }
 }

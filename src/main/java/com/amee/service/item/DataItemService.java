@@ -240,7 +240,7 @@ public class DataItemService extends ItemService implements IDataItemService {
 
             // clear caches
             clearItemValues();
-            invalidationService.invalidate(dataItem.getDataCategory());
+            invalidationService.add(dataItem.getDataCategory());
         }
     }
 

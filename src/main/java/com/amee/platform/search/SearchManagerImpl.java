@@ -45,11 +45,6 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
     private boolean masterIndex = false;
 
     /**
-     * Should the search index be cleared on application start?
-     */
-    private boolean clearIndex = false;
-
-    /**
      * Should all Data Categories be checked on application start?
      */
     private boolean checkDataCategories = false;
@@ -195,12 +190,8 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
     public void updateAll() {
         // Clear the SearchIndexer DataCategory count.
         SearchIndexerImpl.resetCount();
-        // Always make sure index is unlocked.
-        luceneService.unlockIndex();
-        // Clear the index?
-        if (clearIndex) {
-            luceneService.clearIndex();
-        }
+        // Prepare the index; unlock it and potential clear it.
+        luceneService.prepareIndex();
         // Check DataCategories?
         if (checkDataCategories) {
             buildDataCategories();
@@ -356,11 +347,6 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
     @Value("#{ systemProperties['amee.masterIndex'] }")
     public void setMasterIndex(Boolean masterIndex) {
         this.masterIndex = masterIndex;
-    }
-
-    @Value("#{ systemProperties['amee.clearIndex'] }")
-    public void setClearIndex(Boolean clearIndex) {
-        this.clearIndex = clearIndex;
     }
 
     @Value("#{ systemProperties['amee.checkDataCategories'] }")
