@@ -9,13 +9,11 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.stereotype.Service;
 
 /**
  * A service bean to expose other commonly used service beans via ThreadBeanHolder. The service beans
  * are set and then cleared at the start and end of each transaction.
  */
-@Service
 public class TransactionThreadBeanManager implements ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
