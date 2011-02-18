@@ -32,4 +32,6 @@ public interface DataItemServiceDAO extends ItemServiceDAO {
     public DataItem getDataItemByPath(IDataCategoryReference parent, String path);
 
     public Date getDataItemsModified(DataCategory dataCategory);
+
+    public boolean isDataItemUniqueByPath(DataItem dataItem);
 }

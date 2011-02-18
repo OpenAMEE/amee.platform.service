@@ -29,6 +29,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
+import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
@@ -114,6 +115,30 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
         Criteria criteria = session.createCriteria(DataItem.class);
         criteria.add(Restrictions.eq("dataCategory.id", dataCategory.getEntityId()));
         return (Date) criteria.setProjection(Projections.max("modified")).uniqueResult();
+    }
+
+    /**
+     * Returns true if the path of the supplied DataItem is unique amongst peers.
+     *
+     * @param dataItem to check for uniqueness
+     * @return true if the DataCategory has a unique path amongst peers
+     */
+    @Override
+    public boolean isDataItemUniqueByPath(DataItem dataItem) {
+        if ((dataItem != null) && (dataItem.getDataCategory() != null)) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(DataItem.class);
+            if (entityManager.contains(dataItem)) {
+                criteria.add(Restrictions.ne("uid", dataItem.getUid()));
+            }
+            criteria.add(Restrictions.eq("path", dataItem.getPath()));
+            criteria.add(Restrictions.eq("dataCategory.id", dataItem.getDataCategory().getId()));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.setFlushMode(FlushMode.MANUAL);
+            return criteria.list().isEmpty();
+        } else {
+            throw new RuntimeException("DataItem was null or it doesn't have a parent DataCategory.");
+        }
     }
 
     /**

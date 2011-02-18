@@ -260,6 +260,19 @@ public class DataItemService extends ItemService implements IDataItemService {
         return modified;
     }
 
+
+    /**
+     * Returns true if the path of the supplied DataItem is unique amongst peers with the same
+     * DataCategory. Empty paths are always treated as 'unique'.
+     *
+     * @param dataItem to check for uniqueness
+     * @return true if the DataItem has a unique path amongst peers or the path is simply empty
+     */
+    @Override
+    public boolean isDataItemUniqueByPath(DataItem dataItem) {
+        return dataItem.getPath().isEmpty() || dao.isDataItemUniqueByPath(dataItem);
+    }
+
     @Override
     public void remove(DataItem dataItem) {
         dataItem.setStatus(AMEEStatus.TRASH);
