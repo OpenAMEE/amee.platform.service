@@ -6,6 +6,7 @@ import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.BaseDataItemValue;
@@ -17,13 +18,21 @@ import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.StartEndDate;
 import com.amee.service.invalidation.InvalidationService;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 @Service
 public class DataItemService extends ItemService implements IDataItemService {
+
+    private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
     private TransactionController transactionController;
@@ -305,6 +314,41 @@ public class DataItemService extends ItemService implements IDataItemService {
         if (!DataItem.class.isAssignableFrom(item.getClass()))
             throw new IllegalStateException("A DataItem instance was expected.");
         return getItemValue(item, identifier, item.getEffectiveStartDate());
+    }
+
+    /**
+     * Updates the Data Item Values for the supplied DataItem based on the properties of the values
+     * bean within the DataItem. Internally uses the Spring and Java beans API to access values in the
+     * CGLIB created DataItem.values JavaBean.
+     *
+     * @param dataItem to update
+     */
+    public void updateDataItemValues(DataItem dataItem) {
+        Object values = dataItem.getValues();
+        ItemValueMap itemValues = getItemValuesMap(dataItem);
+        for (String key : itemValues.keySet()) {
+            BaseItemValue value = itemValues.get(key);
+            PropertyDescriptor pd = BeanUtils.getPropertyDescriptor(values.getClass(), key);
+            if (pd != null) {
+                Method readMethod = pd.getReadMethod();
+                if (readMethod != null) {
+                    try {
+                        Object v = readMethod.invoke(values);
+                        if (v != null) {
+                            value.setValue(v.toString());
+                        }
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException("Caught IllegalAccessException: " + e.getMessage());
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException("Caught InvocationTargetException: " + e.getMessage());
+                    }
+                } else {
+                    log.warn("updateDataItemValues() Write Method was null: " + key);
+                }
+            } else {
+                log.warn("updateDataItemValues() PropertyDescriptor was null: " + key);
+            }
+        }
     }
 
     @Override

@@ -28,6 +28,7 @@ import com.amee.domain.item.data.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.CacheMode;
 import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
@@ -135,6 +136,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
             criteria.add(Restrictions.eq("dataCategory.id", dataItem.getDataCategory().getId()));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setFlushMode(FlushMode.MANUAL);
+            criteria.setCacheMode(CacheMode.IGNORE);
             return criteria.list().isEmpty();
         } else {
             throw new RuntimeException("DataItem was null or it doesn't have a parent DataCategory.");
