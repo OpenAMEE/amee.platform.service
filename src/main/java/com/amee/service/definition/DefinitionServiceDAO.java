@@ -167,7 +167,6 @@ public class DefinitionServiceDAO {
             criteria.add(Restrictions.ilike("name", filter.getName(), MatchMode.EXACT));
         }
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-        criteria.setFetchMode("itemValueDefinitions", FetchMode.JOIN);
         criteria.addOrder(Order.asc("name").ignoreCase());
         criteria.setCacheable(true);
         criteria.setCacheRegion(CACHE_REGION);
