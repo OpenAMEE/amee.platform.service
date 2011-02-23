@@ -50,17 +50,34 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
         }
     }
 
+    /**
+     * Checks if the given {@link ProfileItem} has any non-zero values with a time-based perUnit (eg year).
+     *
+     * @param profileItem the ProfileItem to test.
+     * @return true if any ProfileItem value is non-zero and has a time-based perUnit.
+     */
     @Override
     public boolean hasNonZeroPerTimeValues(ProfileItem profileItem) {
-        for (BaseItemValue biv : getItemValues(profileItem)) {
-            if (ProfileItemNumberValue.class.isAssignableFrom(biv.getClass())) {
-                ProfileItemNumberValue pinv = (ProfileItemNumberValue) biv;
-                if (pinv.hasPerTimeUnit() && pinv.isNonZero()) {
-                    return true;
-                }
+        for (BaseItemValue value : getItemValues(profileItem)) {
+
+            // Only ProfileItemNumberValues have units and perUnits.
+            if (ProfileItemNumberValue.class.isAssignableFrom(value.getClass()) &&
+                isNonZeroPerTimeValue((ProfileItemNumberValue)value)) {
+                return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Checks if the given value is non-zero and has a time-based perUnit (eg year).
+     *
+     * @param value the BaseItemValue to check.
+     * @return true if the given value is non-zero and has a time-based perUnit.
+     */
+    @Override
+    public boolean isNonZeroPerTimeValue(ProfileItemNumberValue value) {
+        return value.hasPerTimeUnit() && value.isNonZero();
     }
 
     //TODO - TEMP HACK - will remove as soon we decide how to handle return units in V1 correctly.
@@ -269,11 +286,21 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
         checkProfileItem(profileItem);
     }
 
+    @Override
+    public void remove(ProfileItem profileItem) {
+        profileItem.setStatus(AMEEStatus.TRASH);
+    }
+
     // ItemValues.
 
     @Override
     public void persist(BaseItemValue itemValue) {
         dao.persist(itemValue);
+    }
+
+    @Override
+    public void remove(BaseItemValue itemValue) {
+        itemValue.setStatus(AMEEStatus.TRASH);
     }
 
     @Override
