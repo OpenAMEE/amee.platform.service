@@ -241,6 +241,7 @@ public class GroupServiceDAO {
         pager.setItems(count);
         pager.goRequestedPage();
         // now get the objects for the current page
+        // TODO: Does this query really limit maxResults to just the GroupPrincipal?
         List<GroupPrincipal> groupPrincipals = entityManager.createQuery(
                 "SELECT gp " +
                         "FROM GroupPrincipal gp " +
