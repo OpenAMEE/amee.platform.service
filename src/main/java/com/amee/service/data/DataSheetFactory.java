@@ -33,6 +33,7 @@ import com.amee.domain.sheet.Column;
 import com.amee.domain.sheet.Row;
 import com.amee.domain.sheet.Sheet;
 import com.amee.platform.science.StartEndDate;
+import com.amee.service.item.DataItemService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -51,9 +52,10 @@ public class DataSheetFactory implements CacheableFactory {
         super();
     }
 
-    public DataSheetFactory(DataService dataService, DataBrowser dataBrowser, String cacheName) {
+    public DataSheetFactory(DataService dataService, IDataItemService dataItemService, DataBrowser dataBrowser, String cacheName) {
         this();
         this.dataService = dataService;
+        this.dataItemService = dataItemService;
         this.dataBrowser = dataBrowser;
         this.cacheName = cacheName;
     }

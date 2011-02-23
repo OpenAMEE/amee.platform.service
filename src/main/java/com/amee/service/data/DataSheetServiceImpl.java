@@ -87,7 +87,7 @@ public class DataSheetServiceImpl implements DataSheetService {
     @Override
     public Sheet getSheet(DataBrowser browser, String fullPath) {
         DataSheetFactory dataSheetFactory = new DataSheetFactory(
-                dataService, browser, getEternalPaths().contains(fullPath) ? "DataSheetsEternal" : "DataSheets");
+                dataService, dataItemService, browser, getEternalPaths().contains(fullPath) ? "DataSheetsEternal" : "DataSheets");
         return (Sheet) cacheHelper.getCacheable(dataSheetFactory);
     }
 

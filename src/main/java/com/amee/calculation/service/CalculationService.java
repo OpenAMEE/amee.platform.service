@@ -19,10 +19,7 @@
  */
 package com.amee.calculation.service;
 
-import com.amee.domain.AMEEStatistics;
-import com.amee.domain.APIVersion;
-import com.amee.domain.IDataItemService;
-import com.amee.domain.ValueType;
+import com.amee.domain.*;
 import com.amee.domain.algorithm.Algorithm;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
@@ -37,10 +34,8 @@ import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.sheet.Choices;
-import com.amee.platform.science.AlgorithmRunner;
-import com.amee.platform.science.ExternalValue;
-import com.amee.platform.science.InternalValue;
-import com.amee.platform.science.ReturnValues;
+import com.amee.platform.science.*;
+import com.amee.service.item.ItemService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -66,7 +61,10 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     private AMEEStatistics ameeStatistics;
 
     @Autowired
-    private IDataItemService dataItemService;
+    private IItemService dataItemService;
+
+    @Autowired
+    private IItemService profileItemService;
 
     private AlgorithmRunner algorithmRunner = new AlgorithmRunner();
 
@@ -205,10 +203,10 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         DataItem dataItem = profileItem.getDataItem();
         dataItem.setEffectiveStartDate(profileItem.getEffectiveStartDate());
         dataItem.setEffectiveEndDate(profileItem.getEffectiveEndDate());
-        appendInternalValues(dataItem, values);
+        appendInternalValues(dataItem, dataItemService, values);
 
         // Add the ProfileItem values.
-        appendInternalValues(profileItem, values);
+        appendInternalValues(profileItem, profileItemService, values);
 
         // Add actual values to returnValues list based on InternalValues in values list.
         for (Map.Entry<ItemValueDefinition, InternalValue> entry : values.entrySet()) {
@@ -228,11 +226,12 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param values - the {@link com.amee.platform.science.InternalValue} collection
      */
     @SuppressWarnings("unchecked")
-    public void appendInternalValues(BaseItem item, Map<ItemValueDefinition, InternalValue> values) {
-        ItemValueMap itemValueMap = dataItemService.getItemValuesMap(item);
+    public void appendInternalValues(BaseItem item, IItemService itemService, Map<ItemValueDefinition, InternalValue> values) {
+        // TODO: ProfileItemService?
+        ItemValueMap itemValueMap = itemService.getItemValuesMap(item);
         for (Object path : itemValueMap.keySet()) {
             // Get all ItemValues with this ItemValueDefinition path.
-            List<BaseItemValue> itemValues = dataItemService.getAllItemValues(item, (String) path);
+            List<BaseItemValue> itemValues = itemService.getAllItemValues(item, (String) path);
             if (itemValues.size() > 1 || itemValues.get(0).getItemValueDefinition().isForceTimeSeries()) {
                 appendTimeSeriesItemValue(item, values, itemValues);
             } else if (itemValues.size() == 1) {
@@ -248,7 +247,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         ItemValueDefinition ivd = itemValues.get(0).getItemValueDefinition();
 
         // Add all BaseItemValues with usable values
-        List<ExternalValue> usableSet = (List<ExternalValue>) CollectionUtils.select(itemValues, new UsableValuePredicate());
+        List<ExternalGenericValue> usableSet = (List<ExternalGenericValue>) CollectionUtils.select(itemValues, new UsableValuePredicate());
 
         if (!usableSet.isEmpty()) {
             values.put(ivd, new InternalValue(usableSet, item.getEffectiveStartDate(), item.getEffectiveEndDate()));
@@ -292,13 +291,18 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         values.put("serviceFinder", serviceFinder);
     }
 
-    // Collect all relevant algorithm input values for a DataItem + auth Choices calculation.
-
+    /**
+     * Collect all relevant algorithm input values for a DataItem + auth Choices calculation.
+     *
+     * @param dataItem
+     * @param userValueChoices
+     * @param version
+     * @return
+     */
     private Map<String, Object> getValues(DataItem dataItem, Choices userValueChoices, APIVersion version) {
-
         Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
         dataItem.getItemDefinition().appendInternalValues(values, version);
-        appendInternalValues(dataItem, values);
+        appendInternalValues(dataItem, dataItemService, values);
         appendUserValueChoices(dataItem.getItemDefinition(), userValueChoices, values, version);
 
         Map<String, Object> returnValues = new HashMap<String, Object>();
@@ -333,6 +337,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
                 // Add each submitted user Choice that is available in the ItemDefinition and for the user's APIVersion
                 if (itemValueDefinition.isFromProfile() &&
                         userValueChoices.containsKey(itemValueDefinition.getPath()) &&
+                        !userValueChoices.get(itemValueDefinition.getPath()).getValue().isEmpty() &&
                         itemValueDefinition.isValidInAPIVersion(version)) {
                     // Create transient ProfileItem & ItemValue.
                     ProfileItem profileItem = new ProfileItem();
