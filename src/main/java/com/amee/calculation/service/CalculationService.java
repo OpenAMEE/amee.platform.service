@@ -172,6 +172,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
             // ...and return an empty result by default.
             returnValues = new ReturnValues();
+            returnValues.addNote("error", "Algorithm error.");
         } finally {
             ameeStatistics.addToThreadCalculationDuration(System.nanoTime() - startTime);
         }
