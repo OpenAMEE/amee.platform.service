@@ -101,9 +101,9 @@ public class ResourceAuthorizationService {
     }
 
     /**
-     * Returns true if the user authorized to accept (PUT) a representation for this resource.
+     * Returns true if the user authorized to accept (POST) a representation for this resource.
      *
-     * @return true if the user authorized to accept (PUT) a representation for this resource
+     * @return true if the user authorized to accept (POST) a representation for this resource
      */
     public boolean isAuthorizedForAccept() {
         return isAuthorized(getAcceptAccessSpecifications());
@@ -128,9 +128,9 @@ public class ResourceAuthorizationService {
     }
 
     /**
-     * Returns true if the user authorized to modify (POST) a representation for this resource.
+     * Returns true if the user authorized to modify (PUT) a representation for this resource.
      *
-     * @return true if the user authorized to modify (POST) a representation for this resource
+     * @return true if the user authorized to modify (PUT) a representation for this resource
      */
     public boolean isAuthorizedForModify() {
         return isAuthorized(getModifyAccessSpecifications());

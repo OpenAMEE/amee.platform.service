@@ -116,7 +116,7 @@ public class DefinitionServiceDAO {
         return algorithmContext;
     }
 
-    public void save(AbstractAlgorithm algorithm) {
+    public void persist(AbstractAlgorithm algorithm) {
         entityManager.persist(algorithm);
     }
 
@@ -223,7 +223,7 @@ public class DefinitionServiceDAO {
         return itemDefinitions;
     }
 
-    public void save(ItemDefinition itemDefinition) {
+    public void persist(ItemDefinition itemDefinition) {
         entityManager.persist(itemDefinition);
     }
 
@@ -261,7 +261,7 @@ public class DefinitionServiceDAO {
         return itemValueDefinition;
     }
 
-    public void save(ItemValueDefinition itemValueDefinition) {
+    public void persist(ItemValueDefinition itemValueDefinition) {
         entityManager.persist(itemValueDefinition);
     }
 
@@ -299,7 +299,7 @@ public class DefinitionServiceDAO {
         return returnValueDefinition;
     }
 
-    public void save(ReturnValueDefinition returnValueDefinition) {
+    public void persist(ReturnValueDefinition returnValueDefinition) {
         entityManager.persist(returnValueDefinition);
     }
 
@@ -378,7 +378,7 @@ public class DefinitionServiceDAO {
         return valueDefinition;
     }
 
-    public void save(ValueDefinition valueDefinition) {
+    public void persist(ValueDefinition valueDefinition) {
         entityManager.persist(valueDefinition);
     }
 

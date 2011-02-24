@@ -23,7 +23,7 @@ public interface DefinitionService extends ApplicationListener<InvalidationMessa
 
     AlgorithmContext getAlgorithmContextByUid(String uid);
 
-    void save(AbstractAlgorithm algorithm);
+    void persist(AbstractAlgorithm algorithm);
 
     void remove(AbstractAlgorithm algorithm);
 
@@ -37,7 +37,7 @@ public interface DefinitionService extends ApplicationListener<InvalidationMessa
 
     List<ItemDefinition> getItemDefinitions(Pager pager);
 
-    void save(ItemDefinition itemDefinition);
+    void persist(ItemDefinition itemDefinition);
 
     void remove(ItemDefinition itemDefinition);
 
@@ -49,7 +49,7 @@ public interface DefinitionService extends ApplicationListener<InvalidationMessa
 
     ItemValueDefinition getItemValueDefinitionByUid(String uid);
 
-    void save(ItemValueDefinition itemValueDefinition);
+    void persist(ItemValueDefinition itemValueDefinition);
 
     void remove(ItemValueDefinition itemValueDefinition);
 
@@ -57,7 +57,7 @@ public interface DefinitionService extends ApplicationListener<InvalidationMessa
 
     ReturnValueDefinition getReturnValueDefinitionByUid(String uid);
 
-    void save(ReturnValueDefinition returnValueDefinition);
+    void persist(ReturnValueDefinition returnValueDefinition);
 
     void unsetDefaultTypes(ReturnValueDefinition returnValueDefinition);
 
@@ -69,7 +69,7 @@ public interface DefinitionService extends ApplicationListener<InvalidationMessa
 
     ValueDefinition getValueDefinition(String uid);
 
-    void save(ValueDefinition valueDefinition);
+    void persist(ValueDefinition valueDefinition);
 
     void remove(ValueDefinition valueDefinition);
 }

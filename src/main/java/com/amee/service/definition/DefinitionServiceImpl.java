@@ -95,8 +95,8 @@ public class DefinitionServiceImpl implements DefinitionService {
     }
 
     @Override
-    public void save(AbstractAlgorithm algorithm) {
-        dao.save(algorithm);
+    public void persist(AbstractAlgorithm algorithm) {
+        dao.persist(algorithm);
     }
 
     @Override
@@ -150,8 +150,8 @@ public class DefinitionServiceImpl implements DefinitionService {
     }
 
     @Override
-    public void save(ItemDefinition itemDefinition) {
-        dao.save(itemDefinition);
+    public void persist(ItemDefinition itemDefinition) {
+        dao.persist(itemDefinition);
     }
 
     @Override
@@ -216,8 +216,8 @@ public class DefinitionServiceImpl implements DefinitionService {
     }
 
     @Override
-    public void save(ItemValueDefinition itemValueDefinition) {
-        dao.save(itemValueDefinition);
+    public void persist(ItemValueDefinition itemValueDefinition) {
+        dao.persist(itemValueDefinition);
     }
 
     @Override
@@ -243,8 +243,8 @@ public class DefinitionServiceImpl implements DefinitionService {
     }
 
     @Override
-    public void save(ReturnValueDefinition returnValueDefinition) {
-        dao.save(returnValueDefinition);
+    public void persist(ReturnValueDefinition returnValueDefinition) {
+        dao.persist(returnValueDefinition);
     }
 
     /**
@@ -287,8 +287,8 @@ public class DefinitionServiceImpl implements DefinitionService {
     }
 
     @Override
-    public void save(ValueDefinition valueDefinition) {
-        dao.save(valueDefinition);
+    public void persist(ValueDefinition valueDefinition) {
+        dao.persist(valueDefinition);
     }
 
     @Override
