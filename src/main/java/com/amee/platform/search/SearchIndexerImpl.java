@@ -94,6 +94,9 @@ public class SearchIndexerImpl implements SearchIndexer {
         } catch (LuceneServiceException e) {
             searchLog.warn(documentContext.dataCategoryUid + "|Abandoned processing DataCategory.");
             log.warn("run() Caught LuceneServiceException: " + e.getMessage());
+        } catch (InterruptedException e) {
+            searchLog.warn(documentContext.dataCategoryUid + "|DataCategory may not completed.");
+            log.warn("run() Caught InterruptedException: " + e.getMessage());
         } catch (Throwable t) {
             searchLog.error(documentContext.dataCategoryUid + "|Error processing DataCategory.");
             log.error("run() Caught Throwable: " + t.getMessage(), t);
@@ -105,8 +108,10 @@ public class SearchIndexerImpl implements SearchIndexer {
 
     /**
      * Update or remove Data Category & Data Items from the search index.
+     *
+     * @throws InterruptedException might be thrown if application is shutdown whilst indexing
      */
-    private void updateDataCategory() {
+    private void updateDataCategory() throws InterruptedException {
         if (!dataCategory.isTrash()) {
             Document document = searchQueryService.getDocument(dataCategory, true);
             if (document != null) {

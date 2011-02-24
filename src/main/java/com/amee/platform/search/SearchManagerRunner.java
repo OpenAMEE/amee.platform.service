@@ -3,7 +3,9 @@ package com.amee.platform.search;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.SmartLifecycle;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 public class SearchManagerRunner implements Runnable, SmartLifecycle {
 
@@ -11,6 +13,10 @@ public class SearchManagerRunner implements Runnable, SmartLifecycle {
 
     @Autowired
     private SearchManager searchManager;
+
+    @Autowired
+    @Qualifier("searchIndexerTaskExecutor")
+    private ThreadPoolTaskExecutor taskExecutor;
 
     // A Thread to do the initialisation work in.
     private Thread thread;
@@ -51,11 +57,15 @@ public class SearchManagerRunner implements Runnable, SmartLifecycle {
     @Override
     public synchronized void stop() {
         log.info("stop()");
+        // Remember that we're stopping...
         stopping = true;
+        // Stop the thread.
         if (thread != null) {
             thread.interrupt();
             thread = null;
         }
+        // Shutdown the SearchIndexer thread pool.
+        taskExecutor.shutdown();
     }
 
     @Override
