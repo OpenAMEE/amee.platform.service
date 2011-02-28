@@ -35,6 +35,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
+import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Order;
@@ -367,6 +368,7 @@ public class DefinitionServiceDAO {
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setCacheable(true);
             criteria.setCacheRegion(CACHE_REGION);
+            criteria.setFlushMode(FlushMode.MANUAL);
             List<ValueDefinition> valueDefinitions = criteria.list();
             if (valueDefinitions.size() == 1) {
                 log.debug("getValueDefinitionByUid() found: " + uid);
