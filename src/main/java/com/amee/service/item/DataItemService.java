@@ -314,6 +314,7 @@ public class DataItemService extends ItemService implements IDataItemService {
 
         boolean handledFirst = false;
         boolean truncated = false;
+        int count = 0;
 
         // Get *all* item value for the current DataItem and ItemValueDefinition.
         List<BaseItemValue> itemValues =
@@ -333,11 +334,23 @@ public class DataItemService extends ItemService implements IDataItemService {
                 if (ehv.getStartDate().compareTo(filter.getStartDate()) >= 0) {
                     // Before the end date?
                     if (ehv.getStartDate().before(filter.getEndDate())) {
-                        // Within the end date. Safe to add this item value.
-                        results.add(bdiv);
+                        // On or after the resultStart?
+                        if (count >= filter.getResultStart()) {
+                            // Before the resultLimit?
+                            if (results.size() < filter.getResultLimit()) {
+                                // Safe to add this item value.
+                                results.add(bdiv);
+                            } else {
+                                // Gone beyond the resultLimit.
+                                // The results are truncated and we can ignore the other item values.
+                                truncated = true;
+                                break;
+                            }
+                        }
+                        // Increment count of eligible item values.
+                        count++;
                     } else {
-                        // Gone beyond the end date. The results are truncated and we can ignore the other item values.
-                        truncated = true;
+                        // Gone beyond the end date and we can ignore the other item values.
                         break;
                     }
                 } else {
@@ -350,11 +363,13 @@ public class DataItemService extends ItemService implements IDataItemService {
                     // is in the wrong place in the list.
                     throw new IllegalStateException("Unexpected non-historical item value: " + biv);
                 }
-                // The current item value must be at the epoch.
-                if (filter.getStartDate().equals(IDataItemService.EPOCH)) {
+                // On or after the resultStart? Filter at the epoch?
+                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(IDataItemService.EPOCH)) {
                     // This *must* be the first item value.
                     results.add(bdiv);
                 }
+                // Increment count of eligible item values.
+                count++;
                 // We only work in this section once.
                 handledFirst = true;
             }
