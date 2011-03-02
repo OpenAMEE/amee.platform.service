@@ -431,6 +431,7 @@ public class DataServiceDAOImpl implements DataServiceDAO {
                 .setParameter("trash", AMEEStatus.TRASH)
                 .setHint("org.hibernate.cacheable", true)
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
+                .setFlushMode(FlushModeType.COMMIT)
                 .getResultList();
     }
 
