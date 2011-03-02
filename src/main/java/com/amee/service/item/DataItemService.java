@@ -303,6 +303,9 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     /**
      * Gets a {@link ResultsWrapper} of {@link BaseDataItemValue}s matching the supplied {@link DataItemValuesFilter}.
+     * <p/>
+     * TODO: This method is not designed for large amounts of DIVHs.
+     * TODO: See https://jira.amee.com/browse/PL-2685.
      *
      * @param filter a {@link DataItemValuesFilter} to match {@link BaseDataItemValue}s against
      * @return a a {@link ResultsWrapper} of {@link BaseDataItemValue}s
@@ -357,7 +360,7 @@ public class DataItemService extends ItemService implements IDataItemService {
         }
 
         // Create the ResultsWrapper and return.
-        return new ResultsWrapper<BaseDataItemValue>(results, true);
+        return new ResultsWrapper<BaseDataItemValue>(results, truncated);
     }
 
     /**
