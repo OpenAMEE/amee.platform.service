@@ -203,7 +203,7 @@ public class DefinitionServiceImpl implements DefinitionService {
     @Override
     public ItemValueDefinition getItemValueDefinitionByUid(ItemDefinition itemDefinition, String uid) {
         ItemValueDefinition itemValueDefinition = getItemValueDefinitionByUid(uid);
-        if (itemValueDefinition.getItemDefinition().equals(itemDefinition)) {
+        if (itemValueDefinition != null && itemValueDefinition.getItemDefinition().equals(itemDefinition)) {
             return itemValueDefinition;
         } else {
             return null;
@@ -230,7 +230,7 @@ public class DefinitionServiceImpl implements DefinitionService {
     @Override
     public ReturnValueDefinition getReturnValueDefinitionByUid(ItemDefinition itemDefinition, String uid) {
         ReturnValueDefinition returnValueDefinition = getReturnValueDefinitionByUid(uid);
-        if ((returnValueDefinition != null) && returnValueDefinition.getItemDefinition().equals(itemDefinition)) {
+        if (returnValueDefinition != null && returnValueDefinition.getItemDefinition().equals(itemDefinition)) {
             return returnValueDefinition;
         } else {
             return null;
