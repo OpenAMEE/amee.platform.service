@@ -218,7 +218,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
         // find ItemValueDefinitions not currently implemented in this Item
         for (ItemValueDefinition ivd : profileItem.getItemDefinition().getItemValueDefinitions()) {
-            if (ivd.isFromProfile() && ivd.getAPIVersions().contains(apiVersion)) {
+            if (ivd.isFromProfile() && ivd.getApiVersions().contains(apiVersion)) {
                 if (!existingItemValueDefinitions.contains(ivd)) {
                     missingItemValueDefinitions.add(ivd);
                 }
