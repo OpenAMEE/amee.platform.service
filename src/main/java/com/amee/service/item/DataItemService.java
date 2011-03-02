@@ -312,7 +312,7 @@ public class DataItemService extends ItemService implements IDataItemService {
      */
     public ResultsWrapper<BaseDataItemValue> getAllItemValues(DataItemValuesFilter filter) {
 
-        boolean addedFirst = false;
+        boolean handledFirst = false;
         boolean truncated = false;
 
         // Get *all* item value for the current DataItem and ItemValueDefinition.
@@ -345,7 +345,7 @@ public class DataItemService extends ItemService implements IDataItemService {
                 }
             } else {
                 // We should only execute this section once.
-                if (addedFirst) {
+                if (handledFirst) {
                     // Should never get here. Implies that the list contains a non-historical item value
                     // is in the wrong place in the list.
                     throw new IllegalStateException("Unexpected non-historical item value: " + biv);
@@ -354,8 +354,9 @@ public class DataItemService extends ItemService implements IDataItemService {
                 if (filter.getStartDate().equals(IDataItemService.EPOCH)) {
                     // This *must* be the first item value.
                     results.add(bdiv);
-                    addedFirst = true;
                 }
+                // We only work in this section once.
+                handledFirst = true;
             }
         }
 
