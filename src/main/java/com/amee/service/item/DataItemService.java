@@ -1,12 +1,10 @@
 package com.amee.service.item;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
 import com.amee.domain.*;
-import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.ItemDefinition;
-import com.amee.domain.data.ItemValueDefinition;
-import com.amee.domain.data.ItemValueMap;
+import com.amee.domain.data.*;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.BaseDataItemValue;
@@ -15,6 +13,7 @@ import com.amee.domain.item.data.DataItemNumberValue;
 import com.amee.domain.item.data.DataItemTextValue;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
+import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
 import com.amee.service.invalidation.InvalidationService;
 import org.apache.commons.lang.StringUtils;
@@ -301,6 +300,84 @@ public class DataItemService extends ItemService implements IDataItemService {
     }
 
     // ItemValues.
+
+    /**
+     * Gets a {@link ResultsWrapper} of {@link BaseDataItemValue}s matching the supplied {@link DataItemValuesFilter}.
+     * <p/>
+     * TODO: This method is not designed for large amounts of DIVHs.
+     * TODO: See https://jira.amee.com/browse/PL-2685.
+     *
+     * @param filter a {@link DataItemValuesFilter} to match {@link BaseDataItemValue}s against
+     * @return a a {@link ResultsWrapper} of {@link BaseDataItemValue}s
+     */
+    public ResultsWrapper<BaseDataItemValue> getAllItemValues(DataItemValuesFilter filter) {
+
+        boolean handledFirst = false;
+        boolean truncated = false;
+        int count = 0;
+
+        // Get *all* item value for the current DataItem and ItemValueDefinition.
+        List<BaseItemValue> itemValues =
+                new ArrayList<BaseItemValue>(
+                        getAllItemValues(filter.getDataItem(), filter.getItemValueDefinition().getPath()));
+
+        // Sort so earliest item value comes first, based on the startDate.
+        Collections.sort(itemValues, new BaseItemValueStartDateComparator());
+
+        // Create and populate a ResultsWrapper.
+        List<BaseDataItemValue> results = new ArrayList<BaseDataItemValue>();
+        for (BaseItemValue biv : itemValues) {
+            BaseDataItemValue bdiv = (BaseDataItemValue) biv;
+            if (BaseItemValueStartDateComparator.isHistoricValue(bdiv)) {
+                ExternalHistoryValue ehv = (ExternalHistoryValue) bdiv;
+                // At or beyond the start date?
+                if (ehv.getStartDate().compareTo(filter.getStartDate()) >= 0) {
+                    // Before the end date?
+                    if (ehv.getStartDate().before(filter.getEndDate())) {
+                        // On or after the resultStart?
+                        if (count >= filter.getResultStart()) {
+                            // Before the resultLimit?
+                            if (results.size() < filter.getResultLimit()) {
+                                // Safe to add this item value.
+                                results.add(bdiv);
+                            } else {
+                                // Gone beyond the resultLimit.
+                                // The results are truncated and we can ignore the other item values.
+                                truncated = true;
+                                break;
+                            }
+                        }
+                        // Increment count of eligible item values.
+                        count++;
+                    } else {
+                        // Gone beyond the end date and we can ignore the other item values.
+                        break;
+                    }
+                } else {
+                    // Before the start date.
+                }
+            } else {
+                // We should only execute this section once.
+                if (handledFirst) {
+                    // Should never get here. Implies that the list contains a non-historical item value
+                    // is in the wrong place in the list.
+                    throw new IllegalStateException("Unexpected non-historical item value: " + biv);
+                }
+                // On or after the resultStart? Filter at the epoch?
+                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(IDataItemService.EPOCH)) {
+                    // This *must* be the first item value.
+                    results.add(bdiv);
+                }
+                // Increment count of eligible item values.
+                count++;
+                // We only work in this section once.
+                handledFirst = true;
+            }
+        }
+
+        // Create the ResultsWrapper and return.
+        return new ResultsWrapper<BaseDataItemValue>(results, truncated);
+    }
 
     /**
      * Get an {@link BaseItemValue} belonging to this Item using some identifier and prevailing datetime context.

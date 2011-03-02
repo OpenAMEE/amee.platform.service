@@ -143,7 +143,7 @@ public abstract class ItemService implements IItemService, ApplicationListener {
      * @param uid  - the {@link com.amee.domain.item.BaseItemValue} UID
      * @return the {@link com.amee.domain.item.BaseItemValue} if found or NULL
      */
-    private BaseItemValue getByUid(BaseItem item, final String uid) {
+    public BaseItemValue getByUid(BaseItem item, final String uid) {
         return (BaseItemValue) CollectionUtils.find(getActiveItemValues(item), new Predicate() {
             public boolean evaluate(Object o) {
                 BaseEntity iv = (BaseEntity) o;

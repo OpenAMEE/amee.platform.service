@@ -52,8 +52,8 @@ public class PermissionService {
         addPrincipalAndEntity(ObjectType.USR, ObjectType.PINV);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.PITV);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.DINV);
-        addPrincipalAndEntity(ObjectType.USR, ObjectType.DITV);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.DINVH);
+        addPrincipalAndEntity(ObjectType.USR, ObjectType.DITV);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.DITVH);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.AL);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.ID);
@@ -74,7 +74,9 @@ public class PermissionService {
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.PINV);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.PITV);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.DINV);
+        addPrincipalAndEntity(ObjectType.GRP, ObjectType.DINVH);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.DITV);
+        addPrincipalAndEntity(ObjectType.GRP, ObjectType.DITVH);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.AL);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.ID);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.IVD);
