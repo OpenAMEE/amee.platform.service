@@ -7,6 +7,7 @@ import com.amee.domain.*;
 import com.amee.domain.data.*;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.HistoryValue;
 import com.amee.domain.item.data.BaseDataItemValue;
 import com.amee.domain.item.data.DataItem;
 import com.amee.domain.item.data.DataItemNumberValue;
@@ -377,6 +378,26 @@ public class DataItemService extends ItemService implements IDataItemService {
 
         // Create the ResultsWrapper and return.
         return new ResultsWrapper<BaseDataItemValue>(results, truncated);
+    }
+
+    /**
+     * Returns true if the {@link BaseDataItemValue} supplied has the same startDate as another
+     * peer within the same {@link DataItem}.
+     *
+     * @param itemValue {@link BaseDataItemValue} to check
+     * @return true if the {@link BaseDataItemValue} supplied has the same startDate as another {@link DataItem}
+     */
+    public boolean isDataItemValueUniqueByStartDate(BaseDataItemValue itemValue) {
+        if (HistoryValue.class.isAssignableFrom(itemValue.getClass())) {
+            HistoryValue hv = (HistoryValue) itemValue;
+            BaseItemValue existingItemValue =
+                    getItemValuesMap(itemValue.getDataItem()).get(
+                            itemValue.getItemValueDefinition().getPath(),
+                            hv.getStartDate());
+            return (existingItemValue != null) && !existingItemValue.equals(hv);
+        } else {
+            throw new IllegalStateException("Should not be checking a non-historical DataItemValue.");
+        }
     }
 
     /**
