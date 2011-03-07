@@ -383,18 +383,26 @@ public class DataItemService extends ItemService implements IDataItemService {
     /**
      * Returns true if the {@link BaseDataItemValue} supplied has the same startDate as another
      * peer within the same {@link DataItem}.
+     * <p/>
+     * TODO: This method is not designed for large amounts of DIVHs.
+     * TODO: See https://jira.amee.com/browse/PL-2685.
      *
      * @param itemValue {@link BaseDataItemValue} to check
      * @return true if the {@link BaseDataItemValue} supplied has the same startDate as another {@link DataItem}
      */
     public boolean isDataItemValueUniqueByStartDate(BaseDataItemValue itemValue) {
         if (HistoryValue.class.isAssignableFrom(itemValue.getClass())) {
-            HistoryValue hv = (HistoryValue) itemValue;
-            BaseItemValue existingItemValue =
-                    getItemValuesMap(itemValue.getDataItem()).get(
-                            itemValue.getItemValueDefinition().getPath(),
-                            hv.getStartDate());
-            return (existingItemValue != null) && !existingItemValue.equals(hv);
+            HistoryValue historyValue = (HistoryValue) itemValue;
+            for (BaseItemValue existingItemValue : getActiveItemValues(itemValue.getDataItem())) {
+                if (existingItemValue.getItemValueDefinition().equals(itemValue.getItemValueDefinition()) &&
+                        HistoryValue.class.isAssignableFrom(existingItemValue.getClass())) {
+                    HistoryValue existingHistoryValue = (HistoryValue) existingItemValue;
+                    if (!historyValue.equals(existingHistoryValue) && historyValue.getStartDate().equals(existingHistoryValue.getStartDate())) {
+                        return false;
+                    }
+                }
+            }
+            return true;
         } else {
             throw new IllegalStateException("Should not be checking a non-historical DataItemValue.");
         }
