@@ -63,6 +63,7 @@ public class DefinitionServiceDAO {
         if (!StringUtils.isBlank(uid)) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(Algorithm.class);
+            criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
             criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setCacheable(true);

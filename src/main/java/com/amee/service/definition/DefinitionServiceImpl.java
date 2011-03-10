@@ -79,6 +79,16 @@ public class DefinitionServiceImpl implements DefinitionService {
     // Algorithms
 
     @Override
+    public Algorithm getAlgorithmByUid(ItemDefinition itemDefinition, String uid) {
+        Algorithm algorithm = getAlgorithmByUid(uid);
+        if (algorithm != null && algorithm.getItemDefinition().equals(itemDefinition)) {
+            return algorithm;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     public Algorithm getAlgorithmByUid(String uid) {
         return dao.getAlgorithmByUid(uid);
     }

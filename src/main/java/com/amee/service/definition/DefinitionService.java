@@ -17,59 +17,61 @@ import java.util.List;
 
 public interface DefinitionService extends ApplicationListener<InvalidationMessage> {
 
-    Algorithm getAlgorithmByUid(String uid);
+    public Algorithm getAlgorithmByUid(ItemDefinition itemDefinition, String uid);
 
-    List<AlgorithmContext> getAlgorithmContexts();
+    public Algorithm getAlgorithmByUid(String uid);
 
-    AlgorithmContext getAlgorithmContextByUid(String uid);
+    public List<AlgorithmContext> getAlgorithmContexts();
 
-    void persist(AbstractAlgorithm algorithm);
+    public AlgorithmContext getAlgorithmContextByUid(String uid);
 
-    void remove(AbstractAlgorithm algorithm);
+    public void persist(AbstractAlgorithm algorithm);
 
-    ItemDefinition getItemDefinitionByUid(String uid);
+    public void remove(AbstractAlgorithm algorithm);
 
-    ItemDefinition getItemDefinitionByUid(String uid, boolean includeTrash);
+    public ItemDefinition getItemDefinitionByUid(String uid);
 
-    List<ItemDefinition> getItemDefinitions();
+    public ItemDefinition getItemDefinitionByUid(String uid, boolean includeTrash);
 
-    ResultsWrapper<ItemDefinition> getItemDefinitions(ItemDefinitionsFilter filter);
+    public List<ItemDefinition> getItemDefinitions();
 
-    List<ItemDefinition> getItemDefinitions(Pager pager);
+    public ResultsWrapper<ItemDefinition> getItemDefinitions(ItemDefinitionsFilter filter);
 
-    void persist(ItemDefinition itemDefinition);
+    public List<ItemDefinition> getItemDefinitions(Pager pager);
 
-    void remove(ItemDefinition itemDefinition);
+    public void persist(ItemDefinition itemDefinition);
 
-    void invalidate(ItemDefinition itemDefinition);
+    public void remove(ItemDefinition itemDefinition);
 
-    void clearCaches(ItemDefinition itemDefinition);
+    public void invalidate(ItemDefinition itemDefinition);
 
-    ItemValueDefinition getItemValueDefinitionByUid(ItemDefinition itemDefinition, String uid);
+    public void clearCaches(ItemDefinition itemDefinition);
 
-    ItemValueDefinition getItemValueDefinitionByUid(String uid);
+    public ItemValueDefinition getItemValueDefinitionByUid(ItemDefinition itemDefinition, String uid);
 
-    void persist(ItemValueDefinition itemValueDefinition);
+    public ItemValueDefinition getItemValueDefinitionByUid(String uid);
 
-    void remove(ItemValueDefinition itemValueDefinition);
+    public void persist(ItemValueDefinition itemValueDefinition);
 
-    ReturnValueDefinition getReturnValueDefinitionByUid(ItemDefinition itemDefinition, String uid);
+    public void remove(ItemValueDefinition itemValueDefinition);
 
-    ReturnValueDefinition getReturnValueDefinitionByUid(String uid);
+    public ReturnValueDefinition getReturnValueDefinitionByUid(ItemDefinition itemDefinition, String uid);
 
-    void persist(ReturnValueDefinition returnValueDefinition);
+    public ReturnValueDefinition getReturnValueDefinitionByUid(String uid);
 
-    void unsetDefaultTypes(ReturnValueDefinition returnValueDefinition);
+    public void persist(ReturnValueDefinition returnValueDefinition);
 
-    void remove(ReturnValueDefinition returnValueDefinition);
+    public void unsetDefaultTypes(ReturnValueDefinition returnValueDefinition);
 
-    List<ValueDefinition> getValueDefinitions();
+    public void remove(ReturnValueDefinition returnValueDefinition);
 
-    List<ValueDefinition> getValueDefinitions(Pager pager);
+    public List<ValueDefinition> getValueDefinitions();
 
-    ValueDefinition getValueDefinition(String uid);
+    public List<ValueDefinition> getValueDefinitions(Pager pager);
 
-    void persist(ValueDefinition valueDefinition);
+    public ValueDefinition getValueDefinition(String uid);
 
-    void remove(ValueDefinition valueDefinition);
+    public void persist(ValueDefinition valueDefinition);
+
+    public void remove(ValueDefinition valueDefinition);
 }
