@@ -426,10 +426,13 @@ public class DataItemService extends ItemService implements IDataItemService {
      * Updates the Data Item Values for the supplied DataItem based on the properties of the values
      * bean within the DataItem. Internally uses the Spring and Java beans API to access values in the
      * CGLIB created DataItem.values JavaBean.
+     * <p/>
+     * If a Data Item Value is modified then the Data Item is also marked as modified.
      *
      * @param dataItem to update
      */
     public void updateDataItemValues(DataItem dataItem) {
+        boolean modified = false;
         Object values = dataItem.getValues();
         ItemValueMap itemValues = getItemValuesMap(dataItem);
         for (String key : itemValues.keySet()) {
@@ -442,6 +445,7 @@ public class DataItemService extends ItemService implements IDataItemService {
                         Object v = readMethod.invoke(values);
                         if (v != null) {
                             value.setValue(v.toString());
+                            modified = true;
                         }
                     } catch (IllegalAccessException e) {
                         throw new RuntimeException("Caught IllegalAccessException: " + e.getMessage());
@@ -454,6 +458,10 @@ public class DataItemService extends ItemService implements IDataItemService {
             } else {
                 log.warn("updateDataItemValues() PropertyDescriptor was null: " + key);
             }
+        }
+        // Mark the DataItem as modified.
+        if (modified) {
+            dataItem.onModify();
         }
     }
 
