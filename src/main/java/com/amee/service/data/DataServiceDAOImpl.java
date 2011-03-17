@@ -309,7 +309,9 @@ public class DataServiceDAOImpl implements DataServiceDAO {
         criteria.setFlushMode(FlushMode.MANUAL);
         List<DataCategory> dataCategories = criteria.list();
         for (DataCategory dc : dataCategories) {
-            dataCategoriesReferences.put(dc.getPath(), new DataCategoryReference(dc));
+            if (!dc.isTrash()) {
+                dataCategoriesReferences.put(dc.getPath(), new DataCategoryReference(dc));
+            }
         }
         return dataCategoriesReferences;
     }

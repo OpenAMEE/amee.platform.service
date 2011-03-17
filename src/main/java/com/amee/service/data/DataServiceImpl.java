@@ -172,11 +172,6 @@ public class DataServiceImpl implements DataService, IDataService {
     }
 
     @Override
-    public ResultsWrapper<DataCategory> getDataCategories(int resultStart, int resultLimit) {
-        return getDataCategories(false, resultStart, resultLimit);
-    }
-
-    @Override
     public List<DataCategory> getDataCategories(boolean locales) {
         return getDataCategories(locales, 0, 0).getResults();
     }
@@ -208,14 +203,11 @@ public class DataServiceImpl implements DataService, IDataService {
     public Map<String, DataCategory> getDataCategoryMap(Set<Long> dataCategoryIds) {
         Map<String, DataCategory> dataCategoryMap = new HashMap<String, DataCategory>();
         for (DataCategory dataCategory : dao.getDataCategories(dataCategoryIds)) {
-            dataCategoryMap.put(dataCategory.getUid(), dataCategory);
+            if (!dataCategory.isTrash()) {
+                dataCategoryMap.put(dataCategory.getUid(), dataCategory);
+            }
         }
         return dataCategoryMap;
-    }
-
-    @Override
-    public List<DataCategory> getDataCategories(Set<Long> dataCategoryIds) {
-        return dao.getDataCategories(dataCategoryIds);
     }
 
     @Override

@@ -59,10 +59,34 @@ public class DataItemService extends ItemService implements IDataItemService {
         for (DataItem dataItem : dao.getDataItems(dataCategory)) {
             dataItems.add(dataItem);
         }
-        return activeDataItems(dataItems, checkDataItems);
+        return activeDataItems(dataItems, checkDataItems, true);
     }
 
-    private List<DataItem> activeDataItems(List<DataItem> dataItems, boolean checkDataItems) {
+    @Override
+    @SuppressWarnings(value = "unchecked")
+    public List<DataItem> getDataItems(Set<Long> dataItemIds) {
+        return activeDataItems(dao.getDataItems(dataItemIds), false, true);
+    }
+
+    @Override
+    @SuppressWarnings(value = "unchecked")
+    public Map<String, DataItem> getDataItemMap(Set<Long> dataItemIds, boolean loadValues) {
+        Map<String, DataItem> dataItemMap = new HashMap<String, DataItem>();
+        Set<BaseItemValue> dataItemValues = new HashSet<BaseItemValue>();
+        // Load all DataItems and BaseItemValues, if required.
+        List<DataItem> dataItems = activeDataItems(dao.getDataItems(dataItemIds), false, loadValues);
+        // Add DataItems to map. Add BaseItemValue, if required.
+        for (DataItem dataItem : dataItems) {
+            dataItemMap.put(dataItem.getUid(), dataItem);
+            if (loadValues) {
+                dataItemValues.addAll(getItemValues(dataItem));
+            }
+        }
+        localeService.loadLocaleNamesForDataItems(dataItemMap.values(), dataItemValues);
+        return dataItemMap;
+    }
+
+    private List<DataItem> activeDataItems(List<DataItem> dataItems, boolean checkDataItems, boolean loadValues) {
         List<DataItem> activeDataItems = new ArrayList<DataItem>();
         for (DataItem dataItem : dataItems) {
             if (!dataItem.isTrash()) {
@@ -72,39 +96,11 @@ public class DataItemService extends ItemService implements IDataItemService {
                 activeDataItems.add(dataItem);
             }
         }
-        loadItemValuesForItems((List) activeDataItems);
+        if (loadValues) {
+            loadItemValuesForItems((List) activeDataItems);
+        }
         localeService.loadLocaleNamesForDataItems(activeDataItems);
         return activeDataItems;
-    }
-
-    @Override
-    @SuppressWarnings(value = "unchecked")
-    public List<DataItem> getDataItems(Set<Long> dataItemIds) {
-        List<DataItem> dataItems = dao.getDataItems(dataItemIds);
-        loadItemValuesForItems((List) dataItems);
-        localeService.loadLocaleNamesForDataItems(dataItems);
-        return dataItems;
-    }
-
-    @Override
-    @SuppressWarnings(value = "unchecked")
-    public Map<String, DataItem> getDataItemMap(Set<Long> dataItemIds, boolean loadValues) {
-        Map<String, DataItem> dataItemMap = new HashMap<String, DataItem>();
-        Set<BaseItemValue> dataItemValues = new HashSet<BaseItemValue>();
-        // Load all DataItems and BaseItemValues, if required.
-        List<DataItem> dataItems = dao.getDataItems(dataItemIds);
-        if (loadValues) {
-            loadItemValuesForItems((List) dataItems);
-        }
-        // Add DataItems to map. Add BaseItemValue, if required.
-        for (DataItem dataItem : dataItems) {
-            dataItemMap.put(dataItem.getUid(), dataItem);
-            if (loadValues) {
-                dataItemValues.addAll(this.getItemValues(dataItem));
-            }
-        }
-        localeService.loadLocaleNamesForDataItems(dataItemMap.values(), dataItemValues);
-        return dataItemMap;
     }
 
     @Override

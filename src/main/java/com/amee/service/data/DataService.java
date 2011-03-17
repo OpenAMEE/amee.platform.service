@@ -41,15 +41,11 @@ public interface DataService extends ApplicationListener<InvalidationMessage> {
 
     public List<DataCategory> getDataCategories();
 
-    public ResultsWrapper<DataCategory> getDataCategories(int resultStart, int resultLimit);
-
     public List<DataCategory> getDataCategories(boolean locales);
 
     public ResultsWrapper<DataCategory> getDataCategories(boolean locales, int resultStart, int resultLimit);
 
     public Map<String, DataCategory> getDataCategoryMap(Set<Long> dataCategoryIds);
-
-    public List<DataCategory> getDataCategories(Set<Long> dataCategoryIds);
 
     public List<DataCategory> getDataCategoriesModifiedWithin(Date modifiedSince, Date modifiedUntil);
 

@@ -202,7 +202,10 @@ public class SearchService {
         List<DataCategory> dataCategories = new ArrayList<DataCategory>();
         for (IAMEEEntity entity : entityResultsWrapper.getResults()) {
             if (DataCategory.class.isAssignableFrom(entity.getClass())) {
-                dataCategories.add((DataCategory) entity);
+                DataCategory dataCategory = (DataCategory) entity;
+                if (!dataCategory.isTrash()) {
+                    dataCategories.add((DataCategory) entity);
+                }
             } else {
                 throw new IllegalStateException("A DataCategory was expected.");
             }
@@ -271,7 +274,10 @@ public class SearchService {
         List<DataItem> dataItems = new ArrayList<DataItem>();
         for (IAMEEEntity entity : entityResultsWrapper.getResults()) {
             if (DataItem.class.isAssignableFrom(entity.getClass())) {
-                dataItems.add((DataItem) entity);
+                DataItem dataItem = (DataItem) entity;
+                if (!dataItem.isTrash()) {
+                    dataItems.add((DataItem) entity);
+                }
             } else {
                 throw new IllegalStateException("A DataItem was expected.");
             }
@@ -313,6 +319,8 @@ public class SearchService {
 
         // Load DataCategories.
         if (entityIds.containsKey(ObjectType.DC)) {
+
+            // Load the categories.
             Map<String, DataCategory> dataCategoriesMap = dataService.getDataCategoryMap(entityIds.get(ObjectType.DC));
             addDataCategories(entities, dataCategoriesMap);
 
@@ -327,20 +335,10 @@ public class SearchService {
         }
 
         // Load DataItems.
-        Set<String> dataItemUids = new HashSet<String>();
         if (entityIds.containsKey(ObjectType.NDI)) {
 
-            // Collate DataItem IDs.
-            Set<Long> dataItemIds = new HashSet<Long>();
-            dataItemIds.addAll(entityIds.get(ObjectType.NDI));
-
             // Load the items.
-            Map<String, DataItem> dataItemsMap = dataItemService.getDataItemMap(dataItemIds, loadItemValues);
-
-            // Collect UIDs.
-            for (DataItem dataItem : dataItemsMap.values()) {
-                dataItemUids.add(dataItem.getUid());
-            }
+            Map<String, DataItem> dataItemsMap = dataItemService.getDataItemMap(entityIds.get(ObjectType.NDI), loadItemValues);
 
             // Add to map.
             addDataItems(entities, dataItemsMap);
