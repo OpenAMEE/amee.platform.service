@@ -594,8 +594,7 @@ public class LuceneServiceImpl implements LuceneService {
 
     /**
      * Gets IndexWriter. Will call getNewIndexWriter if an IndexWriter is not yet created. Can
-     * be called multiple times within a thread. The create parameter is only effective when the
-     * IndexWriter has not previously been created.
+     * be called multiple times within a thread.
      * <p/>
      * Later, closeIndexWriter must be called at least once.
      *
