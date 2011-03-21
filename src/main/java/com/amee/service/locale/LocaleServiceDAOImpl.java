@@ -8,7 +8,6 @@ import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
-import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -17,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Repository
 public class LocaleServiceDAOImpl implements LocaleServiceDAO {
 
     private static final String CACHE_REGION = "query.localeService";
@@ -25,6 +23,7 @@ public class LocaleServiceDAOImpl implements LocaleServiceDAO {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Override
     @SuppressWarnings(value = "unchecked")
     public List<LocaleName> getLocaleNames(IAMEEEntityReference entity) {
         Session session = (Session) entityManager.getDelegate();
@@ -40,11 +39,8 @@ public class LocaleServiceDAOImpl implements LocaleServiceDAO {
 
     /**
      * Note: This can return LocaleNames associated with various types of entities.
-     *
-     * @param objectType
-     * @param entities
-     * @return
      */
+    @Override
     @SuppressWarnings(value = "unchecked")
     public List<LocaleName> getLocaleNames(ObjectType objectType, Collection<IAMEEEntityReference> entities) {
         Set<Long> entityIds = new HashSet<Long>();
@@ -61,10 +57,12 @@ public class LocaleServiceDAOImpl implements LocaleServiceDAO {
         return criteria.list();
     }
 
+    @Override
     public void persist(LocaleName localeName) {
         entityManager.persist(localeName);
     }
 
+    @Override
     public void remove(LocaleName localeName) {
         localeName.setStatus(AMEEStatus.TRASH);
     }
