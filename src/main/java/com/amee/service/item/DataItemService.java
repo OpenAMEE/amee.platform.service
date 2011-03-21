@@ -55,11 +55,7 @@ public class DataItemService extends ItemService implements IDataItemService {
 
     @Override
     public List<DataItem> getDataItems(IDataCategoryReference dataCategory, boolean checkDataItems) {
-        List<DataItem> dataItems = new ArrayList<DataItem>();
-        for (DataItem dataItem : dao.getDataItems(dataCategory)) {
-            dataItems.add(dataItem);
-        }
-        return activeDataItems(dataItems, checkDataItems, true);
+        return activeDataItems(dao.getDataItems(dataCategory), checkDataItems, true);
     }
 
     @Override
@@ -386,6 +382,7 @@ public class DataItemService extends ItemService implements IDataItemService {
      * @param itemValue {@link BaseDataItemValue} to check
      * @return true if the {@link BaseDataItemValue} supplied has the same startDate as another {@link DataItem}
      */
+    @Override
     public boolean isDataItemValueUniqueByStartDate(BaseDataItemValue itemValue) {
         if (HistoryValue.class.isAssignableFrom(itemValue.getClass())) {
             HistoryValue historyValue = (HistoryValue) itemValue;
