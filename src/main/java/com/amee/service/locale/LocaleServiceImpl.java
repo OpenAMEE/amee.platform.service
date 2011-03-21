@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
-public class LocaleService implements ILocaleService, ApplicationListener {
+public class LocaleServiceImpl implements LocaleService, ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -32,6 +32,7 @@ public class LocaleService implements ILocaleService, ApplicationListener {
                 }
             };
 
+    @Override
     public void onApplicationEvent(ApplicationEvent e) {
         if (e instanceof TransactionEvent) {
             TransactionEvent te = (TransactionEvent) e;
@@ -52,6 +53,7 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         }
     }
 
+    @Override
     public Map<String, LocaleName> getLocaleNames(IAMEEEntityReference entity) {
         Map<String, LocaleName> localeNames = new HashMap<String, LocaleName>();
         for (LocaleName localeName : getLocaleNameList(entity)) {
@@ -76,18 +78,22 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         return localeNames;
     }
 
+    @Override
     public LocaleName getLocaleName(IAMEEEntityReference entity) {
         return getLocaleName(entity, LocaleHolder.getLocale());
     }
 
+    @Override
     public LocaleName getLocaleName(IAMEEEntityReference entity, String locale) {
         return getLocaleNames(entity).get(LocaleHolder.getLocale());
     }
 
+    @Override
     public String getLocaleNameValue(IAMEEEntityReference entity) {
         return getLocaleNameValue(entity, null);
     }
 
+    @Override
     public String getLocaleNameValue(IAMEEEntityReference entity, String defaultName) {
         LocaleName localeName = getLocaleName(entity);
         if (localeName != null) {
@@ -97,6 +103,7 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         }
     }
 
+    @Override
     public void clearLocaleName(IAMEEEntityReference entity, String locale) {
         // Is there an existing LocaleName?
         LocaleName localeName = getLocaleName(entity, locale);
@@ -105,6 +112,7 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         }
     }
 
+    @Override
     public void setLocaleName(IAMEEEntityReference entity, String locale, String name) {
         // Is there an existing LocaleName?
         LocaleName localeName = getLocaleName(entity, locale);
@@ -121,18 +129,22 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         }
     }
 
+    @Override
     public void loadLocaleNamesForDataCategories(Collection<DataCategory> dataCategories) {
         loadLocaleNames(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
     }
 
+    @Override
     public void loadLocaleNamesForDataCategoryReferences(Collection<IDataCategoryReference> dataCategories) {
         loadLocaleNames(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
     }
 
+    @Override
     public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems) {
         loadLocaleNamesForDataItems(dataItems, null);
     }
 
+    @Override
     public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems, Set<BaseItemValue> values) {
         loadLocaleNames(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
         if ((values != null) && (!values.isEmpty())) {
@@ -143,10 +155,12 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         }
     }
 
+    @Override
     public void loadLocaleNamesForItemValueDefinitions(Collection<ItemValueDefinition> itemValueDefinitions) {
         loadLocaleNames(ObjectType.IVD, new HashSet<IAMEEEntityReference>(itemValueDefinitions));
     }
 
+    @Override
     public void loadLocaleNames(ObjectType objectType, Collection<IAMEEEntityReference> entities) {
         // A null entry for when there are no LocaleNames for the entity.
         // Ensure a null entry exists for all entities.
@@ -167,15 +181,18 @@ public class LocaleService implements ILocaleService, ApplicationListener {
         }
     }
 
+    @Override
     public void clearLocaleNames() {
         LOCALE_NAMES.get().clear();
     }
 
+    @Override
     public void persist(LocaleName localeName) {
         LOCALE_NAMES.get().remove(localeName.getEntityReference().toString());
         dao.persist(localeName);
     }
 
+    @Override
     public void remove(LocaleName localeName) {
         LOCALE_NAMES.get().remove(localeName.getEntityReference().toString());
         dao.remove(localeName);

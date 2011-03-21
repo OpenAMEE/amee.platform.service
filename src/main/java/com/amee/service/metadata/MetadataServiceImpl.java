@@ -2,8 +2,8 @@ package com.amee.service.metadata;
 
 import com.amee.base.transaction.TransactionEvent;
 import com.amee.domain.IAMEEEntityReference;
-import com.amee.domain.IMetadataService;
 import com.amee.domain.Metadata;
+import com.amee.domain.MetadataService;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 @Service
-public class MetadataService implements IMetadataService, ApplicationListener {
+public class MetadataServiceImpl implements MetadataService, ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -82,22 +82,27 @@ public class MetadataService implements IMetadataService, ApplicationListener {
         return metadatas;
     }
 
+    @Override
     public void loadMetadatasForDataCategories(Collection<DataCategory> dataCategories) {
         loadMetadatas(ObjectType.DC, new HashSet<IAMEEEntityReference>(dataCategories));
     }
 
+    @Override
     public void loadMetadatasForDataItems(Collection<DataItem> dataItems) {
         loadMetadatas(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
     }
 
+    @Override
     public void loadMetadatasForItemDefinitions(Collection<ItemDefinition> itemDefinitions) {
         loadMetadatas(ObjectType.ID, new HashSet<IAMEEEntityReference>(itemDefinitions));
     }
 
+    @Override
     public void loadMetadatasForItemValueDefinitions(Collection<ItemValueDefinition> itemValueDefinitions) {
         loadMetadatas(ObjectType.IVD, new HashSet<IAMEEEntityReference>(itemValueDefinitions));
     }
 
+    @Override
     public void loadMetadatas(ObjectType objectType, Collection<IAMEEEntityReference> entities) {
         // A null entry for when there is no Metadata for the entity.
         // Ensure a null entry exists for all entities.
@@ -118,6 +123,7 @@ public class MetadataService implements IMetadataService, ApplicationListener {
         }
     }
 
+    @Override
     public void clearMetadatas() {
         METADATAS.get().clear();
     }
@@ -128,6 +134,7 @@ public class MetadataService implements IMetadataService, ApplicationListener {
         dao.persist(metadata);
     }
 
+    @Override
     public void remove(Metadata metadata) {
         METADATAS.get().remove(metadata.getEntityReference().toString());
         dao.remove(metadata);
