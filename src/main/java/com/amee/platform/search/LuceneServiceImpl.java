@@ -683,6 +683,7 @@ public class LuceneServiceImpl implements LuceneService {
      * Takes a snapshot of the lucene index using the Solr SnapShooter shell script.
      * http://wiki.apache.org/solr/SolrCollectionDistributionScripts
      */
+    @Override
     public void takeSnapshot() {
         if (!snapshotEnabled) return;
         Process p = null;

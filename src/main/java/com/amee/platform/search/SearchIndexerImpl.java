@@ -1,17 +1,13 @@
 package com.amee.platform.search;
 
 import com.amee.base.transaction.AMEETransaction;
-import com.amee.domain.IAMEEEntity;
-import com.amee.domain.IDataItemService;
-import com.amee.domain.ObjectType;
+import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItem;
 import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationService;
-import com.amee.service.locale.LocaleService;
-import com.amee.service.metadata.MetadataService;
 import com.amee.service.tag.TagService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,6 +21,7 @@ import org.apache.lucene.search.TermQuery;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.perf4j.log4j.Log4JStopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +31,7 @@ import java.util.*;
 
 /**
  * Encapsulates all logic for creating the Lucene search index. Extends {@link SearchIndexer} to provide the only
- * public methods, handleDocumentContext and setDocumentContext.
+ * public methods, handleSearchIndexerContext and clear.
  */
 public class SearchIndexerImpl implements SearchIndexer {
 
@@ -71,7 +68,7 @@ public class SearchIndexerImpl implements SearchIndexer {
     private InvalidationService invalidationService;
 
     // A wrapper object encapsulating the context of the current indexing operation.
-    private SearchIndexerContext documentContext;
+    private SearchIndexerContext searchIndexerContext;
 
     // The DataCategory currently being indexed.
     private DataCategory dataCategory;
@@ -79,30 +76,38 @@ public class SearchIndexerImpl implements SearchIndexer {
     // The DataItems for the current DataCategory.
     private List<DataItem> dataItems;
 
+    @Override
+    public void clear() {
+        searchIndexerContext = null;
+        dataCategory = null;
+        dataItems = null;
+    }
+
     @AMEETransaction
     @Transactional(propagation = Propagation.REQUIRED, readOnly = true)
-    public void handleSearchIndexerContext() {
+    public void handleSearchIndexerContext(SearchIndexerContext searchIndexerContext) {
+        this.searchIndexerContext = searchIndexerContext;
         try {
-            searchLog.info(documentContext.dataCategoryUid + "|Started processing DataCategory.");
+            searchLog.info(this.searchIndexerContext.dataCategoryUid + "|Started processing DataCategory.");
             // Get the DataCategory and handle.
-            dataCategory = dataService.getDataCategoryByUid(documentContext.dataCategoryUid, null);
+            dataCategory = dataService.getDataCategoryByUid(this.searchIndexerContext.dataCategoryUid, null);
             if (dataCategory != null) {
                 updateDataCategory();
             } else {
-                searchLog.warn(documentContext.dataCategoryUid + "|DataCategory not found.");
+                searchLog.warn(this.searchIndexerContext.dataCategoryUid + "|DataCategory not found.");
             }
         } catch (LuceneServiceException e) {
-            searchLog.warn(documentContext.dataCategoryUid + "|Abandoned processing DataCategory.");
+            searchLog.warn(this.searchIndexerContext.dataCategoryUid + "|Abandoned processing DataCategory.");
             log.warn("run() Caught LuceneServiceException: " + e.getMessage());
         } catch (InterruptedException e) {
-            searchLog.warn(documentContext.dataCategoryUid + "|DataCategory may not completed.");
+            searchLog.warn(this.searchIndexerContext.dataCategoryUid + "|DataCategory may not completed.");
             log.warn("run() Caught InterruptedException: " + e.getMessage());
         } catch (Throwable t) {
-            searchLog.error(documentContext.dataCategoryUid + "|Error processing DataCategory.");
+            searchLog.error(this.searchIndexerContext.dataCategoryUid + "|Error processing DataCategory.");
             log.error("run() Caught Throwable: " + t.getMessage(), t);
         } finally {
             // We're done!
-            searchLog.info(documentContext.dataCategoryUid + "|Completed processing DataCategory.");
+            searchLog.info(this.searchIndexerContext.dataCategoryUid + "|Completed processing DataCategory.");
         }
     }
 
@@ -112,22 +117,24 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @throws InterruptedException might be thrown if application is shutdown whilst indexing
      */
     private void updateDataCategory() throws InterruptedException {
+        Log4JStopWatch stopWatch = new Log4JStopWatch("updateDataCategory");
         if (!dataCategory.isTrash()) {
             Document document = searchQueryService.getDocument(dataCategory, true);
             if (document != null) {
                 checkDataCategoryDocument(document);
             } else {
-                searchLog.info(documentContext.dataCategoryUid + "|DataCategory not in index, adding for the first time.");
-                documentContext.handleDataItems = true;
+                searchLog.info(searchIndexerContext.dataCategoryUid + "|DataCategory not in index, adding for the first time.");
+                searchIndexerContext.handleDataItems = true;
                 handleDataCategory();
             }
         } else {
-            searchLog.info(documentContext.dataCategoryUid + "|DataCategory needs to be removed.");
+            searchLog.info(searchIndexerContext.dataCategoryUid + "|DataCategory needs to be removed.");
             searchQueryService.removeDataCategory(dataCategory);
             searchQueryService.removeDataItems(dataCategory);
             // Send message stating that the DataCategory has been re-indexed.
             invalidationService.add(dataCategory, "dataCategoryIndexed");
         }
+        stopWatch.stop();
     }
 
     /**
@@ -136,11 +143,12 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param document of the current DataCategory
      */
     private void checkDataCategoryDocument(Document document) {
+        Log4JStopWatch stopWatch = new Log4JStopWatch("checkDataCategoryDocument");
         boolean doUpdate = false;
         // Has a re-index been requested?
-        if (documentContext.handleDataCategories || documentContext.handleDataItems) {
+        if (searchIndexerContext.handleDataCategories || searchIndexerContext.handleDataItems) {
             // DataCategory and/or DataItem index requested, force an update.
-            searchLog.info(documentContext.dataCategoryUid + "|A DataCategory re-index was requested.");
+            searchLog.info(searchIndexerContext.dataCategoryUid + "|A DataCategory re-index was requested.");
             doUpdate = true;
         } else {
             // Document must have a modified date.
@@ -148,33 +156,34 @@ public class SearchIndexerImpl implements SearchIndexer {
                 // If the Document is out-of-date then update it.
                 if (isDocumentOutOfDateForDataCategory(document)) {
                     // DataCategory in index is out-of-date, force an update.
-                    searchLog.info(documentContext.dataCategoryUid + "|DataCategory has been modified or re-index requested, updating.");
+                    searchLog.info(searchIndexerContext.dataCategoryUid + "|DataCategory has been modified or re-index requested, updating.");
                     doUpdate = true;
                 } else {
                     // No need to re-index.
-                    searchLog.info(documentContext.dataCategoryUid + "|DataCategory is up-to-date, skipping.");
+                    searchLog.info(searchIndexerContext.dataCategoryUid + "|DataCategory is up-to-date, skipping.");
                 }
             } else {
                 // Modified field missing in Document, force an update.
-                searchLog.warn(documentContext.dataCategoryUid + "|The DataCategory modified field was missing, updating.");
+                searchLog.warn(searchIndexerContext.dataCategoryUid + "|The DataCategory modified field was missing, updating.");
                 doUpdate = true;
             }
         }
         // Should we do a detailed check of the Data Item Documents?
-        if (!doUpdate && !documentContext.handleDataItems && documentContext.checkDataItems) {
+        if (!doUpdate && !searchIndexerContext.handleDataItems && searchIndexerContext.checkDataItems) {
             if (areDataCategoryDataItemsInconsistent()) {
                 // Something is wrong with the DataItems in the index, force an update.
-                searchLog.warn(documentContext.dataCategoryUid + "|DataItems were inconsistent in the index for the DataCategory, updating.");
-                doUpdate = documentContext.handleDataItems = true;
+                searchLog.warn(searchIndexerContext.dataCategoryUid + "|DataItems were inconsistent in the index for the DataCategory, updating.");
+                doUpdate = searchIndexerContext.handleDataItems = true;
             }
         }
         // Update required?
         if (doUpdate) {
             // Have Data Items been updated?
-            documentContext.handleDataItems = documentContext.handleDataItems || isDocumentOutOfDateForDataItems(document);
+            searchIndexerContext.handleDataItems = searchIndexerContext.handleDataItems || isDocumentOutOfDateForDataItems(document);
             // Update the Data Category Document, and perhaps the Data Items documents too.
             handleDataCategory();
         }
+        stopWatch.stop();
     }
 
     /**
@@ -230,9 +239,10 @@ public class SearchIndexerImpl implements SearchIndexer {
      * Add Documents for the supplied Data Category and any associated Data Items to the Lucene index.
      */
     private void handleDataCategory() {
+        Log4JStopWatch stopWatch = new Log4JStopWatch("handleDataCategory");
         log.debug("handleDataCategory() " + dataCategory.toString());
         // Handle Data Items (Create, store & update documents).
-        if (documentContext.handleDataItems) {
+        if (searchIndexerContext.handleDataItems) {
             handleDataItems();
         }
         // Get Data Category Document.
@@ -252,14 +262,16 @@ public class SearchIndexerImpl implements SearchIndexer {
         invalidationService.add(dataCategory, "dataCategoryIndexed");
         // Increment count for DataCategories successfully indexed.
         incrementCount();
+        stopWatch.stop();
     }
 
     /**
      * Create all DataItem documents for the supplied DataCategory.
      */
     private void handleDataItems() {
-        documentContext.dataItemDoc = null;
-        documentContext.dataItemDocs = null;
+        Log4JStopWatch stopWatch = new Log4JStopWatch("handleDataItems");
+        searchIndexerContext.dataItemDoc = null;
+        searchIndexerContext.dataItemDocs = null;
         // There are only Data Items for a Data Category if there is an Item Definition.
         if (dataCategory.getItemDefinition() != null) {
             log.info("handleDataItems() Starting... (" + dataCategory.toString() + ")");
@@ -269,15 +281,17 @@ public class SearchIndexerImpl implements SearchIndexer {
             List<DataItem> dataItems = getDataItems();
             metadataService.loadMetadatasForDataItems(dataItems);
             // Iterate over all Data Items and create Documents.
-            documentContext.dataItemDocs = new ArrayList<Document>();
+            searchIndexerContext.dataItemDocs = new ArrayList<Document>();
+            Log4JStopWatch stopWatch2 = new Log4JStopWatch("handleDataItems:dataItemsLoop");
             for (DataItem dataItem : dataItems) {
-                documentContext.dataItem = dataItem;
+                searchIndexerContext.dataItem = dataItem;
                 // Create new Data Item Document.
-                documentContext.dataItemDoc = getDocumentForDataItem(dataItem);
-                documentContext.dataItemDocs.add(documentContext.dataItemDoc);
+                searchIndexerContext.dataItemDoc = getDocumentForDataItem(dataItem);
+                searchIndexerContext.dataItemDocs.add(searchIndexerContext.dataItemDoc);
                 // Handle the Data Item Values.
-                handleDataItemValues(documentContext);
+                handleDataItemValues(searchIndexerContext);
             }
+            stopWatch2.stop();
             // Clear caches.
             metadataService.clearMetadatas();
             localeService.clearLocaleNames();
@@ -287,13 +301,14 @@ public class SearchIndexerImpl implements SearchIndexer {
                 searchQueryService.removeDataItems(dataCategory);
             }
             // Add the new Data Item Documents to the index (if any).
-            luceneService.addDocuments(documentContext.dataItemDocs);
+            luceneService.addDocuments(searchIndexerContext.dataItemDocs);
             log.info("handleDataItems() ...done (" + dataCategory.toString() + ").");
         } else {
             log.debug("handleDataItems() DataCategory does not have items: " + dataCategory.toString());
             // Ensure we clear any Data Item Documents for this Data Category.
             searchQueryService.removeDataItems(dataCategory);
         }
+        stopWatch.stop();
     }
 
     // Lucene Document creation.
@@ -305,6 +320,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @return the Document
      */
     private Document getDocumentForDataCategory(DataCategory dataCategory) {
+        Log4JStopWatch stopWatch = new Log4JStopWatch("getDocumentForDataCategory");
         Document doc = getDocumentForAMEEEntity(dataCategory);
         doc.add(new Field("name", dataCategory.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataCategory.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
@@ -323,6 +339,7 @@ public class SearchIndexerImpl implements SearchIndexer {
             doc.add(new Field("itemDefinitionName", dataCategory.getItemDefinition().getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         }
         doc.add(new Field("tags", new SearchService.TagTokenizer(new StringReader(tagService.getTagsCSV(dataCategory).toLowerCase()))));
+        stopWatch.stop();
         return doc;
     }
 
@@ -333,6 +350,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @return the Document
      */
     private Document getDocumentForDataItem(DataItem dataItem) {
+        Log4JStopWatch stopWatch = new Log4JStopWatch("getDocumentForDataItem");
         Document doc = getDocumentForAMEEEntity(dataItem);
         doc.add(new Field("name", dataItem.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataItem.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
@@ -365,6 +383,7 @@ public class SearchIndexerImpl implements SearchIndexer {
         doc.add(new Field("label", dataItemService.getLabel(dataItem).toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("byLabel", dataItemService.getLabel(dataItem).toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
         doc.add(new Field("tags", new SearchService.TagTokenizer(new StringReader(tagService.getTagsCSV(dataItem.getDataCategory()).toLowerCase()))));
+        stopWatch.stop();
         return doc;
     }
 
@@ -375,6 +394,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @return the Document
      */
     private Document getDocumentForAMEEEntity(IAMEEEntity entity) {
+        Log4JStopWatch stopWatch = new Log4JStopWatch("getDocumentForAMEEEntity");
         Document doc = new Document();
         doc.add(new Field("entityType", entity.getObjectType().getName(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("entityId", entity.getId().toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
@@ -385,6 +405,7 @@ public class SearchIndexerImpl implements SearchIndexer {
                 new DateTime(entity.getModified()).toString(DATE_TO_SECOND), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("documentModified",
                 new DateTime().toString(DATE_TO_SECOND), Field.Store.YES, Field.Index.NOT_ANALYZED));
+        stopWatch.stop();
         return doc;
     }
 
@@ -394,6 +415,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param context the current SearchIndexerContext
      */
     private void handleDataItemValues(SearchIndexerContext context) {
+        Log4JStopWatch stopWatch = new Log4JStopWatch("handleDataItemValues");
         for (BaseItemValue itemValue : dataItemService.getItemValues(context.dataItem)) {
             if (itemValue.isUsableValue()) {
                 if (itemValue.getItemValueDefinition().isDrillDown()) {
@@ -412,6 +434,7 @@ public class SearchIndexerImpl implements SearchIndexer {
                 }
             }
         }
+        stopWatch.stop();
     }
 
     /**
@@ -423,59 +446,67 @@ public class SearchIndexerImpl implements SearchIndexer {
      */
     private boolean areDataCategoryDataItemsInconsistent() {
 
-        // Create Query for all Data Items within the current DataCategory.
-        BooleanQuery query = new BooleanQuery();
-        query.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.MUST);
-        query.add(new TermQuery(new Term("categoryUid", dataCategory.getEntityUid())), BooleanClause.Occur.MUST);
+        Log4JStopWatch stopWatch = new Log4JStopWatch("areDataCategoryDataItemsInconsistent");
 
-        // Do search. Very high maxNumHits to cope with large Data Categories.
-        List<Document> dataItemDocuments = luceneService.doSearch(query, 100000).getResults();
-
-        // First: Are the correct number of Data Items in the index?
-        long dataItemCount = dataItemService.getDataItemCount(dataCategory);
-        if (dataItemCount != dataItemDocuments.size()) {
-            log.warn("isDataCategoryCorrupt() Inconsistent DataItem count (DB=" + dataItemCount + ", Index=" + dataItemDocuments.size() + ")");
-            return true;
-        }
-
-        // Second: Check to see if modified timestamps of the most recently updated database and index items
-        // match. If they do, we consider the index to correctly reflect the database.
-
-        // Get the most recent DataItem modified date.
-        Date dataItemsModified = dataItemService.getDataItemsModified(dataCategory);
-
-        // Sort the DataItem documents by modified timestamp.
         try {
-            Collections.sort(dataItemDocuments, new Comparator<Document>() {
-                public int compare(Document doc1, Document doc2) {
-                    // Find modified fields.
-                    Field doc1Mf = doc1.getField("entityModified");
-                    Field doc2Mf = doc2.getField("entityModified");
-                    // All docs should have a valid entityModified.
-                    if (doc1Mf == null || doc2Mf == null) {
-                        // Trigger a rebuild if this is not the case.
-                        throw new RuntimeException("areDataCategoryDataItemsInconsistent() A null entityModified of DataItem detected.");
-                    } else {
-                        // Compare the modified values.
-                        DateTime doc1Mod = DATE_TO_SECOND.parseDateTime(doc1Mf.stringValue());
-                        DateTime doc2Mod = DATE_TO_SECOND.parseDateTime(doc2Mf.stringValue());
-                        return doc1Mod.compareTo(doc2Mod);
+
+            // Create Query for all Data Items within the current DataCategory.
+            BooleanQuery query = new BooleanQuery();
+            query.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.MUST);
+            query.add(new TermQuery(new Term("categoryUid", dataCategory.getEntityUid())), BooleanClause.Occur.MUST);
+
+            // Do search. Very high maxNumHits to cope with large Data Categories.
+            List<Document> dataItemDocuments = luceneService.doSearch(query, 100000).getResults();
+
+            // First: Are the correct number of Data Items in the index?
+            long dataItemCount = dataItemService.getDataItemCount(dataCategory);
+            if (dataItemCount != dataItemDocuments.size()) {
+                log.warn("isDataCategoryCorrupt() Inconsistent DataItem count (DB=" + dataItemCount + ", Index=" + dataItemDocuments.size() + ")");
+                return true;
+            }
+
+            // Second: Check to see if modified timestamps of the most recently updated database and index items
+            // match. If they do, we consider the index to correctly reflect the database.
+
+            // Get the most recent DataItem modified date.
+            Date dataItemsModified = dataItemService.getDataItemsModified(dataCategory);
+
+            // Sort the DataItem documents by modified timestamp.
+            try {
+                Collections.sort(dataItemDocuments, new Comparator<Document>() {
+                    public int compare(Document doc1, Document doc2) {
+                        // Find modified fields.
+                        Field doc1Mf = doc1.getField("entityModified");
+                        Field doc2Mf = doc2.getField("entityModified");
+                        // All docs should have a valid entityModified.
+                        if (doc1Mf == null || doc2Mf == null) {
+                            // Trigger a rebuild if this is not the case.
+                            throw new RuntimeException("areDataCategoryDataItemsInconsistent() A null entityModified of DataItem detected.");
+                        } else {
+                            // Compare the modified values.
+                            DateTime doc1Mod = DATE_TO_SECOND.parseDateTime(doc1Mf.stringValue());
+                            DateTime doc2Mod = DATE_TO_SECOND.parseDateTime(doc2Mf.stringValue());
+                            return doc1Mod.compareTo(doc2Mod);
+                        }
                     }
-                }
-            });
-        } catch (RuntimeException e) {
-            // Trigger a rebuild on error. Was the entityModified missing?
-            log.warn("isDataCategoryCorrupt() Seems like an entityModified field was missing for a DataItem Document.");
-            return true;
+                });
+            } catch (RuntimeException e) {
+                // Trigger a rebuild on error. Was the entityModified missing?
+                log.warn("isDataCategoryCorrupt() Seems like an entityModified field was missing for a DataItem Document.");
+                return true;
+            }
+
+            // Get the most recent Data Item document.
+            Document mostRecentDocument = dataItemDocuments.get(dataItemDocuments.size() - 1);
+            Field modField = mostRecentDocument.getField("entityModified");
+            Date dataItemDocumentModified = DATE_TO_SECOND.parseDateTime(modField.stringValue()).toDate();
+
+            // Inconsistent if the actual Data Item and Data Item Document have different modified timestamps.
+            return !dataItemsModified.equals(dataItemDocumentModified);
+
+        } finally {
+            stopWatch.stop();
         }
-
-        // Get the most recent Data Item document.
-        Document mostRecentDocument = dataItemDocuments.get(dataItemDocuments.size() - 1);
-        Field modField = mostRecentDocument.getField("entityModified");
-        Date dataItemDocumentModified = DATE_TO_SECOND.parseDateTime(modField.stringValue()).toDate();
-
-        // Inconsistent if the actual Data Item and Data Item Document have different modified timestamps.
-        return !dataItemsModified.equals(dataItemDocumentModified);
     }
 
     /**
@@ -512,10 +543,5 @@ public class SearchIndexerImpl implements SearchIndexer {
      */
     private synchronized static void incrementCount() {
         COUNT++;
-    }
-
-    @Override
-    public void setSearchIndexerContext(SearchIndexerContext documentContext) {
-        this.documentContext = documentContext;
     }
 }

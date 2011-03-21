@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.core.task.TaskRejectedException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -34,40 +35,54 @@ public class SearchIndexerRunner implements Runnable {
     @Override
     public void run() {
         try {
-            searchIndexer.setSearchIndexerContext(searchIndexerContext);
-            searchIndexer.handleSearchIndexerContext();
+            // Tell the SearchIndexer to start indexing the category.
+            searchIndexer.handleSearchIndexerContext(searchIndexerContext);
         } finally {
-            synchronized (CURRENT_CATEGORY_UIDS) {
-                CURRENT_CATEGORY_UIDS.remove(searchIndexerContext.dataCategoryUid);
-            }
+            // Remove the category from list of categories currently being indexed.
+            remove();
         }
     }
 
     /**
      * Submit this to the TaskExecutor for execution. This method ensures the same category is not indexed
-     * concurrently whilst ensuring later indexing attempts will eventually succeed. Will throw
-     * TaskRejectedException if the category is already being indexed.
+     * concurrently whilst ensuring later indexing attempts will eventually succeed.
      *
-     * @return true if task is accepted for execution
+     * @throws SearchIndexerRunnerException if the queue is full or the category is already being indexed
      */
-    public boolean execute() {
-        synchronized (CURRENT_CATEGORY_UIDS) {
-            // Is the Data Category currently being indexed?
-            if (!CURRENT_CATEGORY_UIDS.contains(searchIndexerContext.dataCategoryUid)) {
-                // OK to proceed, Data Category is not currently being indexed.
-                CURRENT_CATEGORY_UIDS.add(searchIndexerContext.dataCategoryUid);
-                taskExecutor.execute(this);
-                return true;
-            } else {
-                // The Data Category was already being indexed so reject this SearchIndexerRunner.
-                log.warn("execute() DataCategory is already being indexed: " + searchIndexerContext.dataCategoryUid);
-                return false;
-            }
+    public void execute() throws SearchIndexerRunnerException {
+        try {
+            // Track the category UID.
+            add();
+            // Execute this.
+            taskExecutor.execute(this);
+        } catch (TaskRejectedException e) {
+            // The queue was full, remove the category and throw a SearchIndexerRunnerException.
+            remove();
+            throw new SearchIndexerRunnerException(SearchIndexerRunnerException.Reason.FULL);
         }
     }
 
-    public SearchIndexerContext getSearchIndexerContext() {
-        return searchIndexerContext;
+    private void add() throws SearchIndexerRunnerException {
+        synchronized (CURRENT_CATEGORY_UIDS) {
+            // Is the Data Category currently being indexed?
+            if (CURRENT_CATEGORY_UIDS.contains(searchIndexerContext.dataCategoryUid)) {
+                // The Data Category was already being indexed so reject this SearchIndexerRunner.
+                log.info("addCategoryUid() DataCategory is already being indexed: " + searchIndexerContext.dataCategoryUid);
+                throw new SearchIndexerRunnerException(SearchIndexerRunnerException.Reason.DUPLICATE);
+            }
+            // OK to proceed, Data Category is not currently being indexed.
+            CURRENT_CATEGORY_UIDS.add(searchIndexerContext.dataCategoryUid);
+        }
+        log.info("addCategoryUid() " + searchIndexerContext.dataCategoryUid + " (" + CURRENT_CATEGORY_UIDS.size() + ")");
+    }
+
+    private void remove() {
+        synchronized (CURRENT_CATEGORY_UIDS) {
+            CURRENT_CATEGORY_UIDS.remove(searchIndexerContext.dataCategoryUid);
+        }
+        log.info("removeCategoryUid() " + searchIndexerContext.dataCategoryUid + " (" + CURRENT_CATEGORY_UIDS.size() + ")");
+        searchIndexer.clear();
+        searchIndexer = null;
     }
 
     public void setSearchIndexerContext(SearchIndexerContext searchIndexerContext) {

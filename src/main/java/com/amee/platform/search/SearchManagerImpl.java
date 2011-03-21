@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.core.task.TaskRejectedException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,9 +25,6 @@ import java.util.concurrent.TimeUnit;
 public class SearchManagerImpl implements SearchManager, ApplicationContextAware {
 
     private final Log log = LogFactory.getLog(getClass());
-
-    // Random for sleep times.
-    private final static Random RANDOM = new Random();
 
     @Autowired
     private DataService dataService;
@@ -315,7 +311,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      * Update the DataCategory in the index using a SearchIndexerRunner for the supplied SearchIndexerContext.
      *
      * @param context a context for the SearchIndexer
-     * @return true if the task was submitted
+     * @return true if the task was submitted and the thread pool is not full
      */
     private boolean submitForExecution(SearchIndexerContext context) {
         // Create SearchIndexerRunner.
@@ -325,21 +321,17 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
         try {
             // The SearchIndexerRunner can be rejected if an equivalent SearchIndexerContext is
             // currently being processed.
-            if (!searchIndexerRunner.execute()) {
-                // Failed to execute the SearchIndexerRunner as the Data Category
-                // is already being indexed. Now we add the SearchIndexerContext back
-                // into the queue so it gets another chance to be executed.
-                addSearchIndexerContext(context);
-            }
+            searchIndexerRunner.execute();
             // Managed to submit task.
             return true;
-        } catch (TaskRejectedException e) {
+        } catch (SearchIndexerRunnerException e) {
             log.debug("submitForExecution() Task was rejected: " + context.dataCategoryUid);
-            // Failed to execute the SearchIndexerRunner as thread pool was full. Now we add the
-            // SearchIndexerContext back into the queue so it gets another chance to be executed.
+            // Failed to execute the SearchIndexerRunner as thread pool was full or this is a duplicate
+            // category. Now we add the SearchIndexerContext back into the queue so it gets another
+            // chance to be executed.
             addSearchIndexerContext(context);
-            // Failed to submit task.
-            return false;
+            // Return false if the queue is full.
+            return !e.isReasonFull();
         }
     }
 
