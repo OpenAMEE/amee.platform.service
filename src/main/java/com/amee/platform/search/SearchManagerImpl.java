@@ -198,7 +198,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      * Add all DataCategories to the index.
      */
     private void buildDataCategories() {
-        log.info("handleDataCategories()");
+        log.debug("handleDataCategories()");
         Set<String> dataCategoryUids = getDataCategoryUids();
         buildDataCategories(dataCategoryUids);
     }
@@ -229,7 +229,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      * @param dataCategoryUids UIDs of Data Categories to index.
      */
     private void buildDataCategories(Set<String> dataCategoryUids) {
-        log.info("handleDataCategories()");
+        log.debug("handleDataCategories()");
         for (String uid : dataCategoryUids) {
             buildDataCategory(uid);
         }
@@ -241,7 +241,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      * @param dataCategoryUid Data Category UID
      */
     private void buildDataCategory(String dataCategoryUid) {
-        log.info("buildDataCategory()");
+        log.debug("buildDataCategory()");
         SearchIndexerContext context = new SearchIndexerContext();
         context.dataCategoryUid = dataCategoryUid;
         context.handleDataCategories = indexDataCategories;

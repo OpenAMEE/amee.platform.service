@@ -67,20 +67,20 @@ public class SearchIndexerRunner implements Runnable {
             // Is the Data Category currently being indexed?
             if (CURRENT_CATEGORY_UIDS.contains(searchIndexerContext.dataCategoryUid)) {
                 // The Data Category was already being indexed so reject this SearchIndexerRunner.
-                log.info("addCategoryUid() DataCategory is already being indexed: " + searchIndexerContext.dataCategoryUid);
+                log.info("add() DataCategory is already being indexed: " + searchIndexerContext.dataCategoryUid);
                 throw new SearchIndexerRunnerException(SearchIndexerRunnerException.Reason.DUPLICATE);
             }
             // OK to proceed, Data Category is not currently being indexed.
             CURRENT_CATEGORY_UIDS.add(searchIndexerContext.dataCategoryUid);
         }
-        log.info("addCategoryUid() " + searchIndexerContext.dataCategoryUid + " (" + CURRENT_CATEGORY_UIDS.size() + ")");
+        log.debug("add() " + searchIndexerContext.dataCategoryUid);
     }
 
     private void remove() {
         synchronized (CURRENT_CATEGORY_UIDS) {
             CURRENT_CATEGORY_UIDS.remove(searchIndexerContext.dataCategoryUid);
         }
-        log.info("removeCategoryUid() " + searchIndexerContext.dataCategoryUid + " (" + CURRENT_CATEGORY_UIDS.size() + ")");
+        log.debug("remove() " + searchIndexerContext.dataCategoryUid);
         searchIndexer.clear();
         searchIndexer = null;
     }
