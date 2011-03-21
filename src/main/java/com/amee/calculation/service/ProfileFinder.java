@@ -21,9 +21,9 @@ package com.amee.calculation.service;
 
 import com.amee.domain.AMEEStatistics;
 import com.amee.domain.IDataCategoryReference;
+import com.amee.domain.IProfileItemService;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.ProfileItem;
-import com.amee.service.item.ProfileItemService;
 import com.amee.service.profile.ProfileService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,7 +44,7 @@ public class ProfileFinder {
     private ProfileService profileService;
 
     @Autowired
-    private ProfileItemService profileItemService;
+    private IProfileItemService profileItemService;
 
     @Autowired
     private AMEEStatistics ameeStatistics;

@@ -1,5 +1,7 @@
 package com.amee.platform.search;
 
+import com.amee.domain.LimitFilter;
+
 public class ItemDefinitionsFilter extends LimitFilter {
 
     private String name = "";

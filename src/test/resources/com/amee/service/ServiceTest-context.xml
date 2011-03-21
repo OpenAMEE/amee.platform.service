@@ -21,7 +21,7 @@
 
     <bean class="com.amee.service.events.SubscriberService"/>
 
-    <bean id="searchQueryService" class="com.amee.platform.search.SearchQueryService"/>
+    <bean id="searchQueryService" class="com.amee.platform.search.SearchQueryServiceImpl"/>
 
     <bean id="luceneService" class="com.amee.platform.search.LuceneServiceMock"/>
 

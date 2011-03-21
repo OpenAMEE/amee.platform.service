@@ -1,5 +1,6 @@
 package com.amee.platform.search;
 
+import com.amee.domain.LimitFilter;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 
@@ -54,8 +55,8 @@ public abstract class QueryFilter extends LimitFilter {
     /**
      * Get a Sort object that encapsulates an ordered collection of field sorting information.
      * To sort by relevance (the default) you may return Sort.RELEVANCE however there is some overhead in using a Sort object.
-     * 
-     * @return  A Sort object for ordering results.
+     *
+     * @return A Sort object for ordering results.
      */
     public Sort getSort() {
         return Sort.RELEVANCE;
