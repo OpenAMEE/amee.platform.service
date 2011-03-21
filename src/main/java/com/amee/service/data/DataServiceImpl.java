@@ -28,7 +28,6 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.service.invalidation.InvalidationMessage;
 import com.amee.service.invalidation.InvalidationService;
-import com.amee.service.locale.LocaleService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
