@@ -22,13 +22,13 @@ public class TransactionThreadBeanManager implements ApplicationListener {
     private IDataItemService dataItemService;
 
     @Autowired
-    private ILocaleService localeService;
+    private LocaleService localeService;
 
     @Autowired
     private IDataService dataService;
 
     @Autowired
-    private IMetadataService metadataService;
+    private MetadataService metadataService;
 
     @Autowired
     private IProfileItemService profileItemService;
@@ -53,8 +53,8 @@ public class TransactionThreadBeanManager implements ApplicationListener {
                     // Store commonly used services.
                     ThreadBeanHolder.set(IDataService.class, dataService);
                     ThreadBeanHolder.set(IDataItemService.class, dataItemService);
-                    ThreadBeanHolder.set(ILocaleService.class, localeService);
-                    ThreadBeanHolder.set(IMetadataService.class, metadataService);
+                    ThreadBeanHolder.set(LocaleService.class, localeService);
+                    ThreadBeanHolder.set(MetadataService.class, metadataService);
                     ThreadBeanHolder.set(IProfileItemService.class, profileItemService);
                     ThreadBeanHolder.set(CO2CalculationService.class, calculationService);
                     break;
