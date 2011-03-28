@@ -29,6 +29,9 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     private TransactionController transactionController;
 
     @Autowired
+    private DataItemService dataItemService;
+
+    @Autowired
     private ProfileItemServiceDAO dao;
 
     @Autowired
@@ -62,7 +65,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
 
             // Only ProfileItemNumberValues have units and perUnits.
             if (ProfileItemNumberValue.class.isAssignableFrom(value.getClass()) &&
-                isNonZeroPerTimeValue((ProfileItemNumberValue)value)) {
+                    isNonZeroPerTimeValue((ProfileItemNumberValue) value)) {
                 return true;
             }
         }
@@ -239,7 +242,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
                 // next give DataItem a chance to set the default value, if appropriate
                 if (ivd.isFromData()) {
                     BaseItemValue dataItemValue =
-                            getItemValue(profileItem.getDataItem(), ivd.getPath(), profileItem.getStartDate());
+                            dataItemService.getItemValue(profileItem.getDataItem(), ivd.getPath(), profileItem.getStartDate());
                     if ((dataItemValue != null) && (dataItemValue.getValueAsString().length() > 0)) {
                         defaultValue = dataItemValue.getValueAsString();
                     }
