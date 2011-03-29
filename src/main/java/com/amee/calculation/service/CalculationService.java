@@ -19,7 +19,10 @@
  */
 package com.amee.calculation.service;
 
-import com.amee.domain.*;
+import com.amee.domain.AMEEStatistics;
+import com.amee.domain.APIVersion;
+import com.amee.domain.IItemService;
+import com.amee.domain.ValueType;
 import com.amee.domain.algorithm.Algorithm;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
@@ -34,8 +37,10 @@ import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.CO2CalculationService;
 import com.amee.domain.sheet.Choices;
-import com.amee.platform.science.*;
-import com.amee.service.item.ItemService;
+import com.amee.platform.science.AlgorithmRunner;
+import com.amee.platform.science.ExternalGenericValue;
+import com.amee.platform.science.InternalValue;
+import com.amee.platform.science.ReturnValues;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -228,7 +233,6 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      */
     @SuppressWarnings("unchecked")
     public void appendInternalValues(BaseItem item, IItemService itemService, Map<ItemValueDefinition, InternalValue> values) {
-        // TODO: ProfileItemService?
         ItemValueMap itemValueMap = itemService.getItemValuesMap(item);
         for (Object path : itemValueMap.keySet()) {
             // Get all ItemValues with this ItemValueDefinition path.
