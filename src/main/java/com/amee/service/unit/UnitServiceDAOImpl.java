@@ -61,4 +61,8 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
             return null;
         }
     }
+
+    public void persist(AMEEUnitType unitType) {
+        entityManager.persist(unitType);
+    }
 }

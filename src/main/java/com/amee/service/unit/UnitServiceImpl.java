@@ -1,6 +1,7 @@
 package com.amee.service.unit;
 
 import com.amee.base.utils.UidGen;
+import com.amee.domain.AMEEStatus;
 import com.amee.domain.unit.AMEEUnitType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,6 @@ public class UnitServiceImpl implements UnitService {
             unitType = getUnitTypeByName(identifier);
         }
         return unitType;
-
     }
 
     @Override
@@ -32,5 +32,15 @@ public class UnitServiceImpl implements UnitService {
     @Override
     public AMEEUnitType getUnitTypeByName(String name) {
         return dao.getUnitTypeByName(name);
+    }
+
+    @Override
+    public void persist(AMEEUnitType unitType) {
+        dao.persist(unitType);
+    }
+
+    @Override
+    public void remove(AMEEUnitType unitType) {
+        unitType.setStatus(AMEEStatus.TRASH);
     }
 }
