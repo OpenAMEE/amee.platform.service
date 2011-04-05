@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Identity. -->
@@ -13,7 +14,7 @@
         <!-- Versions. -->
         <amee-messaging.version>1.0.7</amee-messaging.version>
         <amee-platform-science.version>1.0.13</amee-platform-science.version>
-        <amee-platform-domain.version>2.0.0</amee-platform-domain.version>
+        <amee-platform-domain.version>2.0.1-SNAPSHOT</amee-platform-domain.version>
         <!-- External Versions. -->
         <!-- Note: These versions were last checked & upgraded on 15/04/2010. -->
         <apache-httpcomponents-httpclient>4.1</apache-httpcomponents-httpclient>
@@ -257,7 +258,7 @@
                                 <source>1.6</source>
                                 <target>1.6</target>
                                 <compilerArguments>
-                                    <verbose />
+                                    <verbose/>
                                     <bootclasspath>${java.home}/lib/rt.jar:${java.home}/lib/jce.jar</bootclasspath>
                                 </compilerArguments>
                             </configuration>
