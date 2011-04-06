@@ -42,5 +42,6 @@ public interface UnitService {
     public void remove(AMEEUnit unit);
 
     // For tests.
+
     public void setUnitServiceDAO(UnitServiceDAO dao);
 }
