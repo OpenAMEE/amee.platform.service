@@ -45,6 +45,17 @@ public class ResourceAuthorizationService {
     private AuthorizationContext authorizationContext;
 
     /**
+     * A utility method wrapping up a setUserByUid, setResource and ensureAuthorizedForBuild call sequence. Will cause
+     * a NotAuthorizedException if the user is not authorized to build (GET) a resource. The Root DataCategory is
+     * assumed to be the parent resource for the entity to be built.
+     *
+     * @param userUid to authorize
+     */
+    public void ensureAuthorizedForBuild(String userUid) {
+        ensureAuthorizedForBuild(userUid, dataService.getRootDataCategory());
+    }
+
+    /**
      * A utility method wrapping up a setUserByUid, setResource and isAuthorizedForBuild call sequence. Will cause
      * a NotAuthorizedException if the user is not authorized to build (GET) the resource.
      *

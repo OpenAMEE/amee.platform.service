@@ -7,17 +7,33 @@ import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.criterion.MatchMode;
+import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.List;
 
 @Repository
 public class UnitServiceDAOImpl implements UnitServiceDAO {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    /**
+     * Fetch a list of all AMEEUnitTypes.
+     *
+     * @return list of all AMEEUnitTypes
+     */
+    public List<AMEEUnitType> getUnitTypes() {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(AMEEUnitType.class);
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.addOrder(Order.asc(StringUtils.lowerCase("name")));
+        criteria.setTimeout(60);
+        return criteria.list();
+    }
 
     /**
      * Fetch an AMEEUnitType with the given UID value.

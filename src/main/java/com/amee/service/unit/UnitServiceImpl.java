@@ -6,11 +6,17 @@ import com.amee.domain.unit.AMEEUnitType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UnitServiceImpl implements UnitService {
 
     @Autowired
     private UnitServiceDAO dao;
+
+    public List<AMEEUnitType> getUnitTypes() {
+        return dao.getUnitTypes();
+    }
 
     @Override
     public AMEEUnitType getUnitTypeByIdentifier(String identifier) {
