@@ -70,8 +70,8 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
             Criteria criteria = session.createCriteria(AMEEUnitType.class);
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.add(Restrictions.ilike("name", name, MatchMode.EXACT));
-            criteria.setTimeout(60);
             criteria.setFlushMode(FlushMode.MANUAL);
+            criteria.setTimeout(60);
             return (AMEEUnitType) criteria.uniqueResult();
         } else {
             return null;
@@ -91,9 +91,10 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
             if (entityManager.contains(unitType)) {
                 criteria.add(Restrictions.ne("uid", unitType.getUid()));
             }
-            criteria.add(Restrictions.eq("name", unitType.getName()));
+            criteria.add(Restrictions.ilike("name", unitType.getName(), MatchMode.EXACT));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setFlushMode(FlushMode.MANUAL);
+            criteria.setTimeout(60);
             return criteria.list().isEmpty();
         } else {
             throw new RuntimeException("UnitType was null.");
