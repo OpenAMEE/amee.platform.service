@@ -3,12 +3,12 @@ package com.amee.service.unit;
 import com.amee.base.utils.UidGen;
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.unit.AMEEUnit;
+import com.amee.domain.unit.AMEEUnitSymbolComparator;
 import com.amee.domain.unit.AMEEUnitType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -88,20 +88,7 @@ public class UnitServiceImpl implements UnitService {
      */
     public List<AMEEUnit> getUnits(AMEEUnitType unitType) {
         List<AMEEUnit> units = dao.getUnits(unitType);
-        Collections.sort(units, new Comparator<AMEEUnit>() {
-            @Override
-            public int compare(AMEEUnit unit1, AMEEUnit unit2) {
-                if (unit1.hasExternalSymbol() && unit2.hasExternalSymbol()) {
-                    return unit1.getExternalSymbol().compareToIgnoreCase(unit2.getExternalSymbol());
-                } else if (unit1.hasExternalSymbol()) {
-                    return unit1.getExternalSymbol().compareToIgnoreCase(unit2.getInternalSymbol());
-                } else if (unit2.hasExternalSymbol()) {
-                    return unit1.getInternalSymbol().compareToIgnoreCase(unit2.getExternalSymbol());
-                } else {
-                    return unit1.getInternalSymbol().compareToIgnoreCase(unit2.getInternalSymbol());
-                }
-            }
-        });
+        Collections.sort(units, new AMEEUnitSymbolComparator());
         return units;
     }
 
