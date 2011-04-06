@@ -1,10 +1,13 @@
 package com.amee.service.unit;
 
+import com.amee.domain.unit.AMEEUnit;
 import com.amee.domain.unit.AMEEUnitType;
 
 import java.util.List;
 
 public interface UnitService {
+
+    // Unit Types.
 
     public List<AMEEUnitType> getUnitTypes();
 
@@ -19,4 +22,25 @@ public interface UnitService {
     public void persist(AMEEUnitType unitType);
 
     public void remove(AMEEUnitType unitType);
+
+    // Units.
+
+    public List<AMEEUnit> getUnits();
+
+    public List<AMEEUnit> getUnits(AMEEUnitType unitType);
+
+    public AMEEUnit getUnitByIdentifier(String unitIdentifier);
+
+    public AMEEUnit getUnitByUid(String uid);
+
+    public AMEEUnit getUnitBySymbol(String symbol);
+
+    public boolean isUnitUniqueBySymbol(AMEEUnit unit);
+
+    public void persist(AMEEUnit unit);
+
+    public void remove(AMEEUnit unit);
+
+    // For tests.
+    public void setUnitServiceDAO(UnitServiceDAO dao);
 }

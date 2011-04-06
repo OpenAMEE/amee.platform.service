@@ -1,6 +1,7 @@
 package com.amee.service.unit;
 
 import com.amee.domain.AMEEStatus;
+import com.amee.domain.unit.AMEEUnit;
 import com.amee.domain.unit.AMEEUnitType;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.Criteria;
@@ -21,10 +22,12 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
     @PersistenceContext
     private EntityManager entityManager;
 
+    // Unit Types.
+
     /**
-     * Fetch a list of all AMEEUnitTypes.
+     * Fetch a list of all Unit Types.
      *
-     * @return list of all AMEEUnitTypes
+     * @return list of all Unit Types
      */
     public List<AMEEUnitType> getUnitTypes() {
         Session session = (Session) entityManager.getDelegate();
@@ -36,10 +39,10 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
     }
 
     /**
-     * Fetch an AMEEUnitType with the given UID value.
+     * Fetch a Unit Type with the given UID value.
      *
-     * @param uid value to match AMEEUnitType on
-     * @return AMEEUnitType matching the name value
+     * @param uid value to match Unit Type on
+     * @return Unit Type matching the name value
      */
     @Override
     public AMEEUnitType getUnitTypeByUid(String uid) {
@@ -56,12 +59,12 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
     }
 
     /**
-     * Fetch an AMEEUnitType with the given name value.
+     * Fetch a Unit Type with the given name value.
      * <p/>
      * This query uses FlushMode.MANUAL to ensure the session is not flushed prior to execution.
      *
-     * @param name value to match AMEEUnitType on
-     * @return AMEEUnitType matching the name value
+     * @param name value to match Unit Type on
+     * @return Unit Type matching the name value
      */
     @Override
     public AMEEUnitType getUnitTypeByName(String name) {
@@ -79,11 +82,12 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
     }
 
     /**
-     * Returns true if the name of the supplied UnitType is unique.
+     * Returns true if the name of the supplied Unit Type is unique.
      *
      * @param unitType to check for uniqueness
-     * @return true if the UnitType has a unique name
+     * @return true if the Unit Type has a unique name
      */
+    @Override
     public boolean isUnitTypeUniqueByName(AMEEUnitType unitType) {
         if (unitType != null) {
             Session session = (Session) entityManager.getDelegate();
@@ -103,5 +107,100 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
 
     public void persist(AMEEUnitType unitType) {
         entityManager.persist(unitType);
+    }
+
+    // Units.
+
+    /**
+     * Fetch a list of all Units.
+     *
+     * @return list of all Units
+     */
+    public List<AMEEUnit> getUnits(AMEEUnitType unitType) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(AMEEUnit.class);
+        if (unitType != null) {
+            criteria.add(Restrictions.eq("unitType.id", unitType.getId()));
+        }
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setTimeout(60);
+        return criteria.list();
+    }
+
+    /**
+     * Fetch a Unit with the given UID value.
+     *
+     * @param uid value to match Unit on
+     * @return AMEEUnit matching the name value
+     */
+    @Override
+    public AMEEUnit getUnitByUid(String uid) {
+        if (StringUtils.isNotBlank(uid)) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(AMEEUnit.class);
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.add(Restrictions.naturalId().set("uid", uid.toUpperCase()));
+            criteria.setTimeout(60);
+            return (AMEEUnit) criteria.uniqueResult();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Fetch a Unit with the given name value.
+     * <p/>
+     * This query uses FlushMode.MANUAL to ensure the session is not flushed prior to execution.
+     *
+     * @param symbol value to match AMEEUnit on
+     * @return AMEEUnit matching the name value
+     */
+    @Override
+    public AMEEUnit getUnitBySymbol(String symbol) {
+        if (StringUtils.isNotBlank(symbol)) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(AMEEUnit.class);
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.add(
+                    Restrictions.or(
+                            Restrictions.eq("internalSymbol", symbol),
+                            Restrictions.eq("externalSymbol", symbol)));
+            criteria.setFlushMode(FlushMode.MANUAL);
+            criteria.setTimeout(60);
+            return (AMEEUnit) criteria.uniqueResult();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Returns true if the name of the supplied Unit is unique.
+     *
+     * @param unit to check for uniqueness
+     * @return true if the Unit has a unique name
+     */
+    @Override
+    public boolean isUnitUniqueBySymbol(AMEEUnit unit) {
+        if (unit != null) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(AMEEUnit.class);
+            if (entityManager.contains(unit)) {
+                criteria.add(Restrictions.ne("uid", unit.getUid()));
+            }
+            criteria.add(
+                    Restrictions.or(
+                            Restrictions.eq("internalSymbol", unit.getInternalSymbol()),
+                            Restrictions.eq("externalSymbol", unit.getExternalSymbol())));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.setFlushMode(FlushMode.MANUAL);
+            criteria.setTimeout(60);
+            return criteria.list().isEmpty();
+        } else {
+            throw new RuntimeException("Unit was null.");
+        }
+    }
+
+    public void persist(AMEEUnit unit) {
+        entityManager.persist(unit);
     }
 }
