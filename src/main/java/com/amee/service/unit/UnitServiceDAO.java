@@ -8,5 +8,7 @@ public interface UnitServiceDAO {
 
     public AMEEUnitType getUnitTypeByName(String name);
 
+    public boolean isUnitTypeUniqueByName(AMEEUnitType ameeUnit);
+
     public void persist(AMEEUnitType unitType);
 }

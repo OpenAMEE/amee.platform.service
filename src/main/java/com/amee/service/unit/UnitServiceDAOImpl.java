@@ -62,6 +62,28 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
         }
     }
 
+    /**
+     * Returns true if the name of the supplied UnitType is unique.
+     *
+     * @param unitType to check for uniqueness
+     * @return true if the UnitType has a unique name
+     */
+    public boolean isUnitTypeUniqueByName(AMEEUnitType unitType) {
+        if (unitType != null) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(AMEEUnitType.class);
+            if (entityManager.contains(unitType)) {
+                criteria.add(Restrictions.ne("uid", unitType.getUid()));
+            }
+            criteria.add(Restrictions.eq("name", unitType.getName()));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.setFlushMode(FlushMode.MANUAL);
+            return criteria.list().isEmpty();
+        } else {
+            throw new RuntimeException("UnitType was null.");
+        }
+    }
+
     public void persist(AMEEUnitType unitType) {
         entityManager.persist(unitType);
     }

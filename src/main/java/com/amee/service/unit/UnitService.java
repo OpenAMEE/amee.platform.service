@@ -10,6 +10,8 @@ public interface UnitService {
 
     public AMEEUnitType getUnitTypeByName(String name);
 
+    public boolean isUnitTypeUniqueByName(AMEEUnitType unitType);
+
     public void persist(AMEEUnitType unitType);
 
     public void remove(AMEEUnitType unitType);

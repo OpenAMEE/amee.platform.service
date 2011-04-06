@@ -34,6 +34,17 @@ public class UnitServiceImpl implements UnitService {
         return dao.getUnitTypeByName(name);
     }
 
+    /**
+     * Returns true if the name of the supplied UnitType is unique.
+     *
+     * @param unitType to check for uniqueness
+     * @return true if the UnitType has a unique name
+     */
+    @Override
+    public boolean isUnitTypeUniqueByName(AMEEUnitType unitType) {
+        return dao.isUnitTypeUniqueByName(unitType);
+    }
+
     @Override
     public void persist(AMEEUnitType unitType) {
         dao.persist(unitType);
