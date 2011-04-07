@@ -35,6 +35,8 @@ public interface UnitService {
 
     public AMEEUnit getUnitBySymbol(String symbol);
 
+    public boolean isUnitUniqueByName(AMEEUnit unit);
+
     public boolean isUnitUniqueBySymbol(AMEEUnit unit);
 
     public void persist(AMEEUnit unit);

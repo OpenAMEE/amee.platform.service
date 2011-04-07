@@ -115,6 +115,17 @@ public class UnitServiceImpl implements UnitService {
     }
 
     /**
+     * Returns true if the name of the supplied Unit is unique.
+     *
+     * @param unit to check for uniqueness
+     * @return true if the Unit has a unique name
+     */
+    @Override
+    public boolean isUnitUniqueByName(AMEEUnit unit) {
+        return dao.isUnitUniqueByName(unit);
+    }
+
+    /**
      * Returns true if the symbol of the supplied Unit is unique.
      *
      * @param unit to check for uniqueness
