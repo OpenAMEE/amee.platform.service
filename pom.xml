@@ -6,7 +6,7 @@
     <name>amee-platform-service</name>
     <groupId>com.amee.platform</groupId>
     <artifactId>amee-platform-service</artifactId>
-    <version>2.0.1-SNAPSHOT</version>
+    <version>2.0.2-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <!-- Properties. -->
@@ -14,7 +14,7 @@
         <!-- Versions. -->
         <amee-messaging.version>1.0.7</amee-messaging.version>
         <amee-platform-science.version>1.0.13</amee-platform-science.version>
-        <amee-platform-domain.version>2.0.1-SNAPSHOT</amee-platform-domain.version>
+        <amee-platform-domain.version>2.0.1</amee-platform-domain.version>
         <!-- External Versions. -->
         <!-- Note: These versions were last checked & upgraded on 15/04/2010. -->
         <apache-httpcomponents-httpclient>4.1</apache-httpcomponents-httpclient>
@@ -217,12 +217,12 @@
         <repository>
             <id>releases</id>
             <name>Releases Repository</name>
-            <url>https://nexus.amee.com/content/repositories/releases/</url>
+            <url>https://nexus.amee.com/content/repositories/releases</url>
         </repository>
         <snapshotRepository>
             <id>snapshots</id>
             <name>Snapshots Repository</name>
-            <url>https://nexus.amee.com/content/repositories/snapshots/</url>
+            <url>https://nexus.amee.com/content/repositories/snapshots</url>
         </snapshotRepository>
     </distributionManagement>
 
