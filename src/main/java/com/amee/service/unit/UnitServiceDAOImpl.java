@@ -7,7 +7,6 @@ import org.apache.commons.lang.StringUtils;
 import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
-import org.hibernate.criterion.LogicalExpression;
 import org.hibernate.criterion.MatchMode;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
@@ -199,42 +198,56 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
     }
 
     /**
-     * Returns true if the symbol of the supplied Unit is unique.
+     * Returns true if the internalSymbol of the supplied Unit is unique.
      *
      * @param unit to check for uniqueness
-     * @return true if the Unit has a unique symbol
+     * @return true if the Unit has a unique internalSymbol
      */
     @Override
-    public boolean isUnitUniqueBySymbol(AMEEUnit unit) {
+    public boolean isUnitUniqueByInternalSymbol(AMEEUnit unit) {
         if (unit != null) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(AMEEUnit.class);
             if (entityManager.contains(unit)) {
                 criteria.add(Restrictions.ne("uid", unit.getUid()));
             }
-            // Check the internalSymbol is not used as an internalSymbol or externalSymbol already.
-            LogicalExpression withInternalSymbol =
+            criteria.add(
                     Restrictions.or(
                             Restrictions.eq("internalSymbol", unit.getInternalSymbol()),
-                            Restrictions.eq("externalSymbol", unit.getInternalSymbol()));
-            // Does unit have an externalSymbol?
-            if (unit.hasExternalSymbol()) {
-                // Check the internalSymbol & externalSymbol are not used as an internalSymbol or externalSymbol already.
-                LogicalExpression withExternalSymbol =
-                        Restrictions.or(
-                                Restrictions.eq("internalSymbol", unit.getExternalSymbol()),
-                                Restrictions.eq("externalSymbol", unit.getExternalSymbol()));
-                criteria.add(Restrictions.or(withInternalSymbol, withExternalSymbol));
-            } else {
-                // Unit does not have an externalSymbol, only check internalSymbol.
-                criteria.add(withInternalSymbol);
-            }
+                            Restrictions.eq("externalSymbol", unit.getInternalSymbol())));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setFlushMode(FlushMode.MANUAL);
             criteria.setTimeout(60);
             return criteria.list().isEmpty();
         } else {
             throw new RuntimeException("Unit was null.");
+        }
+    }
+
+    /**
+     * Returns true if the externalSymbol of the supplied Unit is unique.
+     *
+     * @param unit to check for uniqueness
+     * @return true if the Unit has a unique externalSymbol
+     */
+    @Override
+    public boolean isUnitUniqueByExternalSymbol(AMEEUnit unit) {
+        if ((unit != null) && unit.hasExternalSymbol()) {
+            Session session = (Session) entityManager.getDelegate();
+            Criteria criteria = session.createCriteria(AMEEUnit.class);
+            if (entityManager.contains(unit)) {
+                criteria.add(Restrictions.ne("uid", unit.getUid()));
+            }
+            criteria.add(
+                    Restrictions.or(
+                            Restrictions.eq("internalSymbol", unit.getExternalSymbol()),
+                            Restrictions.eq("externalSymbol", unit.getExternalSymbol())));
+            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+            criteria.setFlushMode(FlushMode.MANUAL);
+            criteria.setTimeout(60);
+            return criteria.list().isEmpty();
+        } else {
+            throw new RuntimeException("Unit was null or externalSymbol was empty.");
         }
     }
 

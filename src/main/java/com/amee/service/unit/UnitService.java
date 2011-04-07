@@ -37,7 +37,9 @@ public interface UnitService {
 
     public boolean isUnitUniqueByName(AMEEUnit unit);
 
-    public boolean isUnitUniqueBySymbol(AMEEUnit unit);
+    public boolean isUnitUniqueByInternalSymbol(AMEEUnit unit);
+
+    public boolean isUnitUniqueByExternalSymbol(AMEEUnit unit);
 
     public void persist(AMEEUnit unit);
 

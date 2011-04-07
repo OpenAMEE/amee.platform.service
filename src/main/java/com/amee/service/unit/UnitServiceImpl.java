@@ -126,14 +126,26 @@ public class UnitServiceImpl implements UnitService {
     }
 
     /**
-     * Returns true if the symbol of the supplied Unit is unique.
+     * Returns true if the internalSymbol of the supplied Unit is unique.
      *
      * @param unit to check for uniqueness
-     * @return true if the Unit has a unique symbol
+     * @return true if the Unit has a unique internalSymbol
      */
     @Override
-    public boolean isUnitUniqueBySymbol(AMEEUnit unit) {
-        return dao.isUnitUniqueBySymbol(unit);
+    public boolean isUnitUniqueByInternalSymbol(AMEEUnit unit) {
+        return dao.isUnitUniqueByInternalSymbol(unit);
+    }
+
+    /**
+     * Returns true if the externalSymbol of the supplied Unit is unique. If there is no externalSymbol the
+     * unit is considered unique and true is returned.
+     *
+     * @param unit to check for uniqueness
+     * @return true if the Unit has a unique externalSymbol or no externalSymbol
+     */
+    @Override
+    public boolean isUnitUniqueByExternalSymbol(AMEEUnit unit) {
+        return !unit.hasExternalSymbol() || dao.isUnitUniqueByExternalSymbol(unit);
     }
 
     @Override
