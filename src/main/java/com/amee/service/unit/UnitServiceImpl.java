@@ -92,6 +92,19 @@ public class UnitServiceImpl implements UnitService {
         return units;
     }
 
+    /**
+     * Returns a sorted list of alternative units for the supplied unit. Alternative units for any given unit
+     * are those that share the same unit type. See getUnits for sorting rules.
+     *
+     * @param unit for which to find alternative units
+     * @return list of alternative units
+     */
+    public List<AMEEUnit> getAlternativeUnits(AMEEUnit unit) {
+        List<AMEEUnit> alternativeUnits = getUnits(unit.getUnitType());
+        alternativeUnits.remove(unit);
+        return alternativeUnits;
+    }
+
     @Override
     public AMEEUnit getUnitByIdentifier(String identifier) {
         AMEEUnit unit = null;

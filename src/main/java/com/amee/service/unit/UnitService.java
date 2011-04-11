@@ -29,6 +29,8 @@ public interface UnitService {
 
     public List<AMEEUnit> getUnits(AMEEUnitType unitType);
 
+    public List<AMEEUnit> getAlternativeUnits(AMEEUnit unit);
+
     public AMEEUnit getUnitByIdentifier(String unitIdentifier);
 
     public AMEEUnit getUnitByUid(String uid);
