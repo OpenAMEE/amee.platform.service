@@ -99,7 +99,7 @@ public class UnitServiceImpl implements UnitService {
             unit = getUnitByUid(identifier);
         }
         if (unit == null) {
-            unit = getUnitBySymbol(identifier);
+            unit = getUnitByInternalSymbol(identifier);
         }
         return unit;
     }
@@ -110,19 +110,8 @@ public class UnitServiceImpl implements UnitService {
     }
 
     @Override
-    public AMEEUnit getUnitBySymbol(String symbol) {
-        return dao.getUnitBySymbol(symbol);
-    }
-
-    /**
-     * Returns true if the name of the supplied Unit is unique.
-     *
-     * @param unit to check for uniqueness
-     * @return true if the Unit has a unique name
-     */
-    @Override
-    public boolean isUnitUniqueByName(AMEEUnit unit) {
-        return dao.isUnitUniqueByName(unit);
+    public AMEEUnit getUnitByInternalSymbol(String internalSymbol) {
+        return dao.getUnitByInternalSymbol(internalSymbol);
     }
 
     /**
@@ -134,18 +123,6 @@ public class UnitServiceImpl implements UnitService {
     @Override
     public boolean isUnitUniqueByInternalSymbol(AMEEUnit unit) {
         return dao.isUnitUniqueByInternalSymbol(unit);
-    }
-
-    /**
-     * Returns true if the externalSymbol of the supplied Unit is unique. If there is no externalSymbol the
-     * unit is considered unique and true is returned.
-     *
-     * @param unit to check for uniqueness
-     * @return true if the Unit has a unique externalSymbol or no externalSymbol
-     */
-    @Override
-    public boolean isUnitUniqueByExternalSymbol(AMEEUnit unit) {
-        return !unit.hasExternalSymbol() || dao.isUnitUniqueByExternalSymbol(unit);
     }
 
     @Override

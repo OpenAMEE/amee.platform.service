@@ -152,48 +152,21 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
      * <p/>
      * This query uses FlushMode.MANUAL to ensure the session is not flushed prior to execution.
      *
-     * @param symbol value to match AMEEUnit on
+     * @param internalSymbol value to match AMEEUnit on
      * @return AMEEUnit matching the name value
      */
     @Override
-    public AMEEUnit getUnitBySymbol(String symbol) {
-        if (StringUtils.isNotBlank(symbol)) {
+    public AMEEUnit getUnitByInternalSymbol(String internalSymbol) {
+        if (StringUtils.isNotBlank(internalSymbol)) {
             Session session = (Session) entityManager.getDelegate();
             Criteria criteria = session.createCriteria(AMEEUnit.class);
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-            criteria.add(
-                    Restrictions.or(
-                            Restrictions.eq("internalSymbol", symbol),
-                            Restrictions.eq("externalSymbol", symbol)));
+            criteria.add(Restrictions.eq("internalSymbol", internalSymbol));
             criteria.setFlushMode(FlushMode.MANUAL);
             criteria.setTimeout(60);
             return (AMEEUnit) criteria.uniqueResult();
         } else {
             return null;
-        }
-    }
-
-    /**
-     * Returns true if the name of the supplied Unit is unique.
-     *
-     * @param unit to check for uniqueness
-     * @return true if the Unit has a unique name
-     */
-    @Override
-    public boolean isUnitUniqueByName(AMEEUnit unit) {
-        if (unit != null) {
-            Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(AMEEUnit.class);
-            if (entityManager.contains(unit)) {
-                criteria.add(Restrictions.ne("uid", unit.getUid()));
-            }
-            criteria.add(Restrictions.ilike("name", unit.getName(), MatchMode.EXACT));
-            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-            criteria.setFlushMode(FlushMode.MANUAL);
-            criteria.setTimeout(60);
-            return criteria.list().isEmpty();
-        } else {
-            throw new RuntimeException("Unit was null.");
         }
     }
 
@@ -211,43 +184,13 @@ public class UnitServiceDAOImpl implements UnitServiceDAO {
             if (entityManager.contains(unit)) {
                 criteria.add(Restrictions.ne("uid", unit.getUid()));
             }
-            criteria.add(
-                    Restrictions.or(
-                            Restrictions.eq("internalSymbol", unit.getInternalSymbol()),
-                            Restrictions.eq("externalSymbol", unit.getInternalSymbol())));
+            criteria.add(Restrictions.eq("internalSymbol", unit.getInternalSymbol()));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setFlushMode(FlushMode.MANUAL);
             criteria.setTimeout(60);
             return criteria.list().isEmpty();
         } else {
             throw new RuntimeException("Unit was null.");
-        }
-    }
-
-    /**
-     * Returns true if the externalSymbol of the supplied Unit is unique.
-     *
-     * @param unit to check for uniqueness
-     * @return true if the Unit has a unique externalSymbol
-     */
-    @Override
-    public boolean isUnitUniqueByExternalSymbol(AMEEUnit unit) {
-        if ((unit != null) && unit.hasExternalSymbol()) {
-            Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(AMEEUnit.class);
-            if (entityManager.contains(unit)) {
-                criteria.add(Restrictions.ne("uid", unit.getUid()));
-            }
-            criteria.add(
-                    Restrictions.or(
-                            Restrictions.eq("internalSymbol", unit.getExternalSymbol()),
-                            Restrictions.eq("externalSymbol", unit.getExternalSymbol())));
-            criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
-            criteria.setFlushMode(FlushMode.MANUAL);
-            criteria.setTimeout(60);
-            return criteria.list().isEmpty();
-        } else {
-            throw new RuntimeException("Unit was null or externalSymbol was empty.");
         }
     }
 

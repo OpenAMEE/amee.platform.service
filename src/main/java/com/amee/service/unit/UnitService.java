@@ -33,13 +33,9 @@ public interface UnitService {
 
     public AMEEUnit getUnitByUid(String uid);
 
-    public AMEEUnit getUnitBySymbol(String symbol);
-
-    public boolean isUnitUniqueByName(AMEEUnit unit);
+    public AMEEUnit getUnitByInternalSymbol(String symbol);
 
     public boolean isUnitUniqueByInternalSymbol(AMEEUnit unit);
-
-    public boolean isUnitUniqueByExternalSymbol(AMEEUnit unit);
 
     public void persist(AMEEUnit unit);
 
