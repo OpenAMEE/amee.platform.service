@@ -10,6 +10,9 @@ import org.apache.commons.lang.ArrayUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ *
+ */
 public class InvalidationMessage extends Message implements IAMEEEntityReference {
 
     private String serverName;

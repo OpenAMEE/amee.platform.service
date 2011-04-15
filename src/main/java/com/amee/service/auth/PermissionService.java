@@ -64,6 +64,8 @@ public class PermissionService {
         addPrincipalAndEntity(ObjectType.USR, ObjectType.GRP);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.VD);
         addPrincipalAndEntity(ObjectType.USR, ObjectType.TA);
+        addPrincipalAndEntity(ObjectType.USR, ObjectType.UN);
+        addPrincipalAndEntity(ObjectType.USR, ObjectType.UT);
 
         // Groups <--> Entities
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.ENV);
@@ -86,6 +88,8 @@ public class PermissionService {
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.GRP);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.VD);
         addPrincipalAndEntity(ObjectType.GRP, ObjectType.TA);
+        addPrincipalAndEntity(ObjectType.GRP, ObjectType.UN);
+        addPrincipalAndEntity(ObjectType.GRP, ObjectType.UT);
     }
 
     @Autowired
