@@ -59,32 +59,13 @@ public class ProfileService {
     // Profiles
 
     /**
-     * Fetches a Profile based on the supplied path. If the path is a valid UID format then the
-     * Profile with this UID is returned. If a profile with the UID is not found or the path is
-     * not a valid UID format then a Profile with the matching path is searched for and returned.
+     * Fetches a Profile based on the supplied UID.
      *
-     * @param path to search for. Can be either a UID or a path alias.
+     * @param uid UID to search for.
      * @return the matching Profile
      */
-    public Profile getProfile(String path) {
-        Profile profile = null;
-        if (!StringUtils.isBlank(path)) {
-            if (UidGen.INSTANCE_12.isValid(path)) {
-                profile = getProfileByUid(path);
-            }
-            if (profile == null) {
-                profile = getProfileByPath(path);
-            }
-        }
-        return profile;
-    }
-
     public Profile getProfileByUid(String uid) {
         return dao.getProfileByUid(uid);
-    }
-
-    public Profile getProfileByPath(String path) {
-        return dao.getProfileByPath(path);
     }
 
     public List<Profile> getProfiles(User user, Pager pager) {

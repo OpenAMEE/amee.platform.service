@@ -70,27 +70,6 @@ public class ProfileServiceDAO {
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected Profile getProfileByPath(String path) {
-        Profile profile = null;
-        List<Profile> profiles = entityManager.createQuery(
-                "FROM Profile p " +
-                        "WHERE p.path = :path " +
-                        "AND p.status != :trash")
-                .setParameter("path", path)
-                .setParameter("trash", AMEEStatus.TRASH)
-                .setHint("org.hibernate.cacheable", true)
-                .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-                .getResultList();
-        if (profiles.size() == 1) {
-            log.debug("getProfileByPath() found: " + path);
-            profile = profiles.get(0);
-        } else {
-            log.debug("getProfileByPath() NOT found: " + path);
-        }
-        return profile;
-    }
-
-    @SuppressWarnings(value = "unchecked")
     protected List<Profile> getProfiles(User user, Pager pager) {
         // first count all profiles
         long count = (Long) entityManager.createQuery(
