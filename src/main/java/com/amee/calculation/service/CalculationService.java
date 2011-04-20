@@ -237,7 +237,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         for (Object path : itemValueMap.keySet()) {
             // Get all ItemValues with this ItemValueDefinition path.
             List<BaseItemValue> itemValues = itemService.getAllItemValues(item, (String) path);
-            if (itemValues.size() > 1 || itemValues.get(0).getItemValueDefinition().isForceTimeSeries()) {
+            if (itemValues.size() > 1) {
                 appendTimeSeriesItemValue(item, values, itemValues);
             } else if (itemValues.size() == 1) {
                 appendSingleValuedItemValue(values, itemValues.get(0));
