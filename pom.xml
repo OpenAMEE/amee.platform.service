@@ -13,7 +13,7 @@
     <properties>
 
         <!-- Versions. -->
-        <amee-messaging.version>1.0.7</amee-messaging.version>
+        <amee-messaging.version>1.0.8-SNAPSHOT</amee-messaging.version>
         <amee-platform-science.version>1.1.0-SNAPSHOT</amee-platform-science.version>
         <amee-platform-domain.version>2.1.0-SNAPSHOT</amee-platform-domain.version>
 
