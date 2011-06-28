@@ -12,8 +12,8 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockReleaseFailedException;
+import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Version;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -54,7 +54,7 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * The primary Lucene Searcher.
      */
-    private IndexSearcher searcher;
+    private volatile IndexSearcher searcher;
 
     /**
      * A Lucene Searcher used recently. A reference is kept to this when the primary Searcher
@@ -65,17 +65,17 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * The shared Lucene Analyzer.
      */
-    private Analyzer analyzer;
+    private volatile Analyzer analyzer;
 
     /**
      * The shared Lucene directory.
      */
-    private Directory directory;
+    private volatile Directory directory;
 
     /**
      * The shared Lucene IndexWriter.
      */
-    private IndexWriter indexWriter;
+    private volatile IndexWriter indexWriter;
 
     /**
      * Is this instance the master index node? There can be only one!
@@ -437,6 +437,8 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * On finalize, ensure Lucene objects are closed.
      *
+     * TODO: Should we be using finalize()? http://www.codeguru.com/java/tij/tij0051.shtml
+     * 
      * @throws Throwable the <code>Exception</code> raised by this method
      */
     @Override
@@ -468,11 +470,17 @@ public class LuceneServiceImpl implements LuceneService {
      * @return the Searcher
      */
     private IndexSearcher getIndexSearcher() {
-        if (searcher == null) {
+
+        // Note the usage of the local variable result which seems unnecessary.
+        // For some versions of the Java VM, it will make the code 25% faster and for others, it won't hurt.
+        // Joshua Bloch "Effective Java, Second Edition", p. 283
+        IndexSearcher result = searcher;
+        if (result == null) {
             synchronized (this) {
-                if (searcher == null) {
+                result = searcher;
+                if (result == null) {
                     try {
-                        searcher = new IndexSearcher(getDirectory(), true);
+                        searcher = result = new IndexSearcher(getDirectory(), true);
                     } catch (ClosedByInterruptException e) {
                         throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
                     } catch (IOException e) {
@@ -481,7 +489,7 @@ public class LuceneServiceImpl implements LuceneService {
                 }
             }
         }
-        return searcher;
+        return result;
     }
 
     /**
@@ -545,36 +553,51 @@ public class LuceneServiceImpl implements LuceneService {
      * @return the Analyzer
      */
     private Analyzer getAnalyzer() {
-        if (analyzer == null) {
+
+        // Note the usage of the local variable result which seems unnecessary.
+        // For some versions of the Java VM, it will make the code 25% faster and for others, it won't hurt.
+        // Joshua Bloch "Effective Java, Second Edition", p. 283
+        Analyzer result = analyzer;
+        if (result == null) {
             synchronized (this) {
-                if (analyzer == null) {
-                    analyzer = new StandardAnalyzer(Version.LUCENE_30);
+                result = analyzer;
+                if (result == null) {
+                    analyzer = result = new StandardAnalyzer(Version.LUCENE_30);
                 }
             }
         }
-        return analyzer;
+        return result;
     }
 
     /**
-     * Get the Directory. Will call createDirectory if it does not yet exist.
+     * Gets the Directory. Will call createDirectory if it does not yet exist.
      *
+     * Creates a {@link SimpleFSDirectory} rather than using FSDirectory.open because
+     * {@link com.amee.base.resource.LocalResourceHandler#handleWithTimeout} can cause Exceptions.
+     * 
      * @return the Directory
      */
     private Directory getDirectory() {
-        if (directory == null) {
+
+        // Note the usage of the local variable result which seems unnecessary.
+        // For some versions of the Java VM, it will make the code 25% faster and for others, it won't hurt.
+        // Joshua Bloch "Effective Java, Second Edition", p. 283
+        Directory result = directory;
+        if (result == null) {
             synchronized (this) {
-                try {
-                    if (directory == null) {
-                        directory = FSDirectory.open(new File(lucenePath));
+                result = directory;
+                if (result == null) {
+                    try {
+                        directory = result = new SimpleFSDirectory(new File(lucenePath));
+                    } catch (ClosedByInterruptException e) {
+                        throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
                     }
-                } catch (ClosedByInterruptException e) {
-                    throw new LuceneServiceException("Caught ClosedByInterruptException: " + e.getMessage(), e);
-                } catch (IOException e) {
-                    throw new RuntimeException("Caught IOException: " + e.getMessage(), e);
                 }
             }
         }
-        return directory;
+        return result;
     }
 
     /**
@@ -601,14 +624,20 @@ public class LuceneServiceImpl implements LuceneService {
      * @return the IndexWriter
      */
     private IndexWriter getIndexWriter() {
-        if (indexWriter == null) {
+
+        // Note the usage of the local variable result which seems unnecessary.
+        // For some versions of the Java VM, it will make the code 25% faster and for others, it won't hurt.
+        // Joshua Bloch "Effective Java, Second Edition", p. 283
+        IndexWriter result = indexWriter;
+        if (result == null) {
             synchronized (this) {
-                if (indexWriter == null) {
-                    indexWriter = getNewIndexWriter(false);
+                result = indexWriter;
+                if (result == null) {
+                    indexWriter = result = getNewIndexWriter(false);
                 }
             }
         }
-        return indexWriter;
+        return result;
     }
 
     /**
@@ -726,7 +755,7 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * A TimerTask used by takeSnapshot().
      */
-    private class InterruptTimerTask extends TimerTask {
+    private static class InterruptTimerTask extends TimerTask {
 
         private Thread thread;
 
