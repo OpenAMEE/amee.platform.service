@@ -4,6 +4,11 @@ import org.apache.lucene.analysis.SimpleAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory;
 import org.apache.lucene.store.RAMDirectory;
@@ -19,6 +24,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class DirectoryIT {
@@ -75,16 +82,29 @@ public class DirectoryIT {
         ramDir = new RAMDirectory();
     }
 
+    /**
+     * Times adding documents to the index.
+     * 
+     * @throws Exception
+     */
     @Test
     public void testTiming() throws Exception {
         long simpleTiming = timeIndexWriter(simpleFsDir);
+        long simpleSearchTiming = timeIndexSearcher(simpleFsDir);
         long nioTiming = timeIndexWriter(nioFsDir);
+        long nioSearchTiming = timeIndexSearcher(nioFsDir);
         long ramTiming = timeIndexWriter(ramDir);
+        long ramSearchTiming = timeIndexSearcher(ramDir);
 
         System.out.println("Using mergeFactor: " + mergeFactor);
-        System.out.println("SimpleFSDirectory time: " + (simpleTiming) + " ms");
-        System.out.println("NIOFSDirectory time: " + (nioTiming) + " ms");
-        System.out.println("RamDirectory time: " + (ramTiming) + " ms");
+        System.out.println("SimpleFSDirectory write time: " + (simpleTiming) + " ms");
+        System.out.println("NIOFSDirectory write time: " + (nioTiming) + " ms");
+        System.out.println("RamDirectory write time: " + (ramTiming) + " ms");
+        System.out.println("---------------------------------------");
+        System.out.println("SimpleFSDirectory search time: " + (simpleSearchTiming) + " ms");
+        System.out.println("NIOFSDirectory search time: " + (nioSearchTiming) + " ms");
+        System.out.println("RamDirectory search time: " + (ramSearchTiming) + " ms");
+        System.out.println("***************************************");
     }
 
     private long timeIndexWriter(Directory dir) throws IOException {
@@ -92,6 +112,21 @@ public class DirectoryIT {
         addDocuments(dir);
         long stop = System.currentTimeMillis();
         return (stop - start);
+    }
+
+    private long timeIndexSearcher(Directory dir) throws IOException {
+        long start = System.currentTimeMillis();
+        doSearch(dir);
+        long stop = System.currentTimeMillis();
+        return (stop - start);
+    }
+
+    private void doSearch(Directory dir) throws IOException {
+        IndexSearcher simpleSearcher = new IndexSearcher(dir);
+        Term term = new Term("text", "bibamus");
+        Query query = new TermQuery(term);
+        TopDocs topdocs = simpleSearcher.search(query, 100);
+        assertTrue(topdocs.totalHits > 0);
     }
 
     /**
