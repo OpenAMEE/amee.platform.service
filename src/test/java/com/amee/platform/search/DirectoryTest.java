@@ -28,7 +28,7 @@ import java.util.Collection;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-public class DirectoryIT {
+public class DirectoryTest {
 
     private org.apache.lucene.store.Directory simpleFsDir;
     private org.apache.lucene.store.Directory nioFsDir;
@@ -66,7 +66,7 @@ public class DirectoryIT {
             {50}});
     }
 
-    public DirectoryIT(int mergeFactor) {
+    public DirectoryTest(int mergeFactor) {
         this.mergeFactor = mergeFactor;
         docs = loadDocuments(30000, 5);
     }
