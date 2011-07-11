@@ -14,6 +14,7 @@ import org.apache.lucene.store.NIOFSDirectory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -87,6 +88,7 @@ public class DirectoryTest {
      * 
      * @throws Exception
      */
+    @Ignore("Used for performance testing of Directory types.")
     @Test
     public void testTiming() throws Exception {
         long simpleTiming = timeIndexWriter(simpleFsDir);
