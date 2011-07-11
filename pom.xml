@@ -110,16 +110,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <parallel>methods</parallel>
-                    <systemProperties>
-                        <property>
-                            <name>amee.keyFile</name>
-                            <value>${project.build.directory}/test-classes/crypto/amee.key</value>
-                        </property>
-                        <property>
-                            <name>amee.saltFile</name>
-                            <value>${project.build.directory}/test-classes/crypto/amee.salt</value>
-                        </property>
-                    </systemProperties>
+                    <systemPropertyVariables>
+                        <amee.keyFile>${project.build.directory}/test-classes/crypto/amee.key</amee.keyFile>
+                        <amee.saltFile>${project.build.directory}/test-classes/crypto/amee.salt</amee.saltFile>
+                    </systemPropertyVariables>
                     <additionalClasspathElements>
                         <element>${basedir}/src/test/resources</element>
                     </additionalClasspathElements>
