@@ -33,6 +33,7 @@ import com.amee.service.data.DataService;
 import com.amee.service.data.DrillDownService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -72,6 +73,8 @@ public class DataFinder {
      */
     public DataSeries getDataSeries(String path, String drillDown, String name) {
         DataSeries series = new DataSeries();
+        series.setSeriesStartDate(new DateTime(startDate));
+        series.setSeriesEndDate(new DateTime(endDate));
         DataItem dataItem = getDataItem(path, drillDown);
         if (dataItem != null) {
             // Get all the values
