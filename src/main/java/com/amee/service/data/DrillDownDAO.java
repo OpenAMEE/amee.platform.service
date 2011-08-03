@@ -30,7 +30,6 @@ import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.sheet.Choice;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Hibernate;
 import org.hibernate.HibernateException;
 import org.hibernate.SQLQuery;
 import org.hibernate.Session;
@@ -41,19 +40,16 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.*;
 
+import static org.hibernate.type.StandardBasicTypes.LONG;
+import static org.hibernate.type.StandardBasicTypes.STRING;
+
 /**
  * Uses native SQL to perform a 'drill down' into DataItem values.
  * <p/>
  * See {@link com.amee.service.data.DrillDownService} for a description of drill downs.
  * <p/>
- * Note: I was unable to use the JPA EntityManger for this SQL so have used
- * the native Hibernate Session instead. This seems to be due to
- * the ITEM_VALUE.VALUE column being MEDIUMTEXT. This is the error message
- * I was getting: "No Dialect mapping for JDBC type: -1". After lots of
- * searching the options seem to be: 1) create a custom hibernate SQL dialect
- * that can handle MEDIUMTEXT to String conversion, 2) change the type of the
- * VALUE column, 3) use SQLQuery.addScalar to get hibernate to understand
- * the VALUE column. I've opted for option 3 here.
+ *
+ * TODO: Rewrite using JPA JPQL instead of Hibernate Session.
  */
 @Service
 class DrillDownDAO {
@@ -71,7 +67,7 @@ class DrillDownDAO {
      * are appropriate for the current level within the 'drill down' given the supplied {@link com.amee.domain.data.DataCategory},
      * {@link com.amee.domain.data.ItemValueDefinition) path and selections.
      *
-     * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
+     * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.item.data.DataItem}s will
      *                   be selected (required)
      * @param path       the path of the {@link com.amee.domain.data.ItemValueDefinition) from which to select values
      * @param selections the current user selections for a drill down
@@ -123,7 +119,7 @@ class DrillDownDAO {
      * are appropriate for the current level within the 'drill down' given the supplied {@link com.amee.domain.data.DataCategory},
      * {@link com.amee.domain.data.ItemValueDefinition) path and selections.
      *
-     * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.data.DataItem}s will
+     * @param dc         the {@link com.amee.domain.data.DataCategory} from which {@link com.amee.domain.item.data.DataItem}s will
      *                   be selected (required)
      * @param selections the current user selections for a drill down
      * @return a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing UIDs for a user to select
@@ -182,11 +178,11 @@ class DrillDownDAO {
         // create query
         Session session = (Session) entityManager.getDelegate();
         query = session.createSQLQuery(sql.toString());
-        query.addScalar("UID", Hibernate.STRING);
+        query.addScalar("UID", STRING);
 
         // set parameters
         query.setInteger("trash", AMEEStatus.TRASH.ordinal());
-        query.setParameterList("dataItemIds", dataItemIds, Hibernate.LONG);
+        query.setParameterList("dataItemIds", dataItemIds, LONG);
 
         // execute SQL
         try {
@@ -218,7 +214,7 @@ class DrillDownDAO {
         // create query
         Session session = (Session) entityManager.getDelegate();
         SQLQuery query = session.createSQLQuery(sql.toString());
-        query.addScalar("UID", Hibernate.STRING);
+        query.addScalar("UID", STRING);
 
         // set parameters
         query.setInteger("trash", AMEEStatus.TRASH.ordinal());
@@ -250,7 +246,7 @@ class DrillDownDAO {
         // create query
         Session session = (Session) entityManager.getDelegate();
         SQLQuery query = session.createSQLQuery(sql.toString());
-        query.addScalar("ID", Hibernate.LONG);
+        query.addScalar("ID", LONG);
 
         // set parameters
         query.setInteger("trash", AMEEStatus.TRASH.ordinal());
@@ -290,12 +286,12 @@ class DrillDownDAO {
         // create query
         Session session = (Session) entityManager.getDelegate();
         SQLQuery query = session.createSQLQuery(sql.toString());
-        query.addScalar("VALUE", Hibernate.STRING);
+        query.addScalar("VALUE", STRING);
 
         // set parameters
         query.setInteger("trash", AMEEStatus.TRASH.ordinal());
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
-        query.setParameterList("dataItemIds", dataItemIds, Hibernate.LONG);
+        query.setParameterList("dataItemIds", dataItemIds, LONG);
 
         // execute SQL
         try {
@@ -386,11 +382,11 @@ class DrillDownDAO {
         // create query
         Session session = (Session) entityManager.getDelegate();
         SQLQuery query = session.createSQLQuery(sql.toString());
-        query.addScalar("ID", Hibernate.LONG);
+        query.addScalar("ID", LONG);
 
         // set parameters
         query.setInteger("trash", AMEEStatus.TRASH.ordinal());
-        query.setParameterList("dataItemIds", categoryDataItemIds, Hibernate.LONG);
+        query.setParameterList("dataItemIds", categoryDataItemIds, LONG);
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
         query.setString("value", value);
 
@@ -426,11 +422,11 @@ class DrillDownDAO {
         // Create query.
         Session session = (Session) entityManager.getDelegate();
         SQLQuery query = session.createSQLQuery(sql.toString());
-        query.addScalar("ID", Hibernate.LONG);
+        query.addScalar("ID", LONG);
 
         // Set parameters.
         query.setInteger("trash", AMEEStatus.TRASH.ordinal());
-        query.setParameterList("dataItemIds", categoryDataItemIds, Hibernate.LONG);
+        query.setParameterList("dataItemIds", categoryDataItemIds, LONG);
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
         query.setString("value", value);
         query.setString("locale", LocaleHolder.getLocale());
