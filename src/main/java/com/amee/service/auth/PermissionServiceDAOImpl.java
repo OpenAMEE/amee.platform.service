@@ -81,7 +81,7 @@ public class PermissionServiceDAOImpl implements PermissionServiceDAO {
         criteria.add(Restrictions.eq("principalReference.entityUid", principal.getEntityUid()));
         criteria.add(Restrictions.eq("principalReference.entityType", principal.getObjectType().getName()));
         if (entityClass != null) {
-            criteria.add(Restrictions.eq("entityReference.entityType", ObjectType.getType(entityClass).getName()));
+            criteria.add(Restrictions.eq("entityReference.entityType", ObjectType.fromClass(entityClass).getName()));
         }
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.setCacheable(true);
@@ -111,11 +111,11 @@ public class PermissionServiceDAOImpl implements PermissionServiceDAO {
         if (entityReference.getEntityId() != null) {
             log.debug("getEntity() - using entityManager.find()");
             return (AMEEEntity) entityManager.find(
-                    entityReference.getObjectType().getClazz(), entityReference.getEntityId());
+                    entityReference.getObjectType().toClass(), entityReference.getEntityId());
         } else {
             log.debug("getEntity() - using query");
             Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(entityReference.getObjectType().getClazz());
+            Criteria criteria = session.createCriteria(entityReference.getObjectType().toClass());
             criteria.add(Restrictions.naturalId().set("uid", entityReference.getEntityUid()));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setCacheable(true);

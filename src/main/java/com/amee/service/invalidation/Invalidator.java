@@ -184,7 +184,7 @@ public class Invalidator {
             InvalidationMessage message =
                     new InvalidationMessage(
                             this,
-                            new AMEEEntityReference(ObjectType.valueOf(entityType), entityUid),
+                            new AMEEEntityReference(ObjectType.fromString(entityType), entityUid),
                             invOptions);
             String messageText = message.getMessage();
             System.out.println("        Message: " + messageText);

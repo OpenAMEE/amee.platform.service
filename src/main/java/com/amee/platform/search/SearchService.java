@@ -301,7 +301,7 @@ public class SearchService {
         Map<ObjectType, Set<Long>> entityIds = new HashMap<ObjectType, Set<Long>>();
         for (Document document : resultsWrapper.getResults()) {
             Long entityId = new Long(document.getField("entityId").stringValue());
-            ObjectType entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
+            ObjectType entityType = ObjectType.fromString(document.getField("entityType").stringValue());
             Set<Long> idSet = entityIds.get(entityType);
             if (idSet == null) {
                 idSet = new HashSet<Long>();
@@ -349,7 +349,7 @@ public class SearchService {
         List<IAMEEEntity> results = new ArrayList<IAMEEEntity>();
         for (Document document : resultsWrapper.getResults()) {
             String entityUid = document.getField("entityUid").stringValue();
-            ObjectType entityType = ObjectType.valueOf(document.getField("entityType").stringValue());
+            ObjectType entityType = ObjectType.fromString(document.getField("entityType").stringValue());
 
             // First attempt to find the result.
             IAMEEEntity result = entities.containsKey(entityType) ? entities.get(entityType).get(entityUid) : null;
