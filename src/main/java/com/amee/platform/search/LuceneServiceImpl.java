@@ -34,6 +34,7 @@ public class LuceneServiceImpl implements LuceneService {
 
     private final Log log = LogFactory.getLog(getClass());
 
+    // TODO: Does this mean we can't page past the first 1000 items in a data category that has > 1000?
     public final static int MAX_NUM_HITS = 1000;
 
     /**
@@ -53,6 +54,7 @@ public class LuceneServiceImpl implements LuceneService {
 
     /**
      * The primary Lucene Searcher.
+     * Must be declared volatile for double-check locking.
      */
     private volatile IndexSearcher searcher;
 
@@ -64,16 +66,19 @@ public class LuceneServiceImpl implements LuceneService {
 
     /**
      * The shared Lucene Analyzer.
+     * Must be declared volatile for double-check locking.
      */
     private volatile Analyzer analyzer;
 
     /**
      * The shared Lucene directory.
+     * Must be declared volatile for double-check locking.
      */
     private volatile Directory directory;
 
     /**
      * The shared Lucene IndexWriter.
+     * Must be declared volatile for double-check locking.
      */
     private volatile IndexWriter indexWriter;
 
@@ -104,6 +109,14 @@ public class LuceneServiceImpl implements LuceneService {
 
     /**
      * Lock objects for the index.
+     *
+     * Methods that use the shared IndexWriter instance variable via getIndexWriter can safely share the instance so obtained.
+     * External processes and drastic operations such as forcibly unlocking the index must ensure that no other process
+     * is using the index.
+     *
+     * As we are not always accessing the index via the single shared IndexWriter instance we must use external locking.
+     * Those methods that use the shared IndexWriter should obtain a read lock and those methods that require
+     * exclusive access to the index should obtain a write lock.
      */
     private ReadWriteLock rwLock = new ReentrantReadWriteLock(true);
     private Lock rLock = rwLock.readLock();
@@ -112,7 +125,7 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * Conduct a search in the Lucene index based on the supplied Query, constrained by resultStart and resultLimit.
      * <p/>
-     * At most this will allow up to MAX_RESULT_LIMIT search hits, with a return window based
+     * At most this will allow up to MAX_NUM_HITS search hits, with a return window based
      * on resultStart and resultLimit.
      *
      * @param query       to search with
@@ -133,7 +146,7 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * Conduct a search in the Lucene index based on the supplied Query, constrained by resultStart and resultLimit.
      * <p/>
-     * At most this will allow up to MAX_RESULT_LIMIT search hits, with a return window based
+     * At most this will allow up to MAX_NUM_HITS search hits, with a return window based
      * on resultStart and resultLimit.
      *
      * @param query       to search with
@@ -212,7 +225,7 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * Conduct a search in the Lucene index based on the supplied Query (unconstrained.
      * <p/>
-     * At most this will allow up to MAX_RESULT_LIMIT search hits.
+     * At most this will allow up to MAX_NUM_HITS search hits.
      *
      * @param query to search with
      * @return a List of Lucene Documents
@@ -225,7 +238,7 @@ public class LuceneServiceImpl implements LuceneService {
     /**
      * Conduct a search in the Lucene index based on the supplied Query (unconstrained.
      * <p/>
-     * At most this will allow up to MAX_RESULT_LIMIT search hits.
+     * At most this will allow up to MAX_NUM_HITS search hits.
      *
      * @param query to search with
      * @return a List of Lucene Documents
@@ -573,7 +586,7 @@ public class LuceneServiceImpl implements LuceneService {
      * Gets the Directory. Will call createDirectory if it does not yet exist.
      *
      * Creates a {@link SimpleFSDirectory} rather than using FSDirectory.open because
-     * {@link com.amee.base.resource.LocalResourceHandler#handleWithTimeout} can cause Exceptions.
+     * {@link com.amee.base.resource.LocalResourceHandler#handleWithTimeout} can cause Exceptions with {@link org.apache.lucene.store.NIOFSDirectory}.
      * 
      * @return the Directory
      */
