@@ -24,7 +24,7 @@ import org.springframework.context.ApplicationListener;
 
 import java.util.*;
 
-public abstract class ItemService implements IItemService, ApplicationListener {
+public abstract class AbstractItemService implements IItemService, ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
 

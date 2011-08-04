@@ -30,7 +30,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 @Service
-public class DataItemService extends ItemService implements IDataItemService {
+public class DataItemService extends AbstractItemService implements IDataItemService {
 
     private final Log log = LogFactory.getLog(getClass());
 
