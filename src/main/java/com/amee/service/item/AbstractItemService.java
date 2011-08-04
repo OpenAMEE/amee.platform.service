@@ -1,9 +1,10 @@
 package com.amee.service.item;
 
 import com.amee.base.transaction.TransactionEvent;
-import com.amee.domain.*;
 import com.amee.domain.DataItemService;
+import com.amee.domain.IAMEEEntityReference;
 import com.amee.domain.ItemService;
+import com.amee.domain.LocaleService;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.item.BaseItem;
