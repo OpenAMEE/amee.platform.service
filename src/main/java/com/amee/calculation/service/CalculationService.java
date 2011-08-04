@@ -19,10 +19,7 @@
  */
 package com.amee.calculation.service;
 
-import com.amee.domain.AMEEStatistics;
-import com.amee.domain.APIVersion;
-import com.amee.domain.IItemService;
-import com.amee.domain.ValueType;
+import com.amee.domain.*;
 import com.amee.domain.algorithm.Algorithm;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
@@ -66,10 +63,10 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     private AMEEStatistics ameeStatistics;
 
     @Autowired
-    private IItemService dataItemService;
+    private DataItemService dataItemService;
 
     @Autowired
-    private IItemService profileItemService;
+    private ProfileItemService profileItemService;
 
     private AlgorithmRunner algorithmRunner = new AlgorithmRunner();
 
@@ -232,7 +229,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param values - the {@link com.amee.platform.science.InternalValue} collection
      */
     @SuppressWarnings("unchecked")
-    public void appendInternalValues(BaseItem item, IItemService itemService, Map<ItemValueDefinition, InternalValue> values) {
+    public void appendInternalValues(BaseItem item, ItemService itemService, Map<ItemValueDefinition, InternalValue> values) {
         ItemValueMap itemValueMap = itemService.getItemValuesMap(item);
         for (Object path : itemValueMap.keySet()) {
             // Get all ItemValues with this ItemValueDefinition path.

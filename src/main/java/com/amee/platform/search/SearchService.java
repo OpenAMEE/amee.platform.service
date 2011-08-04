@@ -81,7 +81,7 @@ public class SearchService {
     private DataService dataService;
 
     @Autowired
-    private IDataItemService dataItemService;
+    private DataItemService dataItemService;
 
     @Autowired
     private MetadataService metadataService;

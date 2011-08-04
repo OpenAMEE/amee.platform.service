@@ -30,7 +30,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 @Service
-public class DataItemService extends AbstractItemService implements IDataItemService {
+public class DataItemServiceImpl extends AbstractItemService implements DataItemService {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -256,7 +256,7 @@ public class DataItemService extends AbstractItemService implements IDataItemSer
     public Date getDataItemsModified(DataCategory dataCategory) {
         Date modified = dao.getDataItemsModified(dataCategory);
         if (modified == null) {
-            modified = IDataItemService.EPOCH;
+            modified = DataItemService.EPOCH;
         }
         return modified;
     }
@@ -357,7 +357,7 @@ public class DataItemService extends AbstractItemService implements IDataItemSer
                     throw new IllegalStateException("Unexpected non-historical item value: " + biv);
                 }
                 // On or after the resultStart? Filter at the epoch?
-                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(IDataItemService.EPOCH)) {
+                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(DataItemService.EPOCH)) {
                     // This *must* be the first item value.
                     results.add(bdiv);
                 }

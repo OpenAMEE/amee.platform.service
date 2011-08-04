@@ -19,7 +19,7 @@
  */
 package com.amee.service.data;
 
-import com.amee.domain.IDataItemService;
+import com.amee.domain.DataItemService;
 import com.amee.domain.LocaleHolder;
 import com.amee.domain.ValueType;
 import com.amee.domain.cache.CacheableFactory;
@@ -43,7 +43,7 @@ public class DataSheetFactory implements CacheableFactory {
     private final Log log = LogFactory.getLog(getClass());
 
     private DataService dataService;
-    private IDataItemService dataItemService;
+    private DataItemService dataItemService;
     private DataBrowser dataBrowser;
     private String cacheName;
 
@@ -51,7 +51,7 @@ public class DataSheetFactory implements CacheableFactory {
         super();
     }
 
-    public DataSheetFactory(DataService dataService, IDataItemService dataItemService, DataBrowser dataBrowser, String cacheName) {
+    public DataSheetFactory(DataService dataService, DataItemService dataItemService, DataBrowser dataBrowser, String cacheName) {
         this();
         this.dataService = dataService;
         this.dataItemService = dataItemService;

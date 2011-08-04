@@ -1,14 +1,12 @@
 package com.amee.service.profile;
 
-import com.amee.base.utils.UidGen;
-import com.amee.domain.IProfileItemService;
+import com.amee.domain.ProfileItemService;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
 import com.amee.domain.cache.CacheableFactory;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.sheet.Sheet;
 import com.amee.service.data.DataService;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +52,7 @@ public class ProfileService {
     private ProfileSheetService profileSheetService;
 
     @Autowired
-    private IProfileItemService profileItemService;
+    private ProfileItemService profileItemService;
 
     // Profiles
 

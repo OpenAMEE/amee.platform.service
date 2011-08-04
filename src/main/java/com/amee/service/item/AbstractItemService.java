@@ -1,10 +1,9 @@
 package com.amee.service.item;
 
 import com.amee.base.transaction.TransactionEvent;
-import com.amee.domain.IAMEEEntityReference;
-import com.amee.domain.IDataItemService;
-import com.amee.domain.IItemService;
-import com.amee.domain.LocaleService;
+import com.amee.domain.*;
+import com.amee.domain.DataItemService;
+import com.amee.domain.ItemService;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.item.BaseItem;
@@ -24,7 +23,7 @@ import org.springframework.context.ApplicationListener;
 
 import java.util.*;
 
-public abstract class AbstractItemService implements IItemService, ApplicationListener {
+public abstract class AbstractItemService implements ItemService, ApplicationListener {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -183,7 +182,7 @@ public abstract class AbstractItemService implements IItemService, ApplicationLi
         for (BaseItemValue iv : getActiveItemValues(item)) {
             long time = ExternalHistoryValue.class.isAssignableFrom(iv.getClass()) ?
                     ((ExternalHistoryValue) iv).getStartDate().getTime() :
-                    IDataItemService.EPOCH.getTime();
+                    DataItemService.EPOCH.getTime();
             String checkId = iv.getItemValueDefinition().getUid() + time;
             if (uniqueId.equals(checkId)) {
                 return false;
@@ -237,7 +236,7 @@ public abstract class AbstractItemService implements IItemService, ApplicationLi
             if (ExternalHistoryValue.class.isAssignableFrom(itemValue.getClass())) {
                 return ((ExternalHistoryValue) itemValue).getStartDate();
             } else {
-                return new StartEndDate(IDataItemService.EPOCH);
+                return new StartEndDate(DataItemService.EPOCH);
             }
         } else {
             throw new IllegalStateException("A BaseProfileItemValue or BaseDataItemValue instance was expected.");

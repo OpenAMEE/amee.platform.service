@@ -21,7 +21,7 @@ package com.amee.service.data;
 
 import com.amee.base.transaction.AMEETransaction;
 import com.amee.domain.APIVersion;
-import com.amee.domain.IDataItemService;
+import com.amee.domain.DataItemService;
 import com.amee.domain.ObjectType;
 import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.DataCategory;
@@ -50,7 +50,7 @@ public class DataSheetServiceImpl implements DataSheetService {
     private DataService dataService;
 
     @Autowired
-    private IDataItemService dataItemService;
+    private DataItemService dataItemService;
 
     private CacheHelper cacheHelper = CacheHelper.getInstance();
     private Set<String> eternalPaths = new HashSet<String>();

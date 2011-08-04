@@ -19,7 +19,7 @@ public class TransactionThreadBeanManager implements ApplicationListener {
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
-    private IDataItemService dataItemService;
+    private DataItemService dataItemService;
 
     @Autowired
     private LocaleService localeService;
@@ -31,7 +31,7 @@ public class TransactionThreadBeanManager implements ApplicationListener {
     private MetadataService metadataService;
 
     @Autowired
-    private IProfileItemService profileItemService;
+    private ProfileItemService profileItemService;
 
     @Autowired
     private CO2CalculationService calculationService;
@@ -52,10 +52,10 @@ public class TransactionThreadBeanManager implements ApplicationListener {
                     ThreadBeanHolder.clear();
                     // Store commonly used services.
                     ThreadBeanHolder.set(IDataService.class, dataService);
-                    ThreadBeanHolder.set(IDataItemService.class, dataItemService);
+                    ThreadBeanHolder.set(DataItemService.class, dataItemService);
                     ThreadBeanHolder.set(LocaleService.class, localeService);
                     ThreadBeanHolder.set(MetadataService.class, metadataService);
-                    ThreadBeanHolder.set(IProfileItemService.class, profileItemService);
+                    ThreadBeanHolder.set(ProfileItemService.class, profileItemService);
                     ThreadBeanHolder.set(CO2CalculationService.class, calculationService);
                     break;
                 case END:

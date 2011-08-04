@@ -19,8 +19,8 @@
  */
 package com.amee.calculation.service;
 
+import com.amee.domain.DataItemService;
 import com.amee.domain.IDataCategoryReference;
-import com.amee.domain.IDataItemService;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItem;
 import com.amee.domain.sheet.Choice;
@@ -51,7 +51,7 @@ public class DataFinder {
     private DataService dataService;
 
     @Autowired
-    private IDataItemService dataItemService;
+    private DataItemService dataItemService;
 
     @Autowired
     private DrillDownService drillDownService;

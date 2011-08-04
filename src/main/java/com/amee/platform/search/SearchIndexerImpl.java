@@ -47,7 +47,7 @@ public class SearchIndexerImpl implements SearchIndexer {
     private DataService dataService;
 
     @Autowired
-    private IDataItemService dataItemService;
+    private DataItemService dataItemService;
 
     @Autowired
     private MetadataService metadataService;
