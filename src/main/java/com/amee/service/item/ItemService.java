@@ -178,7 +178,7 @@ public abstract class ItemService implements IItemService, ApplicationListener {
      * @return - true if the newItemValue is unique, otherwise false
      */
     @Override
-    public boolean isUnique(BaseItem item, ItemValueDefinition itemValueDefinition, StartEndDate startDate) {
+    public boolean isItemValueUnique(BaseItem item, ItemValueDefinition itemValueDefinition, StartEndDate startDate) {
         String uniqueId = itemValueDefinition.getUid() + startDate.getTime();
         for (BaseItemValue iv : getActiveItemValues(item)) {
             long time = ExternalHistoryValue.class.isAssignableFrom(iv.getClass()) ?
