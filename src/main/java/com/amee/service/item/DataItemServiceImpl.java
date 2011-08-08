@@ -482,4 +482,60 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     protected DataItemServiceDAO getDao() {
         return dao;
     }
+
+    public boolean equivalentDataItemExists(DataItem dataItem) {
+
+        // Get a list of this dataitem's values for the drilldowns
+
+        // First get all the item values
+        ItemValueMap allValuesMap = getItemValuesMap(dataItem);
+
+        // Then make a new map with just the drillDowns values.
+        ItemValueMap drillDownValuesMap = new ItemValueMap();
+        List<Choice> drillDownChoices = dataItem.getItemDefinition().getDrillDownChoices();
+        for (Choice choice : drillDownChoices) {
+            drillDownValuesMap.put(allValuesMap.get(choice.getValue()).getDisplayPath(), allValuesMap.get(choice.getValue()));
+        }
+
+        // We now have a list of this data item's values for the drilldowns (I think!)
+
+        // Check the drilldown values for all existing data items for the same category.
+        List<DataItem> existingDataItems = getDataItems(dataItem.getDataCategory());
+
+        // If there are no existing data items then it can't be dupe.
+        if (existingDataItems.size() == 0) {
+            return false;
+        }
+
+        // There are some data items for this category so we need to check them.
+        for (DataItem existingDataItem : existingDataItems) {
+
+            if (existingDataItem.getUid().equals(dataItem.getUid())) {
+                // It's the one we just persisted.
+                continue;
+            }
+
+            // Must have the same item definition to be considered a dupe.
+            if (existingDataItem.getItemDefinition().equals(dataItem.getItemDefinition())) {
+
+                // check if it has the same values for the drillDowns we have
+                // Check the values for each choice.
+                for (Choice choice : drillDownChoices) {
+                    BaseItemValue newValue = drillDownValuesMap.get(choice.getValue());
+                    BaseItemValue existingValue = getItemValue(existingDataItem, choice.getValue());
+                    if (!newValue.getValueAsString().equals(existingValue.getValueAsString())) {
+
+                        // This one doesn't match. Try the next data item
+                        break;
+                    }
+
+                    // We found at least one that matches.
+                    return true;
+                }
+            }
+        }
+
+        // We've checked all data items and didn't find one that matched.
+        return false;
+    }
 }
