@@ -303,6 +303,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
      * @param filter a {@link DataItemValuesFilter} to match {@link BaseDataItemValue}s against
      * @return a a {@link ResultsWrapper} of {@link BaseDataItemValue}s
      */
+    @Override
     public ResultsWrapper<BaseDataItemValue> getAllItemValues(DataItemValuesFilter filter) {
 
         boolean handledFirst = false;
@@ -424,6 +425,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
      *
      * @param dataItem to update
      */
+    @Override
     public void updateDataItemValues(DataItem dataItem) {
         boolean modified = false;
         Object values = dataItem.getValues();
@@ -483,9 +485,58 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
         return dao;
     }
 
+    /**
+     * Check if a DataItem already exists with the same drill down values.
+     *
+     * @param dataItem the DataItem to check for equivalents.
+     * @return true if a DataItem already exists with the same category and drill down values. Otherwise, false.
+     */
+    @Override
     public boolean equivalentDataItemExists(DataItem dataItem) {
 
-        // Get a list of this dataitem's values for the drilldowns
+        // Get a list of this data item's values for the drill downs.
+        ItemValueMap drillDownValuesMap = getDrillDownValuesMap(dataItem);
+
+        // Check the drilldown values for all existing data items for the same category.
+        for (DataItem existingDataItem : getDataItems(dataItem.getDataCategory())) {
+
+            // Ignore the one we just added. This is the one we are checking!
+            if (existingDataItem.getUid().equals(dataItem.getUid())) {
+                continue;
+            }
+
+            // Must have the same item definition to be considered a dupe.
+            if (existingDataItem.getItemDefinition().equals(dataItem.getItemDefinition())) {
+
+                // check if it has the same values for the drillDowns we have
+                // Check the values for each choice.
+                for (String path : drillDownValuesMap.keySet()) {
+                    String newValue = drillDownValuesMap.get(path).getValueAsString();
+                    String existingValue = getItemValue(existingDataItem, path).getValueAsString();
+                    if (!newValue.equals(existingValue)) {
+
+                        // This DataItem has at least one value that is different so move on to the next DataItem.
+                        break;
+                    }
+
+                    // We found a DataItem that has the same values.
+                    return true;
+                }
+            }
+        }
+
+        // We've checked all data items for this category and didn't find one that was the same.
+        return false;
+    }
+
+    /**
+     * Get an {@code ItemValueMap} containing the given DataItem's DrillDown values.
+     *
+     * @param dataItem the DataItem to get the drilldown values for.
+     * @return an ItemValueMap with the drilldown values.
+     */
+    @Override
+    public ItemValueMap getDrillDownValuesMap(DataItem dataItem) {
 
         // First get all the item values
         ItemValueMap allValuesMap = getItemValuesMap(dataItem);
@@ -496,46 +547,6 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
         for (Choice choice : drillDownChoices) {
             drillDownValuesMap.put(allValuesMap.get(choice.getValue()).getDisplayPath(), allValuesMap.get(choice.getValue()));
         }
-
-        // We now have a list of this data item's values for the drilldowns (I think!)
-
-        // Check the drilldown values for all existing data items for the same category.
-        List<DataItem> existingDataItems = getDataItems(dataItem.getDataCategory());
-
-        // If there are no existing data items then it can't be dupe.
-        if (existingDataItems.size() == 0) {
-            return false;
-        }
-
-        // There are some data items for this category so we need to check them.
-        for (DataItem existingDataItem : existingDataItems) {
-
-            if (existingDataItem.getUid().equals(dataItem.getUid())) {
-                // It's the one we just persisted.
-                continue;
-            }
-
-            // Must have the same item definition to be considered a dupe.
-            if (existingDataItem.getItemDefinition().equals(dataItem.getItemDefinition())) {
-
-                // check if it has the same values for the drillDowns we have
-                // Check the values for each choice.
-                for (Choice choice : drillDownChoices) {
-                    BaseItemValue newValue = drillDownValuesMap.get(choice.getValue());
-                    BaseItemValue existingValue = getItemValue(existingDataItem, choice.getValue());
-                    if (!newValue.getValueAsString().equals(existingValue.getValueAsString())) {
-
-                        // This one doesn't match. Try the next data item
-                        break;
-                    }
-
-                    // We found at least one that matches.
-                    return true;
-                }
-            }
-        }
-
-        // We've checked all data items and didn't find one that matched.
-        return false;
+        return drillDownValuesMap;
     }
 }
