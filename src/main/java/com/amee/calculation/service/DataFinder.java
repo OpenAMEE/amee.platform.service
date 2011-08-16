@@ -1,26 +1,7 @@
-/**
- * This file is part of AMEE.
- *
- * AMEE is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * AMEE is free software and is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Created by http://www.dgen.net.
- * Website http://www.amee.cc
- */
 package com.amee.calculation.service;
 
+import com.amee.domain.DataItemService;
 import com.amee.domain.IDataCategoryReference;
-import com.amee.domain.IDataItemService;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItem;
 import com.amee.domain.sheet.Choice;
@@ -33,6 +14,7 @@ import com.amee.service.data.DataService;
 import com.amee.service.data.DrillDownService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -50,7 +32,7 @@ public class DataFinder {
     private DataService dataService;
 
     @Autowired
-    private IDataItemService dataItemService;
+    private DataItemService dataItemService;
 
     @Autowired
     private DrillDownService drillDownService;
@@ -72,6 +54,8 @@ public class DataFinder {
      */
     public DataSeries getDataSeries(String path, String drillDown, String name) {
         DataSeries series = new DataSeries();
+        series.setSeriesStartDate(new DateTime(startDate));
+        series.setSeriesEndDate(new DateTime(endDate));
         DataItem dataItem = getDataItem(path, drillDown);
         if (dataItem != null) {
             // Get all the values

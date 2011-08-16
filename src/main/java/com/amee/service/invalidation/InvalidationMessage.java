@@ -112,7 +112,7 @@ public class InvalidationMessage extends Message implements IAMEEEntityReference
                 setInstanceName(obj.getString("in"));
             }
             if (obj.has("ot")) {
-                setObjectType(ObjectType.valueOf(obj.getString("ot")));
+                setObjectType(ObjectType.fromString(obj.getString("ot")));
             }
             if (obj.has("id")) {
                 setEntityId(obj.getLong("id"));

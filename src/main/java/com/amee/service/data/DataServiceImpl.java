@@ -1,22 +1,3 @@
-/**
- * This file is part of AMEE.
- * <p/>
- * AMEE is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- * <p/>
- * AMEE is free software and is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * <p/>
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * <p/>
- * Created by http://www.dgen.net.
- * Website http://www.amee.cc
- */
 package com.amee.service.data;
 
 import com.amee.base.domain.ResultsWrapper;
@@ -56,7 +37,7 @@ public class DataServiceImpl implements DataService, IDataService {
     private LocaleService localeService;
 
     @Autowired
-    private IDataItemService dataItemService;
+    private DataItemService dataItemService;
 
     @Autowired
     private DataServiceDAOImpl dao;
@@ -286,7 +267,7 @@ public class DataServiceImpl implements DataService, IDataService {
         Date dataCategoryModified = dataCategory.getModified();
         Date dataItemsModified = getDataItemsModifiedDeep(dataCategory);
         // Work out which date is the latest.
-        Date modified = IDataItemService.EPOCH;
+        Date modified = DataItemService.EPOCH;
         modified = dataCategoryModified.after(modified) ? dataCategoryModified : modified;
         modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
         // Now we have the most recent modified timestamp of all entities related to this DataCategory.
@@ -305,9 +286,9 @@ public class DataServiceImpl implements DataService, IDataService {
         // Get the modified dates for all related entities.
         Date dataItemsModified = dataItemService.getDataItemsModified(dataCategory);
         Date definitionsModified =
-                dataCategory.isItemDefinitionPresent() ? dataCategory.getItemDefinition().getModifiedDeep() : IDataItemService.EPOCH;
+                dataCategory.isItemDefinitionPresent() ? dataCategory.getItemDefinition().getModifiedDeep() : DataItemService.EPOCH;
         // Work out which date is the latest.
-        Date modified = IDataItemService.EPOCH;
+        Date modified = DataItemService.EPOCH;
         modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
         modified = definitionsModified.after(modified) ? definitionsModified : modified;
         // Now we have the most recent modified timestamp of all entities related to this DataCategory.

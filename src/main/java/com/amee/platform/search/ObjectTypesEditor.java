@@ -18,7 +18,7 @@ public class ObjectTypesEditor extends PropertyEditorSupport {
                 if (s.equalsIgnoreCase("DI")) {
                     s = "NDI";
                 }
-                types.add(ObjectType.valueOf(s.trim().toUpperCase()));
+                types.add(ObjectType.fromString(s.trim().toUpperCase()));
             }
             setValue(types);
         }

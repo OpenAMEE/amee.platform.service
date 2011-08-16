@@ -30,7 +30,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 @Service
-public class DataItemService extends ItemService implements IDataItemService {
+public class DataItemServiceImpl extends AbstractItemService implements DataItemService {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -256,7 +256,7 @@ public class DataItemService extends ItemService implements IDataItemService {
     public Date getDataItemsModified(DataCategory dataCategory) {
         Date modified = dao.getDataItemsModified(dataCategory);
         if (modified == null) {
-            modified = IDataItemService.EPOCH;
+            modified = DataItemService.EPOCH;
         }
         return modified;
     }
@@ -303,6 +303,7 @@ public class DataItemService extends ItemService implements IDataItemService {
      * @param filter a {@link DataItemValuesFilter} to match {@link BaseDataItemValue}s against
      * @return a a {@link ResultsWrapper} of {@link BaseDataItemValue}s
      */
+    @Override
     public ResultsWrapper<BaseDataItemValue> getAllItemValues(DataItemValuesFilter filter) {
 
         boolean handledFirst = false;
@@ -357,7 +358,7 @@ public class DataItemService extends ItemService implements IDataItemService {
                     throw new IllegalStateException("Unexpected non-historical item value: " + biv);
                 }
                 // On or after the resultStart? Filter at the epoch?
-                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(IDataItemService.EPOCH)) {
+                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(DataItemService.EPOCH)) {
                     // This *must* be the first item value.
                     results.add(bdiv);
                 }
@@ -424,6 +425,7 @@ public class DataItemService extends ItemService implements IDataItemService {
      *
      * @param dataItem to update
      */
+    @Override
     public void updateDataItemValues(DataItem dataItem) {
         boolean modified = false;
         Object values = dataItem.getValues();
@@ -481,5 +483,70 @@ public class DataItemService extends ItemService implements IDataItemService {
     @Override
     protected DataItemServiceDAO getDao() {
         return dao;
+    }
+
+    /**
+     * Check if a DataItem already exists with the same drill down values.
+     *
+     * @param dataItem the DataItem to check for equivalents.
+     * @return true if a DataItem already exists with the same category and drill down values. Otherwise, false.
+     */
+    @Override
+    public boolean equivalentDataItemExists(DataItem dataItem) {
+
+        // Get a list of this data item's values for the drill downs.
+        ItemValueMap drillDownValuesMap = getDrillDownValuesMap(dataItem);
+
+        // Check the drilldown values for all existing data items for the same category.
+        for (DataItem existingDataItem : getDataItems(dataItem.getDataCategory())) {
+
+            // Ignore the one we just added. This is the one we are checking!
+            if (existingDataItem.getUid().equals(dataItem.getUid())) {
+                continue;
+            }
+
+            // Must have the same item definition to be considered a dupe.
+            if (existingDataItem.getItemDefinition().equals(dataItem.getItemDefinition())) {
+
+                // check if it has the same values for the drillDowns we have
+                // Check the values for each choice.
+                for (String path : drillDownValuesMap.keySet()) {
+                    String newValue = drillDownValuesMap.get(path).getValueAsString();
+                    String existingValue = getItemValue(existingDataItem, path).getValueAsString();
+                    if (!newValue.equals(existingValue)) {
+
+                        // This DataItem has at least one value that is different so move on to the next DataItem.
+                        break;
+                    }
+
+                    // We found a DataItem that has the same values.
+                    return true;
+                }
+            }
+        }
+
+        // We've checked all data items for this category and didn't find one that was the same.
+        return false;
+    }
+
+    /**
+     * Get an {@code ItemValueMap} containing the given DataItem's DrillDown values.
+     *
+     * @param dataItem the DataItem to get the drilldown values for.
+     * @return an ItemValueMap with the drilldown values.
+     */
+    @Override
+    public ItemValueMap getDrillDownValuesMap(DataItem dataItem) {
+
+        // First get all the item values
+        ItemValueMap allValuesMap = getItemValuesMap(dataItem);
+
+        // Then make a new map with just the drillDowns values.
+        ItemValueMap drillDownValuesMap = new ItemValueMap();
+        List<Choice> drillDownChoices = dataItem.getItemDefinition().getDrillDownChoices();
+        for (Choice choice : drillDownChoices) {
+            drillDownValuesMap.put(allValuesMap.get(choice.getValue()).getDisplayPath(), allValuesMap.get(choice.getValue()));
+        }
+        return drillDownValuesMap;
     }
 }

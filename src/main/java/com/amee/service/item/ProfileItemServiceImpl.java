@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
-public class ProfileItemService extends ItemService implements IProfileItemService {
+public class ProfileItemServiceImpl extends AbstractItemService implements ProfileItemService {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -29,7 +29,7 @@ public class ProfileItemService extends ItemService implements IProfileItemServi
     private TransactionController transactionController;
 
     @Autowired
-    private DataItemService dataItemService;
+    private DataItemServiceImpl dataItemService;
 
     @Autowired
     private ProfileItemServiceDAO dao;

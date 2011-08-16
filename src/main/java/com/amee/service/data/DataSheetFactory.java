@@ -1,25 +1,6 @@
-/**
- * This file is part of AMEE.
- *
- * AMEE is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * AMEE is free software and is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Created by http://www.dgen.net.
- * Website http://www.amee.cc
- */
 package com.amee.service.data;
 
-import com.amee.domain.IDataItemService;
+import com.amee.domain.DataItemService;
 import com.amee.domain.LocaleHolder;
 import com.amee.domain.ValueType;
 import com.amee.domain.cache.CacheableFactory;
@@ -43,7 +24,7 @@ public class DataSheetFactory implements CacheableFactory {
     private final Log log = LogFactory.getLog(getClass());
 
     private DataService dataService;
-    private IDataItemService dataItemService;
+    private DataItemService dataItemService;
     private DataBrowser dataBrowser;
     private String cacheName;
 
@@ -51,7 +32,7 @@ public class DataSheetFactory implements CacheableFactory {
         super();
     }
 
-    public DataSheetFactory(DataService dataService, IDataItemService dataItemService, DataBrowser dataBrowser, String cacheName) {
+    public DataSheetFactory(DataService dataService, DataItemService dataItemService, DataBrowser dataBrowser, String cacheName) {
         this();
         this.dataService = dataService;
         this.dataItemService = dataItemService;

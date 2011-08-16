@@ -1,28 +1,6 @@
-/**
- * This file is part of AMEE.
- *
- * AMEE is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * AMEE is free software and is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Created by http://www.dgen.net.
- * Website http://www.amee.cc
- */
 package com.amee.calculation.service;
 
-import com.amee.domain.AMEEStatistics;
-import com.amee.domain.APIVersion;
-import com.amee.domain.IItemService;
-import com.amee.domain.ValueType;
+import com.amee.domain.*;
 import com.amee.domain.algorithm.Algorithm;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
@@ -66,10 +44,10 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     private AMEEStatistics ameeStatistics;
 
     @Autowired
-    private IItemService dataItemService;
+    private DataItemService dataItemService;
 
     @Autowired
-    private IItemService profileItemService;
+    private ProfileItemService profileItemService;
 
     private AlgorithmRunner algorithmRunner = new AlgorithmRunner();
 
@@ -232,7 +210,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @param values - the {@link com.amee.platform.science.InternalValue} collection
      */
     @SuppressWarnings("unchecked")
-    public void appendInternalValues(BaseItem item, IItemService itemService, Map<ItemValueDefinition, InternalValue> values) {
+    public void appendInternalValues(BaseItem item, ItemService itemService, Map<ItemValueDefinition, InternalValue> values) {
         ItemValueMap itemValueMap = itemService.getItemValuesMap(item);
         for (Object path : itemValueMap.keySet()) {
             // Get all ItemValues with this ItemValueDefinition path.

@@ -5,16 +5,16 @@
     <name>amee-platform-service</name>
     <groupId>com.amee.platform</groupId>
     <artifactId>amee-platform-service</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <!-- Properties. -->
     <properties>
 
         <!-- Versions. -->
-        <amee-messaging.version>1.0.8</amee-messaging.version>
-        <amee-platform-science.version>1.1.0</amee-platform-science.version>
-        <amee-platform-domain.version>2.1.0</amee-platform-domain.version>
+        <amee-messaging.version>1.0.9</amee-messaging.version>
+        <amee-platform-science.version>1.2.0</amee-platform-science.version>
+        <amee-platform-domain.version>2.2.0</amee-platform-domain.version>
 
         <!-- External Versions. -->
         <!-- Note: These versions were last checked & upgraded on 14/04/2011. -->
@@ -72,11 +72,11 @@
                     <artifactId>maven-surefire-report-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
                 </plugin>
-                <!--<plugin>-->
-                    <!--<groupId>org.apache.maven.plugins</groupId>-->
-                    <!--<artifactId>maven-surefire-plugin</artifactId>-->
-                    <!--<version>${maven-surefire-plugin.version}</version>-->
-                <!--</plugin>-->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -107,7 +107,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven-surefire-plugin.version}</version>
                 <configuration>
                     <!-- NB: Cannot use parallel tests with system properties. -->
                     <systemPropertyVariables>

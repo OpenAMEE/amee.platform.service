@@ -1,24 +1,3 @@
-/*
- * This file is part of AMEE.
- *
- * Copyright (c) 2007, 2008, 2009 AMEE UK LIMITED (help@amee.com).
- *
- * AMEE is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * AMEE is free software and is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Created by http://www.dgen.net.
- * Website http://www.amee.cc
- */
 package com.amee.service.auth;
 
 import com.amee.domain.*;
@@ -81,7 +60,7 @@ public class PermissionServiceDAOImpl implements PermissionServiceDAO {
         criteria.add(Restrictions.eq("principalReference.entityUid", principal.getEntityUid()));
         criteria.add(Restrictions.eq("principalReference.entityType", principal.getObjectType().getName()));
         if (entityClass != null) {
-            criteria.add(Restrictions.eq("entityReference.entityType", ObjectType.getType(entityClass).getName()));
+            criteria.add(Restrictions.eq("entityReference.entityType", ObjectType.fromClass(entityClass).getName()));
         }
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.setCacheable(true);
@@ -111,11 +90,11 @@ public class PermissionServiceDAOImpl implements PermissionServiceDAO {
         if (entityReference.getEntityId() != null) {
             log.debug("getEntity() - using entityManager.find()");
             return (AMEEEntity) entityManager.find(
-                    entityReference.getObjectType().getClazz(), entityReference.getEntityId());
+                    entityReference.getObjectType().toClass(), entityReference.getEntityId());
         } else {
             log.debug("getEntity() - using query");
             Session session = (Session) entityManager.getDelegate();
-            Criteria criteria = session.createCriteria(entityReference.getObjectType().getClazz());
+            Criteria criteria = session.createCriteria(entityReference.getObjectType().toClass());
             criteria.add(Restrictions.naturalId().set("uid", entityReference.getEntityUid()));
             criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
             criteria.setCacheable(true);

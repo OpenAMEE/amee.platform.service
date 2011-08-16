@@ -1,7 +1,6 @@
 package com.amee.service;
 
 import com.amee.domain.TimeZoneHolder;
-import com.amee.domain.auth.User;
 import com.amee.platform.science.StartEndDate;
 
 import java.util.TimeZone;
