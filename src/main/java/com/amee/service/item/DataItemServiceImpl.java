@@ -486,7 +486,8 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     }
 
     /**
-     * Check if a DataItem already exists with the same drill down values.
+     * Checks if a DataItem already exists with the same drill down values.
+     * NB: This method uses the transient values returned from com.amee.domain.item.data.DataItem#getValues()
      *
      * @param dataItem the DataItem to check for equivalents.
      * @return true if a DataItem already exists with the same category and drill down values. Otherwise, false.
@@ -495,7 +496,10 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     public boolean equivalentDataItemExists(DataItem dataItem) {
 
         // Get a list of this data item's values for the drill downs.
-        ItemValueMap drillDownValuesMap = getDrillDownValuesMap(dataItem);
+        // The values for these values are null :-(
+        List<String> drillDownPaths = getDrillDownPaths(dataItem);
+
+        boolean isEqual = false;
 
         // Check the drilldown values for all existing data items for the same category.
         for (DataItem existingDataItem : getDataItems(dataItem.getDataCategory())) {
@@ -510,23 +514,30 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
 
                 // check if it has the same values for the drillDowns we have
                 // Check the values for each choice.
-                for (String path : drillDownValuesMap.keySet()) {
-                    String newValue = drillDownValuesMap.get(path).getValueAsString();
-                    String existingValue = getItemValue(existingDataItem, path).getValueAsString();
-                    if (!newValue.equals(existingValue)) {
+                Map<String, String> newValues = new HashMap<String, String>();
+                Map<String, String> existingValues = new HashMap<String, String>();
 
-                        // This DataItem has at least one value that is different so move on to the next DataItem.
-                        break;
+                // Create maps of new and existing values
+                for (String path : drillDownPaths) {
+                    String newValue = null;
+
+                    // Use reflection to get the values. See: com.amee.domain.item.data.DataItem#getValues().
+                    try {
+                        String pathMethod = "get" + StringUtils.capitalize(path);
+                        Method getter = dataItem.getValues().getClass().getMethod(pathMethod);
+                        newValue = String.valueOf(getter.invoke(dataItem.getValues()));
+                    } catch (Exception e) {
+                        throw new RuntimeException("equivalentDataItemExists() caught Exception: " + e.getMessage(), e);
                     }
+                    newValues.put(path, newValue);
 
-                    // We found a DataItem that has the same values.
-                    return true;
+                    String existingValue = getItemValue(existingDataItem, path).getValueAsString();
+                    existingValues.put(path, existingValue);
                 }
+                isEqual = newValues.equals(existingValues);
             }
         }
-
-        // We've checked all data items for this category and didn't find one that was the same.
-        return false;
+        return isEqual;
     }
 
     /**
@@ -548,5 +559,19 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
             drillDownValuesMap.put(allValuesMap.get(choice.getValue()).getDisplayPath(), allValuesMap.get(choice.getValue()));
         }
         return drillDownValuesMap;
+    }
+
+    private List<String> getDrillDownPaths(DataItem dataItem) {
+
+        // First get all the item values
+        ItemValueMap allValuesMap = getItemValuesMap(dataItem);
+
+        // Then make a list of the drill down paths
+        List<String> drillDownPaths = new ArrayList<String>();
+        List<Choice> drillDownChoices = dataItem.getItemDefinition().getDrillDownChoices();
+        for (Choice choice : drillDownChoices) {
+            drillDownPaths.add(allValuesMap.get(choice.getValue()).getDisplayPath());
+        }
+        return drillDownPaths;
     }
 }
