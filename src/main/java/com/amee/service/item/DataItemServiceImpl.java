@@ -513,15 +513,14 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
             if (existingDataItem.getItemDefinition().equals(dataItem.getItemDefinition())) {
 
                 // check if it has the same values for the drillDowns we have
-                // Check the values for each choice.
+                // Create maps of new and existing values
                 Map<String, String> newValues = new HashMap<String, String>();
                 Map<String, String> existingValues = new HashMap<String, String>();
-
-                // Create maps of new and existing values
                 for (String path : drillDownPaths) {
                     String newValue = null;
 
                     // Use reflection to get the values. See: com.amee.domain.item.data.DataItem#getValues().
+                    // This is only for v3
                     try {
                         String pathMethod = "get" + StringUtils.capitalize(path);
                         Method getter = dataItem.getValues().getClass().getMethod(pathMethod);
@@ -529,6 +528,12 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
                     } catch (Exception e) {
                         throw new RuntimeException("equivalentDataItemExists() caught Exception: " + e.getMessage(), e);
                     }
+
+                    // Handle v2
+                    if (newValue.equals("null")) {
+                        newValue = getItemValuesMap(dataItem).get(path).getValueAsString();
+                    }
+
                     newValues.put(path, newValue);
 
                     String existingValue = getItemValue(existingDataItem, path).getValueAsString();
