@@ -89,21 +89,6 @@ public class LocaleServiceImpl implements LocaleService, ApplicationListener {
     }
 
     @Override
-    public String getLocaleNameValue(IAMEEEntityReference entity) {
-        return getLocaleNameValue(entity, null);
-    }
-
-    @Override
-    public String getLocaleNameValue(IAMEEEntityReference entity, String defaultName) {
-        LocaleName localeName = getLocaleName(entity);
-        if (localeName != null) {
-            return localeName.getName();
-        } else {
-            return defaultName;
-        }
-    }
-
-    @Override
     public void clearLocaleName(IAMEEEntityReference entity, String locale) {
         // Is there an existing LocaleName?
         LocaleName localeName = getLocaleName(entity, locale);
