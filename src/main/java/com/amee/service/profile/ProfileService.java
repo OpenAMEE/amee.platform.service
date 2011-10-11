@@ -4,6 +4,7 @@ import com.amee.domain.Pager;
 import com.amee.domain.ProfileItemService;
 import com.amee.domain.auth.User;
 import com.amee.domain.cache.CacheableFactory;
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.sheet.Sheet;
 import com.amee.service.data.DataService;
@@ -49,6 +50,10 @@ public class ProfileService {
         return dao.getProfiles(user, pager);
     }
 
+    public List<Profile> getProfilesByUserUid(String uid) {
+        return dao.getProfilesByUserUid(uid);
+    }
+
     public void persist(Profile p) {
         dao.persist(p);
     }
@@ -71,6 +76,16 @@ public class ProfileService {
         // Get parent Data Category IDs based on existing Data Category IDs.
         dataCategoryIds.addAll(dataService.getParentDataCategoryIds(dataCategoryIds));
         return dataCategoryIds;
+    }
+
+    /**
+     * Gets a Set of DataCategories used by the given Profile's ProfileItems.
+     *
+     * @param profile the Profile to get the DataCategories for.
+     * @return the Set of DataCategories used.
+     */
+    public Set<DataCategory> getProfileDataCategories(Profile profile) {
+        return dao.getProfileDataCategories(profile);
     }
 
     // Sheets
