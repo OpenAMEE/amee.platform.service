@@ -82,6 +82,21 @@ public class ResourceAuthorizationService {
         return isAuthorized(getBuildAccessSpecifications());
     }
 
+    public boolean isAuthorizedForAcceptProfile() {
+        return isAuthorized(getAcceptProfileAccessSpecifications());
+    }
+
+    public void ensureAuthorizedForAcceptProfile(String userUid) {
+        setUserByUid(userUid);
+        setResource(dataService.getRootDataCategory());
+        if (!isAuthorizedForAcceptProfile()) {
+            if (log.isDebugEnabled()) {
+                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
+            }
+            throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
+        }
+    }
+
     /**
      * A utility method wrapping up a setUserByUid, setResource and isAuthorizedForAccept call sequence. Will cause
      * a NotAuthorizedException if the user is not authorized to accept (POST) a resource. The Root DataCategory is
@@ -187,6 +202,10 @@ public class ResourceAuthorizationService {
             accessSpecifications.add(new AccessSpecification(entity, PermissionEntry.VIEW));
         }
         return accessSpecifications;
+    }
+
+    public List<AccessSpecification> getAcceptProfileAccessSpecifications() {
+        return updateLastAccessSpecificationWithPermissionEntry(getBuildAccessSpecifications(), PermissionEntry.CREATE_PROFILE);
     }
 
     /**
