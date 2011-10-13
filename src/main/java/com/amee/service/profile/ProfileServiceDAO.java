@@ -1,5 +1,6 @@
 package com.amee.service.profile;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -94,16 +96,40 @@ public class ProfileServiceDAO {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Profile> getProfilesByUserUid(String uid) {
-        return entityManager.createQuery(
+    public ResultsWrapper<Profile> getProfilesByUserUid(String uid, int resultStart, int resultLimit) {
+        // Create Query, apply start and limit if relevant.
+        Query query = entityManager.createQuery(
             "SELECT p FROM Profile p " +
                 "WHERE p.user.uid = :userUid " +
                 "AND p.status != :trash")
             .setParameter("userUid", uid)
             .setParameter("trash", AMEEStatus.TRASH)
             .setHint("org.hibernate.cacheable", true)
-            .setHint("org.hibernate.cacheRegion", CACHE_REGION)
-            .getResultList();
+            .setHint("org.hibernate.cacheRegion", CACHE_REGION);
+        if (resultStart > 0) {
+            query.setFirstResult(resultStart);
+        }
+        if (resultLimit > 0) {
+
+            // Get 1 more than result limit so we know if we have them all or there are more to fetch.
+            query.setMaxResults(resultLimit + 1);
+        }
+
+        // Get the results
+        List<Profile> profiles = (List<Profile>) query.getResultList();
+
+        // Did we limit the results?
+        if (resultLimit > 0) {
+
+            // Results were limited, work out correct results and truncation state.
+            return new ResultsWrapper<Profile>(
+                profiles.size() > resultLimit ? profiles.subList(0, resultLimit) : profiles,
+                profiles.size() > resultLimit);
+        } else {
+
+            // Results were not limited, no truncation
+            return new ResultsWrapper<Profile>(profiles, false);
+        }
     }
 
     protected void persist(Profile profile) {

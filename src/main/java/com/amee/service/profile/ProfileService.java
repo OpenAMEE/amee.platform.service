@@ -1,5 +1,6 @@
 package com.amee.service.profile;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.Pager;
 import com.amee.domain.ProfileItemService;
 import com.amee.domain.auth.User;
@@ -51,7 +52,11 @@ public class ProfileService {
     }
 
     public List<Profile> getProfilesByUserUid(String uid) {
-        return dao.getProfilesByUserUid(uid);
+        return getProfilesByUserUid(uid, 0, 0).getResults();
+    }
+
+    public ResultsWrapper<Profile> getProfilesByUserUid(String uid, int resultStart, int resultLimit) {
+        return dao.getProfilesByUserUid(uid, resultStart, resultLimit);
     }
 
     public void persist(Profile p) {
