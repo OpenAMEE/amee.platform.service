@@ -8,6 +8,7 @@ import com.amee.domain.cache.CacheableFactory;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.sheet.Sheet;
+import com.amee.platform.search.ProfilesFilter;
 import com.amee.service.data.DataService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,11 +53,14 @@ public class ProfileService {
     }
 
     public List<Profile> getProfilesByUserUid(String uid) {
-        return getProfilesByUserUid(uid, 0, 0).getResults();
+        ProfilesFilter filter = new ProfilesFilter();
+        filter.setResultStart(0);
+        filter.setResultLimit(0);
+        return getProfilesByUserUid(uid, filter).getResults();
     }
 
-    public ResultsWrapper<Profile> getProfilesByUserUid(String uid, int resultStart, int resultLimit) {
-        return dao.getProfilesByUserUid(uid, resultStart, resultLimit);
+    public ResultsWrapper<Profile> getProfilesByUserUid(String uid, ProfilesFilter filter) {
+        return dao.getProfilesByUserUid(uid, filter);
     }
 
     public void persist(Profile p) {

@@ -7,6 +7,7 @@ import com.amee.domain.auth.User;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.profile.Profile;
+import com.amee.platform.search.ProfilesFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -96,7 +97,7 @@ public class ProfileServiceDAO {
     }
 
     @SuppressWarnings("unchecked")
-    public ResultsWrapper<Profile> getProfilesByUserUid(String uid, int resultStart, int resultLimit) {
+    public ResultsWrapper<Profile> getProfilesByUserUid(String uid, ProfilesFilter filter) {
         // Create Query, apply start and limit if relevant.
         Query query = entityManager.createQuery(
             "SELECT p FROM Profile p " +
@@ -106,25 +107,25 @@ public class ProfileServiceDAO {
             .setParameter("trash", AMEEStatus.TRASH)
             .setHint("org.hibernate.cacheable", true)
             .setHint("org.hibernate.cacheRegion", CACHE_REGION);
-        if (resultStart > 0) {
-            query.setFirstResult(resultStart);
+        if (filter.getResultStart() > 0) {
+            query.setFirstResult(filter.getResultStart());
         }
-        if (resultLimit > 0) {
+        if (filter.getResultLimit() > 0) {
 
             // Get 1 more than result limit so we know if we have them all or there are more to fetch.
-            query.setMaxResults(resultLimit + 1);
+            query.setMaxResults(filter.getResultLimit() + 1);
         }
 
         // Get the results
         List<Profile> profiles = (List<Profile>) query.getResultList();
 
         // Did we limit the results?
-        if (resultLimit > 0) {
+        if (filter.getResultLimit() > 0) {
 
             // Results were limited, work out correct results and truncation state.
             return new ResultsWrapper<Profile>(
-                profiles.size() > resultLimit ? profiles.subList(0, resultLimit) : profiles,
-                profiles.size() > resultLimit);
+                profiles.size() > filter.getResultLimit() ? profiles.subList(0, filter.getResultLimit()) : profiles,
+                profiles.size() > filter.getResultLimit());
         } else {
 
             // Results were not limited, no truncation
