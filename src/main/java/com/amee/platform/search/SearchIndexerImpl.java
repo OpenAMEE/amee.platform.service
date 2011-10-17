@@ -455,8 +455,7 @@ public class SearchIndexerImpl implements SearchIndexer {
             query.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.MUST);
             query.add(new TermQuery(new Term("categoryUid", dataCategory.getEntityUid())), BooleanClause.Occur.MUST);
 
-            // Do search. Very high maxNumHits to cope with large Data Categories.
-            List<Document> dataItemDocuments = luceneService.doSearch(query, 100000).getResults();
+            List<Document> dataItemDocuments = luceneService.doSearch(query).getResults();
 
             // First: Are the correct number of Data Items in the index?
             long dataItemCount = dataItemService.getDataItemCount(dataCategory);

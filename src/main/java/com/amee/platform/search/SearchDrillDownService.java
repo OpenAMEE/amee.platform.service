@@ -51,8 +51,7 @@ public class SearchDrillDownService extends DrillDownService {
         for (Choice choice : selections) {
             query.add(new TermQuery(new Term(choice.getName(), choice.getValue().toLowerCase())), BooleanClause.Occur.MUST);
         }
-        // Do search. Very high maxNumHits to cope with large Data Categories.
-        ResultsWrapper<Document> results = luceneService.doSearch(query, 100000);
+        ResultsWrapper<Document> results = luceneService.doSearch(query);
         // Create choices array.
         List<Choice> choices = new ArrayList<Choice>();
         // What kind of choices?
