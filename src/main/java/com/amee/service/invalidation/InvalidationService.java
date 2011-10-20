@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Service
-public class InvalidationService implements ApplicationContextAware, ApplicationListener {
+public class InvalidationService implements ApplicationContextAware, ApplicationListener<TransactionEvent> {
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -43,25 +43,22 @@ public class InvalidationService implements ApplicationContextAware, Application
         }
     };
 
-    public void onApplicationEvent(ApplicationEvent e) {
-        if (e instanceof TransactionEvent) {
-            TransactionEvent te = (TransactionEvent) e;
-            switch (te.getType()) {
-                case BEFORE_BEGIN:
-                    log.trace("onApplicationEvent() BEFORE_BEGIN");
-                    onBeforeBegin();
-                    break;
-                case ROLLBACK:
-                    log.trace("onApplicationEvent() ROLLBACK");
-                    onRollback();
-                    break;
-                case END:
-                    log.trace("onApplicationEvent() END");
-                    onEnd();
-                    break;
-                default:
-                    // Do nothing!
-            }
+    public void onApplicationEvent(TransactionEvent te) {
+        switch (te.getType()) {
+            case BEFORE_BEGIN:
+                log.trace("onApplicationEvent() BEFORE_BEGIN");
+                onBeforeBegin();
+                break;
+            case ROLLBACK:
+                log.trace("onApplicationEvent() ROLLBACK");
+                onRollback();
+                break;
+            case END:
+                log.trace("onApplicationEvent() END");
+                onEnd();
+                break;
+            default:
+                // Do nothing!
         }
     }
 
