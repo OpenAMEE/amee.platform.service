@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +25,9 @@ public class InvalidationService implements ApplicationContextAware, Application
 
     @Autowired
     private MessageService messageService;
+
+    @Autowired
+    private AsyncInvalidator asyncInvalidator;
 
     @Autowired
     @Qualifier("invalidationExchange")
@@ -113,10 +115,9 @@ public class InvalidationService implements ApplicationContextAware, Application
         Set<InvalidationMessage> invalidationMessagesCopy = new HashSet<InvalidationMessage>(invalidationMessages.get());
         // Clear the original set of InvalidationMessages to prevent infinite loop.
         invalidationMessages.get().clear();
-        // Now iterate over the copied set.
-        for (InvalidationMessage invalidationMessage : invalidationMessagesCopy) {
-            invalidate(invalidationMessage);
-        }
+
+        // Now iterate over the copied set asynchronously.
+        asyncInvalidator.invalidate(invalidationMessagesCopy);
     }
 
     /**
