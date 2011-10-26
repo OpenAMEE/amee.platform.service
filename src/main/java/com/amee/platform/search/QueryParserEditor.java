@@ -68,10 +68,13 @@ public class QueryParserEditor extends PropertyEditorSupport {
     private QueryParser getQueryParser() {
         return new QueryParser(Version.LUCENE_30, getField(), getAnalyzer()) {
 
+            // TODO: is getField meant to resolve to this.getField or super.getField?
+            // Added super as this is how java was resolving the unqualified method call.
+            // See: http://findbugs.sourceforge.net/bugDescriptions.html#IA_AMBIGUOUS_INVOCATION_OF_INHERITED_OR_OUTER_METHOD
             protected Query newTermQuery(Term term) {
                 if (isDoubleValue()) {
                     try {
-                        return new TermQuery(new Term(getField(),
+                        return new TermQuery(new Term(super.getField(),
                                 NumericUtils.doubleToPrefixCoded(Double.parseDouble(term.text()))));
                     } catch (NumberFormatException e) {
                         throw new IllegalArgumentException("Cannot parse query (" + e.getMessage() + ").", e);
@@ -81,12 +84,15 @@ public class QueryParserEditor extends PropertyEditorSupport {
                 }
             }
 
+            // TODO: is getField meant to resolve to this.getField or super.getField?
+            // Added super as this is how java was resolving the unqualified method call.
+            // See: http://findbugs.sourceforge.net/bugDescriptions.html#IA_AMBIGUOUS_INVOCATION_OF_INHERITED_OR_OUTER_METHOD
             protected Query newRangeQuery(String field, String part1, String part2, boolean inclusive) {
                 if (isDoubleValue()) {
                     try {
                         final NumericRangeQuery query =
                                 NumericRangeQuery.newDoubleRange(
-                                        getField(),
+                                        super.getField(),
                                         Double.parseDouble(part1),
                                         Double.parseDouble(part2),
                                         inclusive,
