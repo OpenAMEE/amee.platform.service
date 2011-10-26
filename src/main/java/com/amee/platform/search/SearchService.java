@@ -116,8 +116,8 @@ public class SearchService {
 
     protected void addDataCategories(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, DataCategory> dataCategoriesMap) {
         Map<String, IAMEEEntity> e = new HashMap<String, IAMEEEntity>();
-        for (String uid : dataCategoriesMap.keySet()) {
-            e.put(uid, dataCategoriesMap.get(uid));
+        for (Map.Entry<String, DataCategory> entry : dataCategoriesMap.entrySet()) {
+            e.put(entry.getKey(), entry.getValue());
         }
         entities.put(ObjectType.DC, e);
     }
@@ -128,10 +128,10 @@ public class SearchService {
      */
     protected void addDataItems(Map<ObjectType, Map<String, IAMEEEntity>> entities, Map<String, DataItem> dataItemsMap) {
         Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
-        for (String uid : dataItemsMap.keySet()) {
-            IAMEEEntity entity = dataItemsMap.get(uid);
+        for (Map.Entry<String, DataItem> entry : dataItemsMap.entrySet()) {
+            IAMEEEntity entity = entry.getValue();
             if (entity.getObjectType().equals(ObjectType.NDI)) {
-                dataItems.put(uid, dataItemsMap.get(uid));
+                dataItems.put(entry.getKey(), entry.getValue());
             } else {
                 throw new IllegalStateException("An ObjectType of NDI was expected.");
             }
