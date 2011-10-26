@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -24,10 +25,10 @@ public class InvalidationService implements ApplicationContextAware, Application
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
-    private MessageService messageService;
+    private TaskExecutor taskExecutor;
 
     @Autowired
-    private AsyncInvalidator asyncInvalidator;
+    private MessageService messageService;
 
     @Autowired
     @Qualifier("invalidationExchange")
@@ -111,13 +112,26 @@ public class InvalidationService implements ApplicationContextAware, Application
      */
     public synchronized void onEnd() {
         log.trace("onEnd()");
+
         // Copy the set of InvalidationMessages.
-        Set<InvalidationMessage> invalidationMessagesCopy = new HashSet<InvalidationMessage>(invalidationMessages.get());
+        final Set<InvalidationMessage> invalidationMessagesCopy = new HashSet<InvalidationMessage>(invalidationMessages.get());
+
         // Clear the original set of InvalidationMessages to prevent infinite loop.
         invalidationMessages.get().clear();
 
-        // Now iterate over the copied set asynchronously.
-        asyncInvalidator.invalidate(invalidationMessagesCopy);
+        // Invalidate the copied set in a separate thread to prevent large invalidation sets blocking
+        // the client response. The invalidate method publishes events to the application context which
+        // will be handled synchronously in this new thread.
+        taskExecutor.execute(new Runnable() {
+            public void run() {
+                int messageCount = 0;
+                int messageSize = invalidationMessagesCopy.size();
+                for (InvalidationMessage invalidationMessage : invalidationMessagesCopy) {
+                    log.trace("Invalidating message " + ++messageCount + " of " + messageSize);
+                    invalidate(invalidationMessage);
+                }
+            }
+        });
     }
 
     /**
