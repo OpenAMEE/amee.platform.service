@@ -28,9 +28,6 @@ public class DataServiceImpl implements DataService, IDataService {
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
-    private InvalidationService invalidationService;
-
-    @Autowired
     private DrillDownService drillDownService;
 
     @Autowired
