@@ -25,6 +25,7 @@ public class InvalidationService implements ApplicationContextAware, Application
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
+    @Qualifier("invalidationTaskExecutor")
     private TaskExecutor taskExecutor;
 
     @Autowired
