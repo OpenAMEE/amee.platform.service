@@ -86,12 +86,14 @@ public class TagService implements ApplicationListener {
     }
 
     public String getTagsCSV(IAMEEEntityReference entity) {
-        String tags = "";
+        StringBuilder sb = new StringBuilder("");
         for (Tag tag : getTags(entity)) {
-            tags = tags + tag.getTag() + ", ";
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
+            sb.append(tag.getTag());
         }
-        tags = StringUtils.chomp(tags, ", ");
-        return tags;
+        return sb.toString();
     }
 
     public Tag getTagByIdentifier(String identifier) {
