@@ -23,7 +23,6 @@ public class DataSheetFactory implements CacheableFactory {
 
     private final Log log = LogFactory.getLog(getClass());
 
-    private DataService dataService;
     private DataItemService dataItemService;
     private DataBrowser dataBrowser;
     private String cacheName;
@@ -32,9 +31,8 @@ public class DataSheetFactory implements CacheableFactory {
         super();
     }
 
-    public DataSheetFactory(DataService dataService, DataItemService dataItemService, DataBrowser dataBrowser, String cacheName) {
+    public DataSheetFactory(DataItemService dataItemService, DataBrowser dataBrowser, String cacheName) {
         this();
-        this.dataService = dataService;
         this.dataItemService = dataItemService;
         this.dataBrowser = dataBrowser;
         this.cacheName = cacheName;

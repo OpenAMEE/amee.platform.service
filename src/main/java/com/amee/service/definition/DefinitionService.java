@@ -43,6 +43,12 @@ public interface DefinitionService extends ApplicationListener<InvalidationMessa
 
     public void remove(ItemDefinition itemDefinition);
 
+    /**
+     * Invalidate an ItemDefinition. All DataCategories that use the ItemDefinition will also be invalidated and
+     * their DataItems will be re-indexed.
+     *
+     * @param itemDefinition the ItemDefinition to invalidate.
+     */
     public void invalidate(ItemDefinition itemDefinition);
 
     public void clearCaches(ItemDefinition itemDefinition);

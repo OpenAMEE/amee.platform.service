@@ -11,9 +11,6 @@ import java.util.List;
 @Service
 public class OnlyActiveProfileService {
 
-    @Autowired
-    ProfileService profileService;
-
     /**
      * Filter the supplied ProfileItem list to only include the latest item in the historical
      * sequence for each dataItem and name.

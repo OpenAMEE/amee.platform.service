@@ -232,14 +232,14 @@ public class AuthenticationService {
         }
 
         public static String implodeToken(Map<String, String> values) {
-            String token = "";
-            for (String name : values.keySet()) {
-                if (token.length() > 0) {
-                    token += "|";
+            StringBuilder sb = new StringBuilder("");
+            for (Map.Entry<String, String> entry : values.entrySet()) {
+                if (sb.length() > 0) {
+                    sb.append("|");
                 }
-                token += name + "=" + values.get(name);
+                sb.append(entry.getKey()).append("=").append(entry.getValue());
             }
-            return token;
+            return sb.toString();
         }
 
         public static String createToken(User user, String remoteAddress) {

@@ -22,9 +22,6 @@ public class ProfileFinder {
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
-    private ProfileService profileService;
-
-    @Autowired
     private ProfileItemService profileItemService;
 
     @Autowired
