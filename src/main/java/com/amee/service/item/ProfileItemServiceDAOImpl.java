@@ -1,7 +1,9 @@
 package com.amee.service.item;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.IDataCategoryReference;
+import com.amee.domain.ProfileItemsFilter;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
@@ -14,6 +16,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
+import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -119,7 +122,49 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
     }
 
     @Override
-    @SuppressWarnings(value = "unchecked")
+    @SuppressWarnings("unchecked")
+    public ResultsWrapper<ProfileItem> getProfileItems(Profile profile, ProfileItemsFilter filter) {
+        log.debug("getProfileItems() start");
+
+        // Get the ProfileItems (sorted in creation order)
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(ProfileItem.class);
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        if (filter.getEndDate() != null) {
+            criteria.add(Restrictions.lt("startDate", filter.getEndDate()));
+        }
+        criteria.add(Restrictions.or(Restrictions.isNull("endDate"), Restrictions.gt("endDate", filter.getStartDate())));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.addOrder(Order.asc("startDate"));
+        if (filter.getResultStart() > 0) {
+            criteria.setFirstResult(filter.getResultStart());
+        }
+        if (filter.getResultLimit() > 0) {
+            // Get 1 more than result limit so we know if we have them all or there are more to fetch.
+            criteria.setMaxResults(filter.getResultLimit() + 1);
+        }
+        List<ProfileItem> profileItems = criteria.list();
+
+        if (log.isDebugEnabled()) {
+            log.debug("getProfileItems() done (" + profileItems.size() + ")");
+        }
+
+        // Did we limit the results?
+        if (filter.getResultLimit() > 0) {
+
+            // Results were limited, work out correct results and truncation state.
+            return new ResultsWrapper<ProfileItem>(
+                profileItems.size() > filter.getResultLimit() ? profileItems.subList(0, filter.getResultLimit()) :
+                    profileItems, profileItems.size() > filter.getResultLimit());
+        } else {
+
+            // Results were not limited, no truncation
+            return new ResultsWrapper<ProfileItem>(profileItems, false);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate) {
 
         if ((dataCategory == null) || (!dataCategory.isItemDefinitionPresent())) {

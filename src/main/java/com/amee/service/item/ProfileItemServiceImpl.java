@@ -1,5 +1,6 @@
 package com.amee.service.item;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
@@ -12,6 +13,7 @@ import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.Profile;
 import com.amee.platform.science.StartEndDate;
+import com.amee.domain.ProfileItemsFilter;
 import com.amee.service.profile.OnlyActiveProfileService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -114,6 +116,11 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
     @Override
     public int getProfileItemCount(Profile profile, DataCategory dataCategory) {
         return dao.getProfileItemCount(profile, dataCategory);
+    }
+
+    @Override
+    public ResultsWrapper<ProfileItem> getProfileItems(Profile profile, ProfileItemsFilter filter) {
+        return dao.getProfileItems(profile, filter);
     }
 
     /**
