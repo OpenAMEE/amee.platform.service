@@ -89,7 +89,7 @@ public class MetadataServiceImpl implements MetadataService, ApplicationListener
 
     @Override
     public void loadMetadatasForDataItems(Collection<DataItem> dataItems) {
-        loadMetadatas(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
+        loadMetadatas(ObjectType.DI, new HashSet<IAMEEEntityReference>(dataItems));
     }
 
     @Override

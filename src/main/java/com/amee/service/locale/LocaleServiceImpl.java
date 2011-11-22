@@ -131,7 +131,7 @@ public class LocaleServiceImpl implements LocaleService, ApplicationListener {
 
     @Override
     public void loadLocaleNamesForDataItems(Collection<DataItem> dataItems, Set<BaseItemValue> values) {
-        loadLocaleNames(ObjectType.NDI, new HashSet<IAMEEEntityReference>(dataItems));
+        loadLocaleNames(ObjectType.DI, new HashSet<IAMEEEntityReference>(dataItems));
         if ((values != null) && (!values.isEmpty())) {
             Set<IAMEEEntityReference> itemValueRefs = new HashSet<IAMEEEntityReference>();
             itemValueRefs.addAll(values);

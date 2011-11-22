@@ -38,13 +38,13 @@ public class SearchQueryServiceTest extends ServiceTest {
     private final static Document DC_BD = getMockDocument(ObjectType.DC, "BBBBBBBBBBBD", null);
 
     // Mock Data Item Documents.
-    private final static Document DI_1 = getMockDocument(ObjectType.NDI, "111111111111", "BBBBBBBBBBBA"); // Page A3 / A4Alt / B1.
-    private final static Document DI_2 = getMockDocument(ObjectType.NDI, "111111111112", "BBBBBBBBBBBA"); // DuplicateAB.
-    private final static Document DI_3 = getMockDocument(ObjectType.NDI, "111111111113", "BBBBBBBBBBBB"); // Page A4 / A4Alt / B1.
-    private final static Document DI_4 = getMockDocument(ObjectType.NDI, "111111111114", "BBBBBBBBBBBB"); // DuplicateAB.
-    private final static Document DI_5 = getMockDocument(ObjectType.NDI, "111111111115", "AAAAAAAAAAAB"); // DuplicateA / Page B2.
-    private final static Document DI_6 = getMockDocument(ObjectType.NDI, "111111111116", "BBBBBBBBBBBC"); // Page A4 / B2.
-    private final static Document DI_7 = getMockDocument(ObjectType.NDI, "111111111117", "BBBBBBBBBBBD"); // Page A5 / B3.
+    private final static Document DI_1 = getMockDocument(ObjectType.DI, "111111111111", "BBBBBBBBBBBA"); // Page A3 / A4Alt / B1.
+    private final static Document DI_2 = getMockDocument(ObjectType.DI, "111111111112", "BBBBBBBBBBBA"); // DuplicateAB.
+    private final static Document DI_3 = getMockDocument(ObjectType.DI, "111111111113", "BBBBBBBBBBBB"); // Page A4 / A4Alt / B1.
+    private final static Document DI_4 = getMockDocument(ObjectType.DI, "111111111114", "BBBBBBBBBBBB"); // DuplicateAB.
+    private final static Document DI_5 = getMockDocument(ObjectType.DI, "111111111115", "AAAAAAAAAAAB"); // DuplicateA / Page B2.
+    private final static Document DI_6 = getMockDocument(ObjectType.DI, "111111111116", "BBBBBBBBBBBC"); // Page A4 / B2.
+    private final static Document DI_7 = getMockDocument(ObjectType.DI, "111111111117", "BBBBBBBBBBBD"); // Page A5 / B3.
 
     private final static List<Document> ALL_DOCUMENTS = new ArrayList<Document>(
             Arrays.asList(

@@ -452,7 +452,7 @@ public class SearchIndexerImpl implements SearchIndexer {
 
             // Create Query for all Data Items within the current DataCategory.
             BooleanQuery query = new BooleanQuery();
-            query.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.MUST);
+            query.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.MUST);
             query.add(new TermQuery(new Term("categoryUid", dataCategory.getEntityUid())), BooleanClause.Occur.MUST);
 
             List<Document> dataItemDocuments = luceneService.doSearch(query).getResults();

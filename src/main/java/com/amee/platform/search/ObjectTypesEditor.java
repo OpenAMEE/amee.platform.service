@@ -13,11 +13,6 @@ public class ObjectTypesEditor extends PropertyEditorSupport {
         if (text != null) {
             Set<ObjectType> types = new HashSet<ObjectType>();
             for (String s : text.split(",")) {
-
-                // Rewrite DataItem to NuDataItem object type
-                if (s.equalsIgnoreCase("DI")) {
-                    s = "NDI";
-                }
                 types.add(ObjectType.fromString(s.trim().toUpperCase()));
             }
             setValue(types);

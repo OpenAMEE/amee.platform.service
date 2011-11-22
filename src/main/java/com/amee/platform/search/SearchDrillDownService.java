@@ -44,7 +44,7 @@ public class SearchDrillDownService extends DrillDownService {
             List<Choice> drillDownChoices) {
         // Create Query for Data Items within the given DataCategory matching the supplied selections and drillDownChoices.
         BooleanQuery typesQuery = new BooleanQuery();
-        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.SHOULD);
+        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
         BooleanQuery query = new BooleanQuery();
         query.add(typesQuery, BooleanClause.Occur.MUST);
         query.add(new TermQuery(new Term("categoryUid", dataCategory.getEntityUid())), BooleanClause.Occur.MUST);
