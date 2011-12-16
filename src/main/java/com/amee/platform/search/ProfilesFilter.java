@@ -2,6 +2,9 @@ package com.amee.platform.search;
 
 import com.amee.domain.LimitFilter;
 
+/**
+ * A simple LimitFilter to allow paging of results.
+ */
 public class ProfilesFilter extends LimitFilter {
 
     @Override
