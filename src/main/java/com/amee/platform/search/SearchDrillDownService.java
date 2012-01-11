@@ -44,15 +44,14 @@ public class SearchDrillDownService extends DrillDownService {
             List<Choice> drillDownChoices) {
         // Create Query for Data Items within the given DataCategory matching the supplied selections and drillDownChoices.
         BooleanQuery typesQuery = new BooleanQuery();
-        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.SHOULD);
+        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
         BooleanQuery query = new BooleanQuery();
         query.add(typesQuery, BooleanClause.Occur.MUST);
         query.add(new TermQuery(new Term("categoryUid", dataCategory.getEntityUid())), BooleanClause.Occur.MUST);
         for (Choice choice : selections) {
             query.add(new TermQuery(new Term(choice.getName(), choice.getValue().toLowerCase())), BooleanClause.Occur.MUST);
         }
-        // Do search. Very high maxNumHits to cope with large Data Categories.
-        ResultsWrapper<Document> results = luceneService.doSearch(query, 100000);
+        ResultsWrapper<Document> results = luceneService.doSearch(query);
         // Create choices array.
         List<Choice> choices = new ArrayList<Choice>();
         // What kind of choices?

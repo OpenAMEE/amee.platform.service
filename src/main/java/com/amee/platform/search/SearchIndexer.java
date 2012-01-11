@@ -2,7 +2,7 @@ package com.amee.platform.search;
 
 public interface SearchIndexer {
 
-    public void clear();
+    void clear();
 
-    public void handleSearchIndexerContext(SearchIndexerContext documentContext);
+    void handleSearchIndexerContext(SearchIndexerContext documentContext);
 }

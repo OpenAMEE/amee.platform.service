@@ -30,9 +30,6 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
     private DataService dataService;
 
     @Autowired
-    private SearchService searchService;
-
-    @Autowired
     private LuceneService luceneService;
 
     /**

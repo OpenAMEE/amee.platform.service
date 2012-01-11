@@ -55,6 +55,12 @@ public interface DataService extends ApplicationListener<InvalidationMessage> {
 
     public Set<Long> getParentDataCategoryIds(Set<Long> dataCategoryIds);
 
+    /**
+     * Get the DataCategories that use the given ItemDefinition.
+     *
+     * @param itemDefinition the ItemDefinition to retrieve the DataCategories for.
+     * @return a Set of AMEEEntityReferences to the DataCategories using the ItemDefinition.
+     */
     public Set<AMEEEntityReference> getDataCategoryReferences(ItemDefinition itemDefinition);
 
     boolean isDataCategoryUniqueByPath(DataCategory dataCategory);

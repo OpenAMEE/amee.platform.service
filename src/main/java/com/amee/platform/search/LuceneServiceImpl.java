@@ -34,8 +34,11 @@ public class LuceneServiceImpl implements LuceneService {
 
     private final Log log = LogFactory.getLog(getClass());
 
-    // TODO: Does this mean we can't page past the first 1000 items in a data category that has > 1000?
-    public final static int MAX_NUM_HITS = 1000;
+    // We use the higher level search api that returns the top n hits for a query.
+    // Some of our uses of lucene require returning all results, eg filtering categories by tag=ecoinvent would mean
+    // we could only ever retrieve 1000 categories if MAX_NUM_HITS was set to 1000. We could consider using a more
+    // low-level api however it is probably simpler to just use a large MAX_NUM_HITS value.
+    public final static int MAX_NUM_HITS = 100000;
 
     /**
      * Path to the SnapShooter script.
