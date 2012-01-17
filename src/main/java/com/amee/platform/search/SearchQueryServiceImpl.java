@@ -46,7 +46,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
             // Attempt to supplement Data Category results with matches on Data Items.
             // Search for Data Items.
             ResultsWrapper<Document> allSecondaryResults =
-                    luceneService.doSearch(filter.getQuery(ObjectType.NDI));
+                    luceneService.doSearch(filter.getQuery(ObjectType.DI));
 
             // Only handle secondary results if some were found.
             if (!allSecondaryResults.getResults().isEmpty()) {
@@ -247,7 +247,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
         log.debug("removeDataItems() " + dataCategory.toString());
         // Prepare Query to search for all DataItems matching the specified category.
         BooleanQuery typesQuery = new BooleanQuery();
-        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.SHOULD);
+        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
         BooleanQuery combinedQuery = new BooleanQuery();
         combinedQuery.add(typesQuery, BooleanClause.Occur.MUST);
         combinedQuery.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);

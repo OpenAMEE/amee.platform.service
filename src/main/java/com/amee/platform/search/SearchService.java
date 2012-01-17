@@ -130,13 +130,13 @@ public class SearchService {
         Map<String, IAMEEEntity> dataItems = new HashMap<String, IAMEEEntity>();
         for (Map.Entry<String, DataItem> entry : dataItemsMap.entrySet()) {
             IAMEEEntity entity = entry.getValue();
-            if (entity.getObjectType().equals(ObjectType.NDI)) {
+            if (entity.getObjectType().equals(ObjectType.DI)) {
                 dataItems.put(entry.getKey(), entry.getValue());
             } else {
-                throw new IllegalStateException("An ObjectType of NDI was expected.");
+                throw new IllegalStateException("An ObjectType of type '" + ObjectType.DI + "' was expected.");
             }
         }
-        entities.put(ObjectType.NDI, dataItems);
+        entities.put(ObjectType.DI, dataItems);
     }
 
     // DataCategory Search.
@@ -230,22 +230,23 @@ public class SearchService {
     }
 
     /**
+     * Find all DIs in the DataCategory matching the supplied Query and range.
+     * 
      * @param dataCategory
      * @param filter
      * @param query
      * @return
      */
     private ResultsWrapper<DataItem> getDataItems(DataCategory dataCategory, DataItemsFilter filter, Query query) {
-
-        // Create Query to find all NDIs in the DataCategory matching the supplied Query and range.
         BooleanQuery q = new BooleanQuery();
         BooleanQuery typesQuery = new BooleanQuery();
-        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.SHOULD);
+        typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
         q.add(typesQuery, BooleanClause.Occur.MUST);
         q.add(new TermQuery(new Term("categoryUid", dataCategory.getUid())), BooleanClause.Occur.MUST);
         if (query != null) {
             q.add(query, BooleanClause.Occur.MUST);
         }
+        
         // Do search and fetch Lucene documents.
         return getDataItemResultsWrapper(
                 getEntityResultsWrapper(
@@ -331,10 +332,10 @@ public class SearchService {
         }
 
         // Load DataItems.
-        if (entityIds.containsKey(ObjectType.NDI)) {
+        if (entityIds.containsKey(ObjectType.DI)) {
 
             // Load the items.
-            Map<String, DataItem> dataItemsMap = dataItemService.getDataItemMap(entityIds.get(ObjectType.NDI), loadItemValues);
+            Map<String, DataItem> dataItemsMap = dataItemService.getDataItemMap(entityIds.get(ObjectType.DI), loadItemValues);
 
             // Add to map.
             addDataItems(entities, dataItemsMap);

@@ -30,7 +30,7 @@ import java.io.StringReader;
 import java.util.*;
 
 /**
- * Encapsulates all logic for creating the Lucene search index. Extends {@link SearchIndexer} to provide the only
+ * Encapsulates all logic for creating the Lucene search index. Implements {@link SearchIndexer} to provide the only
  * public methods, handleSearchIndexerContext and clear.
  */
 public class SearchIndexerImpl implements SearchIndexer {
@@ -89,7 +89,8 @@ public class SearchIndexerImpl implements SearchIndexer {
         this.searchIndexerContext = searchIndexerContext;
         try {
             searchLog.info(this.searchIndexerContext.dataCategoryUid + "|Started processing DataCategory.");
-            // Get the DataCategory and handle.
+
+            // Get the DataCategory from the database and handle.
             dataCategory = dataService.getDataCategoryByUid(this.searchIndexerContext.dataCategoryUid, null);
             if (dataCategory != null) {
                 updateDataCategory();
@@ -106,23 +107,30 @@ public class SearchIndexerImpl implements SearchIndexer {
             searchLog.error(this.searchIndexerContext.dataCategoryUid + "|Error processing DataCategory.");
             log.error("run() Caught Throwable: " + t.getMessage(), t);
         } finally {
+
             // We're done!
             searchLog.info(this.searchIndexerContext.dataCategoryUid + "|Completed processing DataCategory.");
         }
     }
 
     /**
-     * Update or remove Data Category & Data Items from the search index.
+     * Insert, update or remove the Data Category & Data Items from the search index.
      *
      * @throws InterruptedException might be thrown if application is shutdown whilst indexing
      */
     private void updateDataCategory() throws InterruptedException {
         Log4JStopWatch stopWatch = new Log4JStopWatch("updateDataCategory");
         if (!dataCategory.isTrash()) {
+
+            // First check if we have the data category in the index.
             Document document = searchQueryService.getDocument(dataCategory, true);
             if (document != null) {
+
+                // Check the indexed document is up to date and re-index it if necessary.
                 checkDataCategoryDocument(document);
             } else {
+
+                // We don't have the document in the index, so add it.
                 searchLog.info(searchIndexerContext.dataCategoryUid + "|DataCategory not in index, adding for the first time.");
                 searchIndexerContext.handleDataItems = true;
                 handleDataCategory();
@@ -131,6 +139,7 @@ public class SearchIndexerImpl implements SearchIndexer {
             searchLog.info(searchIndexerContext.dataCategoryUid + "|DataCategory needs to be removed.");
             searchQueryService.removeDataCategory(dataCategory);
             searchQueryService.removeDataItems(dataCategory);
+
             // Send message stating that the DataCategory has been re-indexed.
             invalidationService.add(dataCategory, "dataCategoryIndexed");
         }
@@ -452,7 +461,7 @@ public class SearchIndexerImpl implements SearchIndexer {
 
             // Create Query for all Data Items within the current DataCategory.
             BooleanQuery query = new BooleanQuery();
-            query.add(new TermQuery(new Term("entityType", ObjectType.NDI.getName())), BooleanClause.Occur.MUST);
+            query.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.MUST);
             query.add(new TermQuery(new Term("categoryUid", dataCategory.getEntityUid())), BooleanClause.Occur.MUST);
 
             List<Document> dataItemDocuments = luceneService.doSearch(query).getResults();

@@ -31,7 +31,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
     private TransactionController transactionController;
 
     @Autowired
-    private DataItemServiceImpl dataItemService;
+    private DataItemService dataItemService;
 
     @Autowired
     private ProfileItemServiceDAO dao;
