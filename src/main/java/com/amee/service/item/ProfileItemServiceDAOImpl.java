@@ -225,6 +225,13 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         return profileItems;
     }
 
+    /**
+     * Checks for duplicate profile item. A profile item is considered duplicate if it has the same:
+     * profile ID, data category ID, data item ID, start date, name.
+     *
+     * @param profileItem the ProfileItem to check for duplicate.
+     * @return true if an equivalent ProfileItem exists.
+     */
     @Override
     @SuppressWarnings(value = "unchecked")
     public boolean equivalentProfileItemExists(ProfileItem profileItem) {
