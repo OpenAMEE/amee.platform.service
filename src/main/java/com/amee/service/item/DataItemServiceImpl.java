@@ -448,7 +448,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
                         throw new RuntimeException("Caught InvocationTargetException: " + e.getMessage());
                     }
                 } else {
-                    log.warn("updateDataItemValues() Write Method was null: " + key);
+                    log.warn("updateDataItemValues() Read Method was null: " + key);
                 }
             } else {
                 log.warn("updateDataItemValues() PropertyDescriptor was null: " + key);

@@ -5,6 +5,7 @@ import com.amee.base.transaction.TransactionController;
 import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.BaseProfileItemValue;
@@ -17,9 +18,13 @@ import com.amee.domain.ProfileItemsFilter;
 import com.amee.service.profile.OnlyActiveProfileService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 @Service
@@ -316,5 +321,50 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
     @Override
     protected ProfileItemServiceDAO getDao() {
         return dao;
+    }
+
+    /**
+     * Updates the Profile Item Values for the supplied ProfileItem based on the properties of the values
+     * bean within the ProfileItem. Internally uses the Spring and Java beans API to access values in the
+     * CGLIB created ProfileItem.values JavaBean.
+     * <p/>
+     * If a Profile Item Value is modified then the Profile Item is also marked as modified.
+     *
+     * @param profileItem the ProfileItem to update.
+     */
+    @Override
+    public void updateProfileItemValues(ProfileItem profileItem) {
+        boolean modified = false;
+        Object values = profileItem.getValues();
+        ItemValueMap itemValues = getItemValuesMap(profileItem);
+        for (String key : itemValues.keySet()) {
+            BaseItemValue value = itemValues.get(key);
+            PropertyDescriptor pd = BeanUtils.getPropertyDescriptor(values.getClass(), key);
+            if (pd != null) {
+                Method readMethod = pd.getReadMethod();
+                if (readMethod != null) {
+                    try {
+                        Object v = readMethod.invoke(values);
+                        if (v != null) {
+                            value.setValue(v.toString());
+                            modified = true;
+                        }
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException("Caught IllegalAccessException: " + e.getMessage(), e);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException("Caught InvocationTargetException: " + e.getMessage(), e);
+                    }
+                } else {
+                    log.warn("updateProfileItemValues() Read Method was null: " + key);
+                }
+            } else {
+                log.warn("updateProfileItemValues() PropertyDescriptor was null: " + key);
+            }
+        }
+
+        // Mark the profile item as modified if values were modified.
+        if (modified) {
+            profileItem.onModify();
+        }
     }
 }
