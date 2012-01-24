@@ -57,17 +57,15 @@ public class DrillDownService {
             name = "uid";
         }
 
-        // We either have only one value apart from uid or we have no values for this drilldown selection.
-        if (!name.equals("uid") && (values.size() <= 1)) {
-            if (!values.isEmpty()) {
+        // If this drilldown has no value, set it to null.
+        // It will be removed from the selections in removeSelectionsWithNullValues().
+        if (values.isEmpty()) {
+            selections.add(new Choice(name, null));
+            return getChoices(dataCategory, selections);
+        } else if (!name.equals("uid") && (values.size() == 1)) {
 
-                // skip ahead if we only have one value that is not "uid"
-                selections.add(new Choice(name, values.get(0).getValue()));
-            } else {
-
-                // Set this value to null. It will be removed from the selections in removeSelectionsWithNullValues.
-                selections.add(new Choice(name, null));
-            }
+            // skip ahead if we only have one value that is not "uid"
+            selections.add(new Choice(name, values.get(0).getValue()));
             return getChoices(dataCategory, selections);
         } else {
             // wrap result in Choices object
