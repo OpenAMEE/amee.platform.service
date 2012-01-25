@@ -43,6 +43,7 @@ public class DrillDownService {
             matchSelectionOrderToDrillDownChoices(drillDownChoices, selections);
             removeSelectionsNotInDrillDownChoices(drillDownChoices, selections);
             removeDrillDownChoicesThatHaveBeenSelected(drillDownChoices, selections);
+            removeSelectionsWithNullValues(selections);
 
             // get drill down values
             values = getDataItemChoices(dataCategory, selections, drillDownChoices);
@@ -56,8 +57,14 @@ public class DrillDownService {
             name = "uid";
         }
 
-        // skip ahead if we only have one value that is not "uid"
-        if (!name.equals("uid") && (values.size() == 1)) {
+        // If this drilldown has no value, set it to null.
+        // It will be removed from the selections in removeSelectionsWithNullValues().
+        if (values.isEmpty()) {
+            selections.add(new Choice(name, null));
+            return getChoices(dataCategory, selections);
+        } else if (!name.equals("uid") && (values.size() == 1)) {
+
+            // skip ahead if we only have one value that is not "uid"
             selections.add(new Choice(name, values.get(0).getValue()));
             return getChoices(dataCategory, selections);
         } else {
@@ -82,7 +89,7 @@ public class DrillDownService {
         return choices;
     }
 
-    protected void matchSelectionOrderToDrillDownChoices(List<Choice> drillDownChoices, List<Choice> selections) {
+    private void matchSelectionOrderToDrillDownChoices(List<Choice> drillDownChoices, List<Choice> selections) {
         for (Choice c : drillDownChoices) {
             int selectionIndex = selections.indexOf(c);
             if (selectionIndex >= 0) {
@@ -91,7 +98,7 @@ public class DrillDownService {
         }
     }
 
-    protected void removeDrillDownChoicesThatHaveBeenSelected(List<Choice> drillDownChoices, List<Choice> selections) {
+    private void removeDrillDownChoicesThatHaveBeenSelected(List<Choice> drillDownChoices, List<Choice> selections) {
         Iterator<Choice> iterator;
         Choice choice;
         iterator = drillDownChoices.iterator();
@@ -103,13 +110,25 @@ public class DrillDownService {
         }
     }
 
-    protected void removeSelectionsNotInDrillDownChoices(List<Choice> drillDownChoices, List<Choice> selections) {
+    private void removeSelectionsNotInDrillDownChoices(List<Choice> drillDownChoices, List<Choice> selections) {
         Iterator<Choice> iterator;
         Choice choice;
         iterator = selections.iterator();
         while (iterator.hasNext()) {
             choice = iterator.next();
             if (!drillDownChoices.contains(choice)) {
+                iterator.remove();
+            }
+        }
+    }
+    
+    private void removeSelectionsWithNullValues(List<Choice> selections) {
+        Iterator<Choice> iterator;
+        Choice choice;
+        iterator = selections.iterator();
+        while (iterator.hasNext()) {
+            choice = iterator.next();
+            if (choice.getValue() == null) {
                 iterator.remove();
             }
         }
