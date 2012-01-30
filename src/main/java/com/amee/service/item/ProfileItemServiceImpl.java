@@ -285,8 +285,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
         return !equivalentProfileItemExists(pi);
     }
 
-    @Override
-    public boolean equivalentProfileItemExists(ProfileItem profileItem) {
+    private boolean equivalentProfileItemExists(ProfileItem profileItem) {
         return dao.equivalentProfileItemExists(profileItem);
     }
 
