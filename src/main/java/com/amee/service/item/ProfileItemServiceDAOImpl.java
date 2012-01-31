@@ -134,6 +134,15 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
             criteria.add(Restrictions.lt("startDate", filter.getEndDate()));
         }
         criteria.add(Restrictions.or(Restrictions.isNull("endDate"), Restrictions.gt("endDate", filter.getStartDate())));
+
+        // Handle selectBy parameter
+        if ("start".equalsIgnoreCase(filter.getSelectBy())) {
+            criteria.add(Restrictions.ge("startDate", filter.getStartDate()));
+        } else if ("end".equalsIgnoreCase(filter.getSelectBy()) && filter.getEndDate() != null) {
+            criteria.add(Restrictions.isNotNull("endDate"));
+            criteria.add(Restrictions.lt("endDate", filter.getEndDate()));
+        }
+
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         criteria.addOrder(Order.asc("startDate"));
         if (filter.getResultStart() > 0) {
