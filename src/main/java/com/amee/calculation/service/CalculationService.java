@@ -171,36 +171,38 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     /**
      * Collect all relevant algorithm input values for a ProfileItem calculation.
      *
+     * Profile item values override data item values which override item definition values.
+     *
      * @param profileItem
      * @return
      */
     private Map<String, Object> getValues(ProfileItem profileItem) {
 
-        Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
-        Map<String, Object> returnValues = new HashMap<String, Object>();
+        Map<ItemValueDefinition, InternalValue> collectedValues = new HashMap<ItemValueDefinition, InternalValue>();
 
         // Add ItemDefinition defaults.
         APIVersion apiVersion = profileItem.getProfile().getUser().getAPIVersion();
-        profileItem.getItemDefinition().appendInternalValues(values, apiVersion);
+        profileItem.getItemDefinition().appendInternalValues(collectedValues, apiVersion);
 
         // Add DataItem values, filtered by start and end dates of the ProfileItem (factoring in the query date range).
         DataItem dataItem = profileItem.getDataItem();
         dataItem.setEffectiveStartDate(profileItem.getEffectiveStartDate());
         dataItem.setEffectiveEndDate(profileItem.getEffectiveEndDate());
-        appendInternalValues(dataItem, dataItemService, values);
+        appendInternalValues(dataItem, dataItemService, collectedValues);
 
         // Add the ProfileItem values.
-        appendInternalValues(profileItem, profileItemService, values);
+        appendInternalValues(profileItem, profileItemService, collectedValues);
 
-        // Add actual values to returnValues list based on InternalValues in values list.
-        for (Map.Entry<ItemValueDefinition, InternalValue> entry : values.entrySet()) {
-            returnValues.put(entry.getKey().getCanonicalPath(), entry.getValue().getValue());
+        // Add actual values to return list based on InternalValues in values list.
+        Map<String, Object> theValues = new HashMap<String, Object>();
+        for (Map.Entry<ItemValueDefinition, InternalValue> entry : collectedValues.entrySet()) {
+            theValues.put(entry.getKey().getCanonicalPath(), entry.getValue().getValue());
         }
 
         // Initialise finders for algorithm.
-        initFinders(profileItem, returnValues);
+        initFinders(profileItem, theValues);
 
-        return returnValues;
+        return theValues;
     }
 
     /**

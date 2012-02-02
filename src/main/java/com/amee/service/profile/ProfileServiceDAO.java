@@ -1,9 +1,13 @@
 package com.amee.service.profile;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.Pager;
 import com.amee.domain.auth.User;
+import com.amee.domain.data.DataCategory;
+import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.profile.Profile;
+import com.amee.platform.search.ProfilesFilter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,10 +18,16 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Encapsulates all persistence operations for Profiles and Profile Items.
+ *
+ * TODO: Extract interface?
+ * TODO: Why are these methods protected?
  */
 @Service
 public class ProfileServiceDAO {
@@ -86,6 +96,43 @@ public class ProfileServiceDAO {
         return profiles;
     }
 
+    @SuppressWarnings("unchecked")
+    public ResultsWrapper<Profile> getProfilesByUserUid(String uid, ProfilesFilter filter) {
+        // Create Query, apply start and limit if relevant.
+        Query query = entityManager.createQuery(
+            "SELECT p FROM Profile p " +
+                "WHERE p.user.uid = :userUid " +
+                "AND p.status != :trash")
+            .setParameter("userUid", uid)
+            .setParameter("trash", AMEEStatus.TRASH)
+            .setHint("org.hibernate.cacheable", true)
+            .setHint("org.hibernate.cacheRegion", CACHE_REGION);
+        if (filter.getResultStart() > 0) {
+            query.setFirstResult(filter.getResultStart());
+        }
+        if (filter.getResultLimit() > 0) {
+
+            // Get 1 more than result limit so we know if we have them all or there are more to fetch.
+            query.setMaxResults(filter.getResultLimit() + 1);
+        }
+
+        // Get the results
+        List<Profile> profiles = (List<Profile>) query.getResultList();
+
+        // Did we limit the results?
+        if (filter.getResultLimit() > 0) {
+
+            // Results were limited, work out correct results and truncation state.
+            return new ResultsWrapper<Profile>(
+                profiles.size() > filter.getResultLimit() ? profiles.subList(0, filter.getResultLimit()) : profiles,
+                profiles.size() > filter.getResultLimit());
+        } else {
+
+            // Results were not limited, no truncation
+            return new ResultsWrapper<Profile>(profiles, false);
+        }
+    }
+
     protected void persist(Profile profile) {
         entityManager.persist(profile);
     }
@@ -97,5 +144,19 @@ public class ProfileServiceDAO {
      */
     protected void remove(Profile profile) {
         profile.setStatus(AMEEStatus.TRASH);
+    }
+
+    public Set<DataCategory> getProfileDataCategories(Profile profile) {
+        Session session = (Session) entityManager.getDelegate();
+        Criteria criteria = session.createCriteria(ProfileItem.class);
+        criteria.add(Restrictions.eq("profile.id", profile.getId()));
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+        List<ProfileItem> profileItems = criteria.list();
+        Set<DataCategory> dataCategories = new HashSet<DataCategory>();
+        for (ProfileItem item : profileItems) {
+            dataCategories.add(item.getDataCategory());
+        }
+        return dataCategories;
     }
 }

@@ -1,11 +1,14 @@
 package com.amee.service.profile;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.Pager;
 import com.amee.domain.ProfileItemService;
 import com.amee.domain.auth.User;
 import com.amee.domain.cache.CacheableFactory;
+import com.amee.domain.data.DataCategory;
 import com.amee.domain.profile.Profile;
 import com.amee.domain.sheet.Sheet;
+import com.amee.platform.search.ProfilesFilter;
 import com.amee.service.data.DataService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,6 +52,17 @@ public class ProfileService {
         return dao.getProfiles(user, pager);
     }
 
+    public List<Profile> getProfilesByUserUid(String uid) {
+        ProfilesFilter filter = new ProfilesFilter();
+        filter.setResultStart(0);
+        filter.setResultLimit(0);
+        return getProfilesByUserUid(uid, filter).getResults();
+    }
+
+    public ResultsWrapper<Profile> getProfilesByUserUid(String uid, ProfilesFilter filter) {
+        return dao.getProfilesByUserUid(uid, filter);
+    }
+
     public void persist(Profile p) {
         dao.persist(p);
     }
@@ -71,6 +85,16 @@ public class ProfileService {
         // Get parent Data Category IDs based on existing Data Category IDs.
         dataCategoryIds.addAll(dataService.getParentDataCategoryIds(dataCategoryIds));
         return dataCategoryIds;
+    }
+
+    /**
+     * Gets a Set of DataCategories used by the given Profile's ProfileItems.
+     *
+     * @param profile the Profile to get the DataCategories for.
+     * @return the Set of DataCategories used.
+     */
+    public Set<DataCategory> getProfileDataCategories(Profile profile) {
+        return dao.getProfileDataCategories(profile);
     }
 
     // Sheets
