@@ -2,26 +2,34 @@ package com.amee.service.item;
 
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
+import com.amee.calculation.service.CalculationService;
 import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
+import com.amee.domain.item.NumberValue;
 import com.amee.domain.item.profile.BaseProfileItemValue;
 import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.Profile;
+import com.amee.platform.science.ReturnValue;
 import com.amee.platform.science.StartEndDate;
-import com.amee.domain.ProfileItemsFilter;
 import com.amee.service.profile.OnlyActiveProfileService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.joda.time.DateTime;
+import org.joda.time.Interval;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.measure.Measure;
+import javax.measure.quantity.Duration;
+import javax.measure.unit.SI;
+import javax.measure.unit.Unit;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -46,6 +54,9 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
 
     @Autowired
     private AMEEStatistics ameeStatistics;
+
+    @Autowired
+    private CalculationService calculationService;
 
     @Override
     public ProfileItem getItemByUid(String uid) {
@@ -125,7 +136,16 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
 
     @Override
     public ResultsWrapper<ProfileItem> getProfileItems(Profile profile, ProfileItemsFilter filter) {
-        return dao.getProfileItems(profile, filter);
+        ResultsWrapper<ProfileItem> resultsWrapper = dao.getProfileItems(profile, filter);
+        List<ProfileItem> profileItems = new ArrayList<ProfileItem>(resultsWrapper.getResults());
+        
+        if ("prorata".equals(filter.getMode())) {
+            List<ProfileItem> prorata =
+                prorataProfileItems(profileItems, filter.getStartDate(), filter.getEndDate());
+            resultsWrapper.setResults(prorata);
+        }
+        
+        return resultsWrapper;
     }
 
     /**
@@ -365,5 +385,147 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
         if (modified) {
             profileItem.onModify();
         }
+    }
+    
+    private List<ProfileItem> prorataProfileItems(List<ProfileItem> profileItems, Date startDate, Date endDate) {
+        log.debug("prorataProfileItems() start");
+
+        // The profile items with values adjusted (if required) for prorata.
+        List<ProfileItem> requestedItems = new ArrayList<ProfileItem>();
+
+        // The requested interval to prorata the values over.
+        Interval requestInterval = getInterval(startDate, endDate);
+
+        for (ProfileItem pi : profileItems) {
+
+            // Update ProfileItem with start and end dates.
+            pi.setEffectiveStartDate(startDate);
+            pi.setEffectiveEndDate(endDate);
+
+            if (log.isDebugEnabled()) {
+                log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() + " has un-prorated Amounts: " + pi.getAmounts());
+            }
+
+            // Find the intersection of the profile item with the requested window.
+            Interval intersect = requestInterval;
+            if (intersect.getStart().toDate().before(pi.getStartDate())) {
+                intersect = intersect.withStartMillis(pi.getStartDate().getTime());
+            }
+            if ((pi.getEndDate() != null) && pi.getEndDate().before(intersect.getEnd().toDate())) {
+                intersect = intersect.withEndMillis(pi.getEndDate().getTime());
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("prorataProfileItems() - request interval: " + requestInterval + ", intersect:" + intersect);
+            }
+
+            if (hasNonZeroPerTimeValues(pi)) {
+
+                // The ProfileItem has perTime ItemValues. In this case, the ItemValues are multiplied by
+                // the (intersect/PerTime) ratio and the CO2 value recalculated.
+
+                if (log.isDebugEnabled()) {
+                    log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() + " has PerTime ItemValues.");
+                }
+
+                for (BaseItemValue iv : getItemValues(pi)) {
+
+                    // TODO: Extract method?
+                    if (ProfileItemNumberValue.class.isAssignableFrom(iv.getClass()) &&
+                        isNonZeroPerTimeValue((ProfileItemNumberValue) iv) &&
+                        iv.getItemValueDefinition().isFromProfile()) {
+                        double proratedItemValue = getProRatedItemValue(intersect, (ProfileItemNumberValue)iv);
+                        if (log.isDebugEnabled()) {
+                            log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() +
+                                ". ItemValue: " + iv.getName() + " = " + iv.getValueAsString() +
+                                " has PerUnit: " + ((ProfileItemNumberValue)iv).getPerUnit() +
+                                ". Pro-rated ItemValue = " + proratedItemValue);
+                        }
+
+                        // Set the override value (which will not be persisted)
+                        ((ProfileItemNumberValue)iv).setValueOverride(proratedItemValue);
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() +
+                                ". Unchanged ItemValue: " + iv.getName());
+                        }
+                    }
+                }
+
+                // Perform the calculation using the prorated values.
+                calculationService.calculate(pi);
+
+                if (log.isDebugEnabled()) {
+                    log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() + ". Adding prorated Amounts: " + pi.getAmounts());
+                }
+
+                requestedItems.add(pi);
+            } else if (pi.getEndDate() != null) {
+
+                // The ProfileItem has no perTime ItemValues and is bounded.
+                // In this case, the CO2 value is multiplied by the (intersection/item duration) ratio.
+
+                // TODO - make Item a deep copy (and so inc. ItemValues). Will need to implement equals() in ItemValue
+                // TODO - such that overwriting in the ItemValue collection is handled correctly.
+
+                long itemDurationInMillis = getInterval(pi.getStartDate(), pi.getEndDate()).toDurationMillis();
+                double eventIntersectRatio = intersect.toDurationMillis() / (double) itemDurationInMillis;
+
+                // Iterate over the return values and for each amount, store the prorated value
+                for (Map.Entry<String, ReturnValue> entry : pi.getAmounts().getReturnValues().entrySet()) {
+                    String type = entry.getKey();
+                    ReturnValue value = entry.getValue();
+                    double proRatedValue = value.getValue() * eventIntersectRatio;
+                    pi.getAmounts().putValue(type, value.getUnit(), value.getPerUnit(), proRatedValue);
+                }
+
+                if (log.isDebugEnabled()) {
+                    log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() +
+                        " is bounded (" + getInterval(pi.getStartDate(), pi.getEndDate()) +
+                        ") and has no PerTime ItemValues.");
+                    log.debug("prorataProfileItems() - Adding pro-rated Amounts: " + pi.getAmounts());
+                }
+                requestedItems.add(pi);
+            } else {
+
+                // The ProfileItem has no perTime ItemValues and is unbounded.
+                // In this case, the ReturnValues are not prorated.
+
+                if (log.isDebugEnabled()) {
+                    log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() +
+                        " is unbounded and has no PerTime ItemValues. Adding un-prorated Amounts: " + pi.getAmounts());
+                }
+                requestedItems.add(pi);
+            }
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("prorataProfileItems() done (" + requestedItems.size() + ")");
+        }
+
+        return requestedItems;
+    }
+
+    // endDate may be null. See: com.amee.service.BaseBrowser.getQueryEndDate().
+    private Interval getInterval(Date startDate, Date endDate) {
+        DateTime start = new DateTime(startDate.getTime());
+        DateTime end;
+        if (endDate != null) {
+            end = new DateTime(endDate.getTime());
+        } else {
+            end = new DateTime();
+        }
+        return new Interval(start, end);
+    }
+
+    private double getProRatedItemValue(Interval interval, NumberValue itemValue) {
+
+        // The ProfileItemNumberValue will always have a time based per unit.
+        @SuppressWarnings(value = "unchecked")
+        Measure<Integer, Duration> measure = Measure.valueOf(1, ((Unit<Duration>)itemValue.getPerUnit().toUnit()));
+
+        double perTime = measure.doubleValue(SI.MILLI(SI.SECOND));
+        double intersectPerTimeRatio = (interval.toDurationMillis()) / perTime;
+        return itemValue.getValueAsDouble() * intersectPerTimeRatio;
     }
 }

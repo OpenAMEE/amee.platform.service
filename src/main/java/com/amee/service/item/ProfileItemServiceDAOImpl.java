@@ -136,9 +136,9 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         criteria.add(Restrictions.or(Restrictions.isNull("endDate"), Restrictions.gt("endDate", filter.getStartDate())));
 
         // Handle selectBy parameter
-        if ("start".equalsIgnoreCase(filter.getSelectBy())) {
+        if ("start".equals(filter.getSelectBy())) {
             criteria.add(Restrictions.ge("startDate", filter.getStartDate()));
-        } else if ("end".equalsIgnoreCase(filter.getSelectBy()) && filter.getEndDate() != null) {
+        } else if ("end".equals(filter.getSelectBy()) && filter.getEndDate() != null) {
             criteria.add(Restrictions.isNotNull("endDate"));
             criteria.add(Restrictions.lt("endDate", filter.getEndDate()));
         }
