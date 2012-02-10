@@ -25,6 +25,13 @@ public class DrillDownService {
 
     private CacheHelper cacheHelper = CacheHelper.getInstance();
 
+    /**
+     * Gets the next available drill down choices for the given data category and drill down selections.
+     *
+     * @param dc the Datacategory to get the drill downs for.
+     * @param selections the selected drill down choices.
+     * @return a Choices object containing the next available drill down choices.
+     */
     public Choices getChoices(IDataCategoryReference dc, List<Choice> selections) {
 
         // Get Data Category.
@@ -36,7 +43,7 @@ public class DrillDownService {
         List<Choice> values = new ArrayList<Choice>();
         if (itemDefinition != null) {
 
-            // obtain drill down choices
+            // get all drill down choices for this item definition.
             drillDownChoices = itemDefinition.getDrillDownChoices();
 
             // fix-up selections and drill downs
@@ -52,19 +59,23 @@ public class DrillDownService {
         // work out name
         String name;
         if ((drillDownChoices != null) && (drillDownChoices.size() > 0)) {
+
+            // The next drill down choice.
             name = drillDownChoices.get(0).getName();
         } else {
+
+            // No more drill down choices so we should be able to get the UID.
             name = "uid";
         }
 
-        // If this drilldown has no value, set it to null.
+        // If this drill down has no available values (and it wasn't the last drill down choice), set it to null.
         // It will be removed from the selections in removeSelectionsWithNullValues().
-        if (values.isEmpty()) {
+        if (values.isEmpty() & !name.equals("uid")) {
             selections.add(new Choice(name, null));
             return getChoices(dataCategory, selections);
         } else if (!name.equals("uid") && (values.size() == 1)) {
 
-            // skip ahead if we only have one value that is not "uid"
+            // We only have one possible drill down value and it isn't the UID so select it and skip ahead to next choice.
             selections.add(new Choice(name, values.get(0).getValue()));
             return getChoices(dataCategory, selections);
         } else {
