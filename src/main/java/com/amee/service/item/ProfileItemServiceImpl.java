@@ -356,11 +356,12 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
     public void updateProfileItemValues(ProfileItem profileItem) {
         boolean modified = false;
         Object values = profileItem.getValues();
+        Object units = profileItem.getUnits();
+        Object perUnits = profileItem.getPerUnits();
         ItemValueMap itemValues = getItemValuesMap(profileItem);
         for (String key : itemValues.keySet()) {
             BaseItemValue value = itemValues.get(key);
 
-            // TODO: refactor this
             // Values
             PropertyDescriptor pd = BeanUtils.getPropertyDescriptor(values.getClass(), key);
             if (pd != null) {
@@ -384,16 +385,16 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
                 log.warn("updateProfileItemValues() PropertyDescriptor was null: " + key);
             }
 
-            // Units
+            // Units (only number values have units and perUnits)
             if (ExternalNumberValue.class.isAssignableFrom(value.getClass())) {
 
                 // Unit
-                pd = BeanUtils.getPropertyDescriptor(values.getClass(), key + "Unit");
+                pd = BeanUtils.getPropertyDescriptor(units.getClass(), key);
                 if (pd != null) {
                     Method readMethod = pd.getReadMethod();
                     if (readMethod != null) {
                         try {
-                            Object v = readMethod.invoke(values);
+                            Object v = readMethod.invoke(units);
                             if (v != null) {
                                 ((ProfileItemNumberValue) value).setUnit(v.toString());
                                 modified = true;
@@ -411,12 +412,12 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
                 }
 
                 // Per Unit
-                pd = BeanUtils.getPropertyDescriptor(values.getClass(), key + "PerUnit");
+                pd = BeanUtils.getPropertyDescriptor(perUnits.getClass(), key);
                 if (pd != null) {
                     Method readMethod = pd.getReadMethod();
                     if (readMethod != null) {
                         try {
-                            Object v = readMethod.invoke(values);
+                            Object v = readMethod.invoke(perUnits);
                             if (v != null) {
                                 ((ProfileItemNumberValue) value).setPerUnit(v.toString());
                                 modified = true;
