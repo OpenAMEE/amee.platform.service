@@ -15,6 +15,7 @@ import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.Profile;
+import com.amee.platform.science.ExternalNumberValue;
 import com.amee.platform.science.ReturnValue;
 import com.amee.platform.science.StartEndDate;
 import com.amee.service.profile.OnlyActiveProfileService;
@@ -358,6 +359,9 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
         ItemValueMap itemValues = getItemValuesMap(profileItem);
         for (String key : itemValues.keySet()) {
             BaseItemValue value = itemValues.get(key);
+
+            // TODO: refactor this
+            // Values
             PropertyDescriptor pd = BeanUtils.getPropertyDescriptor(values.getClass(), key);
             if (pd != null) {
                 Method readMethod = pd.getReadMethod();
@@ -378,6 +382,56 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
                 }
             } else {
                 log.warn("updateProfileItemValues() PropertyDescriptor was null: " + key);
+            }
+
+            // Units
+            if (ExternalNumberValue.class.isAssignableFrom(value.getClass())) {
+
+                // Unit
+                pd = BeanUtils.getPropertyDescriptor(values.getClass(), key + "Unit");
+                if (pd != null) {
+                    Method readMethod = pd.getReadMethod();
+                    if (readMethod != null) {
+                        try {
+                            Object v = readMethod.invoke(values);
+                            if (v != null) {
+                                ((ProfileItemNumberValue) value).setUnit(v.toString());
+                                modified = true;
+                            }
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException("Caught IllegalAccessException: " + e.getMessage(), e);
+                        } catch (InvocationTargetException e) {
+                            throw new RuntimeException("Caught InvocationTargetException: " + e.getMessage(), e);
+                        }
+                    } else {
+                        log.warn("updateProfileItemValues() Read Method was null: " + key);
+                    }
+                } else {
+                    log.warn("updateProfileItemValues() PropertyDescriptor was null: " + key);
+                }
+
+                // Per Unit
+                pd = BeanUtils.getPropertyDescriptor(values.getClass(), key + "PerUnit");
+                if (pd != null) {
+                    Method readMethod = pd.getReadMethod();
+                    if (readMethod != null) {
+                        try {
+                            Object v = readMethod.invoke(values);
+                            if (v != null) {
+                                ((ProfileItemNumberValue) value).setPerUnit(v.toString());
+                                modified = true;
+                            }
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException("Caught IllegalAccessException: " + e.getMessage(), e);
+                        } catch (InvocationTargetException e) {
+                            throw new RuntimeException("Caught InvocationTargetException: " + e.getMessage(), e);
+                        }
+                    } else {
+                        log.warn("updateProfileItemValues() Read Method was null: " + key);
+                    }
+                } else {
+                    log.warn("updateProfileItemValues() PropertyDescriptor was null: " + key);
+                }
             }
         }
 
