@@ -22,6 +22,10 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * This class provides methods to be used by javascript algorithms for Data Item access.
+ * An instance of this class is provided to the algorithm see: {@link CalculationService}
+ */
 @Component
 @Scope("prototype")
 public class DataFinder {
