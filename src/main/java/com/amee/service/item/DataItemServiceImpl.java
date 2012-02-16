@@ -167,6 +167,15 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
         return label;
     }
 
+    /**
+     * Get a Choices object containing all the item values that may be set by the user (profile).
+     * If an item value has a default value in the item value definition this will be used.
+     * If an item value has a default value in the data item value this will override the item value definition default.
+     *
+     * @param dataItem the DataItem to get the List of choices for.
+     * @param apiVersion Item Value Definitions are valid for a particular APIVersion.
+     * @return A Choices object with the user settable item values.
+     */
     @Override
     public Choices getUserValueChoices(DataItem dataItem, APIVersion apiVersion) {
         List<Choice> userValueChoices = new ArrayList<Choice>();
