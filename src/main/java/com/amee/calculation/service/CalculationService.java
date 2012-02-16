@@ -76,8 +76,6 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
     /**
      * Calculate and return the GHG amounts for a DataItem and a set of user specified values.
-     * <p/>
-     * Note: I am unsure if this is in active use (SM)
      *
      * @param dataItem         - the DataItem for the calculation
      * @param userValueChoices - user supplied value choices
@@ -194,15 +192,15 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
         appendInternalValues(profileItem, profileItemService, collectedValues);
 
         // Add actual values to return list based on InternalValues in values list.
-        Map<String, Object> theValues = new HashMap<String, Object>();
+        Map<String, Object> algorithmInputValues = new HashMap<String, Object>();
         for (Map.Entry<ItemValueDefinition, InternalValue> entry : collectedValues.entrySet()) {
-            theValues.put(entry.getKey().getCanonicalPath(), entry.getValue().getValue());
+            algorithmInputValues.put(entry.getKey().getCanonicalPath(), entry.getValue().getValue());
         }
 
         // Initialise finders for algorithm.
-        initFinders(profileItem, theValues);
+        initFinders(profileItem, algorithmInputValues);
 
-        return theValues;
+        return algorithmInputValues;
     }
 
     /**
@@ -277,7 +275,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     }
 
     /**
-     * Collect all relevant algorithm input values for a DataItem + auth Choices calculation.
+     * Collect all relevant algorithm input values for a DataItem + user Choices calculation.
      *
      * @param dataItem
      * @param userValueChoices
@@ -285,30 +283,38 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      * @return
      */
     private Map<String, Object> getValues(DataItem dataItem, Choices userValueChoices, APIVersion version) {
-        Map<ItemValueDefinition, InternalValue> values = new HashMap<ItemValueDefinition, InternalValue>();
-        dataItem.getItemDefinition().appendInternalValues(values, version);
-        appendInternalValues(dataItem, dataItemService, values);
-        appendUserValueChoices(dataItem.getItemDefinition(), userValueChoices, values, version);
+        Map<ItemValueDefinition, InternalValue> collectedValues = new HashMap<ItemValueDefinition, InternalValue>();
 
-        Map<String, Object> returnValues = new HashMap<String, Object>();
-        for (Map.Entry<ItemValueDefinition, InternalValue> entry : values.entrySet()) {
-            returnValues.put(entry.getKey().getCanonicalPath(), entry.getValue().getValue());
+        // Add Item Definition default values.
+        dataItem.getItemDefinition().appendInternalValues(collectedValues, version);
+
+        // Add Data Item values.
+        appendInternalValues(dataItem, dataItemService, collectedValues);
+
+        // Add user supplied values.
+        appendUserValueChoices(dataItem.getItemDefinition(), userValueChoices, collectedValues, version);
+
+        // Add actual values to return list based on InternalValues in values list.
+        Map<String, Object> algorithmInputValues = new HashMap<String, Object>();
+        for (Map.Entry<ItemValueDefinition, InternalValue> entry : collectedValues.entrySet()) {
+            algorithmInputValues.put(entry.getKey().getCanonicalPath(), entry.getValue().getValue());
         }
 
+        // Finders for algorithm.
         DataFinder dataFinder = (DataFinder) beanFactory.getBean("dataFinder");
 
         ProfileFinder profileFinder = (ProfileFinder) beanFactory.getBean("profileFinder");
         profileFinder.setDataFinder(dataFinder);
 
         ServiceFinder serviceFinder = (ServiceFinder) beanFactory.getBean("serviceFinder");
-        serviceFinder.setValues(returnValues);
+        serviceFinder.setValues(algorithmInputValues);
         serviceFinder.setProfileFinder(profileFinder);
 
-        returnValues.put("serviceFinder", serviceFinder);
-        returnValues.put("dataFinder", dataFinder);
-        returnValues.put("profileFinder", profileFinder);
+        algorithmInputValues.put("serviceFinder", serviceFinder);
+        algorithmInputValues.put("dataFinder", dataFinder);
+        algorithmInputValues.put("profileFinder", profileFinder);
 
-        return returnValues;
+        return algorithmInputValues;
     }
 
     private void appendUserValueChoices(
@@ -332,11 +338,11 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
                         // Item is a number.
                         ProfileItemNumberValue pinv = new ProfileItemNumberValue(itemValueDefinition, profileItem, userValueChoices.get(itemValueDefinition.getPath()).getValue());
                         if (version.isNotVersionOne()) {
-                            if (userValueChoices.containsKey(itemValueDefinition.getPath() + "Unit")) {
-                                pinv.setUnit(userValueChoices.get(itemValueDefinition.getPath() + "Unit").getValue());
+                            if (userValueChoices.containsKey("units." + itemValueDefinition.getPath())) {
+                                pinv.setUnit(userValueChoices.get("units." + itemValueDefinition.getPath()).getValue());
                             }
-                            if (userValueChoices.containsKey(itemValueDefinition.getPath() + "PerUnit")) {
-                                pinv.setPerUnit(userValueChoices.get(itemValueDefinition.getPath() + "PerUnit").getValue());
+                            if (userValueChoices.containsKey("perUnits." + itemValueDefinition.getPath())) {
+                                pinv.setPerUnit(userValueChoices.get("perUnits." + itemValueDefinition.getPath()).getValue());
                             }
                         }
                         profileItemValue = pinv;
