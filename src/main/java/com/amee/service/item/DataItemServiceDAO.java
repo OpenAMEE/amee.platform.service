@@ -13,25 +13,26 @@ import java.util.Set;
 
 public interface DataItemServiceDAO extends ItemServiceDAO {
 
-    public long getDataItemCount(IDataCategoryReference dataCategory);
+    long getDataItemCount(IDataCategoryReference dataCategory);
 
-    public List<DataItem> getDataItems(IDataCategoryReference dataCategory);
+    List<DataItem> getDataItems(IDataCategoryReference dataCategory);
 
-    public List<DataItem> getDataItems(Set<Long> dataItemIds);
+    List<DataItem> getDataItems(Set<Long> dataItemIds);
 
-    public DataItem getItemByUid(String uid);
+    @Override
+    DataItem getItemByUid(String uid);
 
-    public Set<BaseItemValue> getDataItemValues(DataItem dataItem);
+    Set<BaseItemValue> getDataItemValues(DataItem dataItem);
 
-    public List<DataItemNumberValue> getDataItemNumberValues(DataItem dataItem);
+    List<DataItemNumberValue> getDataItemNumberValues(DataItem dataItem);
 
-    public List<DataItemTextValue> getDataItemTextValues(DataItem dataItem);
+    List<DataItemTextValue> getDataItemTextValues(DataItem dataItem);
 
-    public void persist(DataItem dataItem);
+    void persist(DataItem dataItem);
 
-    public DataItem getDataItemByPath(IDataCategoryReference parent, String path);
+    DataItem getDataItemByPath(IDataCategoryReference parent, String path);
 
-    public Date getDataItemsModified(DataCategory dataCategory);
+    Date getDataItemsModified(DataCategory dataCategory);
 
-    public boolean isDataItemUniqueByPath(DataItem dataItem);
+    boolean isDataItemUniqueByPath(DataItem dataItem);
 }
