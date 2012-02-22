@@ -16,6 +16,7 @@ import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
+import com.amee.service.data.DrillDownService;
 import com.amee.service.invalidation.InvalidationService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -39,6 +40,9 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
 
     @Autowired
     private InvalidationService invalidationService;
+
+    @Autowired
+    private DrillDownService drillDownService;
 
     @Autowired
     private DataItemServiceDAO dao;
@@ -109,6 +113,21 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
             if (dataItem == null) {
                 dataItem = getDataItemByPath(parent, path);
             }
+        }
+        return dataItem;
+    }
+    
+    @Override
+    public DataItem getDataItemByCategoryAndDrillDowns(DataCategory parent, List<Choice> selections) {
+        DataItem dataItem = null;
+        Choices choices = drillDownService.getChoices(parent, selections);
+        if (choices.getName().equals("uid") && (choices.getChoices().size() > 0)) {
+            dataItem = getDataItemByUid(parent, choices.getChoices().get(0).getValue());
+        } else {
+
+        // The drill down selections didn't produce a data item UID.
+        log.debug("getDataItemByCategoryAndDrillDowns() did not find data item for category with UID: " +
+            parent.getUid() + " and drillDowns: " + selections);
         }
         return dataItem;
     }
