@@ -7,6 +7,7 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.sheet.Choice;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.HibernateException;
@@ -345,18 +346,16 @@ class DrillDownDAO {
         // create SQL
         StringBuilder sql = new StringBuilder();
         sql.append("(SELECT DATA_ITEM_ID ID ");
-        sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
+        
+        if (StringUtils.isNumeric(value)) {
+            sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
+        } else {
+            sql.append("FROM DATA_ITEM_TEXT_VALUE ");
+        }
         sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
         sql.append("AND STATUS != :trash ");
         sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
         sql.append("AND VALUE = :value) ");
-        sql.append("UNION ");
-        sql.append("(SELECT DATA_ITEM_ID ID ");
-        sql.append("FROM DATA_ITEM_TEXT_VALUE ");
-        sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
-        sql.append("AND STATUS != :trash ");
-        sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("AND VALUE = :value)");
 
         // create query
         Session session = (Session) entityManager.getDelegate();
