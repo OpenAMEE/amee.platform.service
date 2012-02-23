@@ -54,9 +54,9 @@ class DrillDownDAO {
      * @return a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing values for a user to select
      */
     public List<Choice> getDataItemValueChoices(
-            IDataCategoryReference dc,
-            String path,
-            List<Choice> selections) {
+        IDataCategoryReference dc,
+        String path,
+        List<Choice> selections) {
 
         Collection<Long> dataItemIds;
 
@@ -239,6 +239,13 @@ class DrillDownDAO {
         return new HashSet<Long>(dataItemIds);
     }
 
+    /**
+     * Get a list of distinct values for a given item value definition ID and collection of data item IDs.
+     *
+     * @param itemValueDefinitionId
+     * @param dataItemIds
+     * @return a case-insensitive sorted List of values.
+     */
     @SuppressWarnings(value = "unchecked")
     private List<String> getDataItemValues(Long itemValueDefinitionId, Collection<Long> dataItemIds) {
 
@@ -249,8 +256,9 @@ class DrillDownDAO {
         dataItemIds.add(0L);
 
         // create SQL
+        // TODO: Could it be faster to perform two queries and combine the results?
         StringBuilder sql = new StringBuilder();
-        sql.append("(SELECT DISTINCT VALUE ");
+        sql.append("(SELECT DISTINCT CAST(VALUE AS CHAR) VALUE ");
         sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
         sql.append("WHERE ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
         sql.append("AND STATUS != :trash ");
@@ -261,7 +269,9 @@ class DrillDownDAO {
         sql.append("WHERE ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
         sql.append("AND STATUS != :trash ");
         sql.append("AND DATA_ITEM_ID IN (:dataItemIds)) ");
-        sql.append("ORDER BY LCASE(VALUE) ASC");
+
+        // hsqldb and h2 don't like using LCASE here. Of course MySQL doesn't care.
+        //sql.append("ORDER BY LCASE(VALUE) ASC");
 
         // create query
         Session session = (Session) entityManager.getDelegate();
@@ -277,6 +287,9 @@ class DrillDownDAO {
         try {
             List<String> results = query.list();
             log.debug("getDataItemValues() results: " + results.size());
+
+            // Sorting here instead of the query above as hsqldb and h2 don't like using LCASE in the ORDER BY.
+            Collections.sort(results, String.CASE_INSENSITIVE_ORDER);
             return results;
         } catch (HibernateException e) {
             log.error("getDataItemValues() Caught HibernateException: " + e.getMessage(), e);
@@ -346,8 +359,7 @@ class DrillDownDAO {
         // create SQL
         StringBuilder sql = new StringBuilder();
         sql.append("(SELECT DATA_ITEM_ID ID ");
-        
-        if (StringUtils.isNumeric(value)) {
+        if (!value.isEmpty() && StringUtils.isNumeric(value)) {
             sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
         } else {
             sql.append("FROM DATA_ITEM_TEXT_VALUE ");
@@ -384,18 +396,24 @@ class DrillDownDAO {
 
         // Create SQL.
         StringBuilder sql = new StringBuilder();
-        sql.append("(SELECT dinv.DATA_ITEM_ID ID ");
-        sql.append("FROM DATA_ITEM_NUMBER_VALUE dinv, LOCALE_NAME ln ");
-        sql.append("WHERE dinv.DATA_ITEM_ID IN (:dataItemIds) ");
-        sql.append("AND dinv.STATUS != :trash ");
-        sql.append("AND dinv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId) ");
-        sql.append("UNION ");
-        sql.append("(SELECT ditv.DATA_ITEM_ID ID ");
-        sql.append("FROM DATA_ITEM_TEXT_VALUE ditv, LOCALE_NAME ln ");
-        sql.append("WHERE ditv.DATA_ITEM_ID IN (:dataItemIds) ");
-        sql.append("AND ditv.STATUS != :trash ");
-        sql.append("AND ditv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("AND ln.ENTITY_TYPE='DITV' AND ln.ENTITY_ID = ditv.ID AND LOCALE = :locale AND ln.NAME = :value)");
+        sql.append("SELECT DATA_ITEM_ID ID ");
+        if (!value.isEmpty() && StringUtils.isNumeric(value)) {
+            sql.append("FROM DATA_ITEM_NUMBER_VALUE dinv, LOCALE_NAME ln ");
+        } else {
+            sql.append("FROM DATA_ITEM_TEXT_VALUE ditv, LOCALE_NAME ln ");
+        }
+        sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
+        if (!value.isEmpty() && StringUtils.isNumeric(value)) {
+            sql.append("AND dinv.STATUS != :trash ");
+        } else {
+            sql.append("AND ditv.STATUS != :trash ");
+        }
+        sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
+        if (!value.isEmpty() && StringUtils.isNumeric(value)) {
+            sql.append("AND ln.ENTITY_TYPE='DINV' AND ln.ENTITY_ID = dinv.ID AND LOCALE = :locale AND ln.NAME = :value");
+        } else {
+            sql.append("AND ln.ENTITY_TYPE='DITV' AND ln.ENTITY_ID = ditv.ID AND LOCALE = :locale AND ln.NAME = :value");
+        }
 
         // Create query.
         Session session = (Session) entityManager.getDelegate();
