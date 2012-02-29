@@ -4,6 +4,7 @@ import com.amee.domain.AMEEStatus;
 import com.amee.domain.auth.User;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.Session;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -58,5 +59,15 @@ public class AuthenticationDAO {
         }
         log.debug("auth NOT found: " + username);
         return null;
+    }
+
+    /**
+     * Clears the hibernate cache for the given User.
+     *
+     * @param user the User to clear from the cache.
+     */
+    public void invalidate(User user) {
+        log.debug("invalidate() " + user);
+        ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(User.class, user.getId());
     }
 }
