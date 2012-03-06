@@ -1,6 +1,8 @@
 package com.amee.platform.search;
 
-import com.amee.base.validation.ValidationHelper;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.lucene.search.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -8,12 +10,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.DataBinder;
 import org.springframework.validation.Validator;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.amee.base.validation.BaseValidator;
 
 @Service
 @Scope("prototype")
-public class DataCategoriesFilterValidationHelper extends ValidationHelper {
+public class DataCategoriesFilterValidationHelper extends BaseValidator {
 
     @Autowired
     private DataCategoriesFilterValidator validator;
@@ -84,5 +85,10 @@ public class DataCategoriesFilterValidationHelper extends ValidationHelper {
 
     public void setDataCategoryFilter(DataCategoriesFilter dataCategoryFilter) {
         this.dataCategoryFilter = dataCategoryFilter;
+    }
+
+    @Override
+    public boolean supports(Class<?> clazz) {
+        return validator.supports(clazz);
     }
 }
