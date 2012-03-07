@@ -4,7 +4,7 @@ import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.ObjectType;
 import com.amee.domain.sheet.Choice;
-import com.amee.service.data.DrillDownService;
+import com.amee.service.data.AbstractDrillDownService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.document.Document;
@@ -24,24 +24,17 @@ import java.util.Set;
  * A search index backed sub-class of DrillDownService which overrides the getDataItemChoices method with an
  * implementation that uses the Lucene index instead of the original SQL based implementation.
  */
-public class SearchDrillDownService extends DrillDownService {
+public class SearchDrillDownService extends AbstractDrillDownService {
 
     private final Log log = LogFactory.getLog(getClass());
 
     @Autowired
     private LuceneService luceneService;
 
-    /**
-     * @param dataCategory     to perform drill down within
-     * @param selections       that have already been made for the drill down
-     * @param drillDownChoices that remain to be chosen within the drill down
-     * @return a list of Choices for the next level of drill down available
-     */
     @Override
     protected List<Choice> getDataItemChoices(
-            IDataCategoryReference dataCategory,
-            List<Choice> selections,
-            List<Choice> drillDownChoices) {
+        IDataCategoryReference dataCategory, List<Choice> selections, List<Choice> drillDownChoices) {
+
         // Create Query for Data Items within the given DataCategory matching the supplied selections and drillDownChoices.
         BooleanQuery typesQuery = new BooleanQuery();
         typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);
@@ -52,10 +45,13 @@ public class SearchDrillDownService extends DrillDownService {
             query.add(new TermQuery(new Term(choice.getName(), choice.getValue().toLowerCase())), BooleanClause.Occur.MUST);
         }
         ResultsWrapper<Document> results = luceneService.doSearch(query);
+
         // Create choices array.
         List<Choice> choices = new ArrayList<Choice>();
+
         // What kind of choices?
         if (drillDownChoices.size() > 0) {
+
             // Value choices.
             String path = drillDownChoices.get(0).getName();
             Set<String> values = new HashSet<String>();
@@ -73,11 +69,13 @@ public class SearchDrillDownService extends DrillDownService {
                 }
             }
         } else {
+
             // UID choices.
             for (Document doc : results.getResults()) {
                 choices.add(new Choice(doc.getField("entityUid").stringValue()));
             }
         }
+
         // Remove duplicates.
         return choices;
     }
