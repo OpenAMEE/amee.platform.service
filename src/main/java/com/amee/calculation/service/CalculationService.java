@@ -335,14 +335,25 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
                     BaseProfileItemValue profileItemValue;
                     if (itemValueDefinition.getValueDefinition().getValueType().equals(ValueType.INTEGER) ||
                             itemValueDefinition.getValueDefinition().getValueType().equals(ValueType.DOUBLE)) {
+
                         // Item is a number.
                         ProfileItemNumberValue pinv = new ProfileItemNumberValue(itemValueDefinition, profileItem, userValueChoices.get(itemValueDefinition.getPath()).getValue());
                         if (version.isNotVersionOne()) {
-                            if (userValueChoices.containsKey("units." + itemValueDefinition.getPath())) {
-                                pinv.setUnit(userValueChoices.get("units." + itemValueDefinition.getPath()).getValue());
-                            }
-                            if (userValueChoices.containsKey("perUnits." + itemValueDefinition.getPath())) {
-                                pinv.setPerUnit(userValueChoices.get("perUnits." + itemValueDefinition.getPath()).getValue());
+                            if (version.isVersionTwo()) {
+                                if (userValueChoices.containsKey(itemValueDefinition.getPath() + "Unit")) {
+                                    pinv.setUnit(userValueChoices.get(itemValueDefinition.getPath() + "Unit").getValue());
+                                }
+                                if (userValueChoices.containsKey(itemValueDefinition.getPath() + "PerUnit")) {
+                                    pinv.setPerUnit(userValueChoices.get(itemValueDefinition.getPath() + "PerUnit").getValue());
+                                }
+                            } else {
+                                
+                                if (userValueChoices.containsKey("units." + itemValueDefinition.getPath())) {
+                                    pinv.setUnit(userValueChoices.get("units." + itemValueDefinition.getPath()).getValue());
+                                }
+                                if (userValueChoices.containsKey("perUnits." + itemValueDefinition.getPath())) {
+                                    pinv.setPerUnit(userValueChoices.get("perUnits." + itemValueDefinition.getPath()).getValue());
+                                }
                             }
                         }
                         profileItemValue = pinv;
