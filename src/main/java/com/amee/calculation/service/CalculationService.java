@@ -338,22 +338,16 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
                         // Item is a number.
                         ProfileItemNumberValue pinv = new ProfileItemNumberValue(itemValueDefinition, profileItem, userValueChoices.get(itemValueDefinition.getPath()).getValue());
+
+                        // v1 doesn't handle different input units.
                         if (version.isNotVersionOne()) {
-                            if (version.isVersionTwo()) {
-                                if (userValueChoices.containsKey(itemValueDefinition.getPath() + "Unit")) {
-                                    pinv.setUnit(userValueChoices.get(itemValueDefinition.getPath() + "Unit").getValue());
-                                }
-                                if (userValueChoices.containsKey(itemValueDefinition.getPath() + "PerUnit")) {
-                                    pinv.setPerUnit(userValueChoices.get(itemValueDefinition.getPath() + "PerUnit").getValue());
-                                }
-                            } else {
-                                
-                                if (userValueChoices.containsKey("units." + itemValueDefinition.getPath())) {
-                                    pinv.setUnit(userValueChoices.get("units." + itemValueDefinition.getPath()).getValue());
-                                }
-                                if (userValueChoices.containsKey("perUnits." + itemValueDefinition.getPath())) {
-                                    pinv.setPerUnit(userValueChoices.get("perUnits." + itemValueDefinition.getPath()).getValue());
-                                }
+                            String unit = getUnit(userValueChoices, itemValueDefinition.getPath());
+                            if (!unit.isEmpty()) {
+                                pinv.setUnit(unit);
+                            }
+                            String perUnit = getPerUnit(userValueChoices, itemValueDefinition.getPath());
+                            if (!perUnit.isEmpty()) {
+                                pinv.setPerUnit(perUnit);
                             }
                         }
                         profileItemValue = pinv;
@@ -373,5 +367,39 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
+    }
+    
+    private String getUnit(Choices userValueChoices, String path) {
+        
+        String unit = "";
+        
+        // v2 uses the {path}Unit format.
+        if (userValueChoices.containsKey(path + "Unit")) {
+            unit = userValueChoices.get(path + "Unit").getValue();
+        }
+
+        // v3 uses the units.{path} format.
+        if (userValueChoices.containsKey("units." + path)) {
+            unit = userValueChoices.get("units." + path).getValue();
+        }
+
+        return unit;
+    }
+
+    private String getPerUnit(Choices userValueChoices, String path) {
+
+        String perUnit = "";
+
+        // v2 uses the {path}PerUnit format.
+        if (userValueChoices.containsKey(path + "PerUnit")) {
+            perUnit = userValueChoices.get(path + "PerUnit").getValue();
+        }
+
+        // v3 uses the perUnits.{path} format.
+        if (userValueChoices.containsKey("perUnits." + path)) {
+            perUnit = userValueChoices.get("perUnits." + path).getValue();
+        }
+
+        return perUnit;
     }
 }
