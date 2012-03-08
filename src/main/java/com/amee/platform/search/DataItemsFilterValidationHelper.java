@@ -20,7 +20,7 @@ public class DataItemsFilterValidationHelper extends ValidationHelper {
     @Autowired
     private DataItemsFilterValidator validator;
 
-    private DataItemsFilter dataItemFilter;
+    private DataItemsFilter dataItemsFilter;
     private Set<String> allowedFields;
 
     @Override
@@ -35,7 +35,7 @@ public class DataItemsFilterValidationHelper extends ValidationHelper {
         dataBinder.registerCustomEditor(Query.class, "itemDefinitionUid", new QueryParserEditor("itemDefinitionUid", SearchService.KEYWORD_ANALYZER));
         dataBinder.registerCustomEditor(Query.class, "itemDefinitionName", new QueryParserEditor("itemDefinitionName"));
         dataBinder.registerCustomEditor(Query.class, "label", new QueryParserEditor("label"));
-        for (ItemValueDefinition ivd : dataItemFilter.getItemDefinition().getActiveItemValueDefinitions()) {
+        for (ItemValueDefinition ivd : dataItemsFilter.getItemDefinition().getActiveItemValueDefinitions()) {
             if (ivd.isFromData()) {
                 if (ivd.isDrillDown()) {
                     dataBinder.registerCustomEditor(
@@ -61,7 +61,7 @@ public class DataItemsFilterValidationHelper extends ValidationHelper {
 
     @Override
     public Object getObject() {
-        return dataItemFilter;
+        return dataItemsFilter;
     }
 
     @Override
@@ -88,7 +88,7 @@ public class DataItemsFilterValidationHelper extends ValidationHelper {
             allowedFields.add("itemDefinitionUid");
             allowedFields.add("itemDefinitionName");
             allowedFields.add("label");
-            for (ItemValueDefinition ivd : dataItemFilter.getItemDefinition().getActiveItemValueDefinitions()) {
+            for (ItemValueDefinition ivd : dataItemsFilter.getItemDefinition().getActiveItemValueDefinitions()) {
                 if (ivd.isFromData()) {
                     allowedFields.add("queries[" + ivd.getPath() + "]");
                 }
@@ -101,18 +101,18 @@ public class DataItemsFilterValidationHelper extends ValidationHelper {
 
     @Override
     protected void beforeBind(Map<String, String> values) {
-        for (ItemValueDefinition ivd : dataItemFilter.getItemDefinition().getActiveItemValueDefinitions()) {
+        for (ItemValueDefinition ivd : dataItemsFilter.getItemDefinition().getActiveItemValueDefinitions()) {
             if (ivd.isFromData()) {
                 this.renameValue(values, ivd.getPath(), "queries[" + ivd.getPath() + "]");
             }
         }
     }
 
-    public DataItemsFilter getDataItemFilter() {
-        return dataItemFilter;
+    public DataItemsFilter getDataItemsFilter() {
+        return dataItemsFilter;
     }
 
-    public void setDataItemFilter(DataItemsFilter dataItemFilter) {
-        this.dataItemFilter = dataItemFilter;
+    public void setDataItemsFilter(DataItemsFilter dataItemsFilter) {
+        this.dataItemsFilter = dataItemsFilter;
     }
 }

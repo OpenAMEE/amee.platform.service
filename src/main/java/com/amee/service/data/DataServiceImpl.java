@@ -155,6 +155,7 @@ public class DataServiceImpl implements DataService, IDataService {
 
     /**
      * TODO: There is a potential for confusing pagination truncation when removing inactive entries.
+     * TODO: The database query already excludes trashed categories, why do we check again?
      *
      * @param locales
      * @param resultStart

@@ -159,27 +159,33 @@ public class DataServiceDAOImpl implements DataServiceDAO {
      * Return the supplied DataCategory if the status matches.
      *
      * @param dataCategory to check status against
-     * @param status       status to check
+     * @param status only return DataCategories with the given status. If null, return any status.
      * @return the supplied DataCategory if it matches the status, otherwise null
      */
     @Override
     public DataCategory getDataCategoryWithStatus(DataCategory dataCategory, AMEEStatus status) {
         if (dataCategory != null) {
+
             // Was a specific status requested?
             if (status != null) {
+
                 // Specific status requested.
                 boolean trashed = dataCategory.isTrash();
                 if (status.equals(AMEEStatus.TRASH) && trashed) {
+
                     // TRASHed status requested and DataCategory IS trashed.
                     return dataCategory;
                 } else if (!trashed) {
+
                     // ACTIVE or DEPRECATED status requested and DataCategory is NOT trashed.
                     return dataCategory;
                 } else {
+
                     // Not found.
                     return null;
                 }
             } else {
+
                 // Allow any status.
                 return dataCategory;
             }

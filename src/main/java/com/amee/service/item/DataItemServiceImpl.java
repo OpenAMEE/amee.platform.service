@@ -16,6 +16,7 @@ import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
+import com.amee.service.data.DrillDownService;
 import com.amee.service.invalidation.InvalidationService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -39,6 +40,9 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
 
     @Autowired
     private InvalidationService invalidationService;
+
+    @Autowired
+    private DrillDownService drillDownService;
 
     @Autowired
     private DataItemServiceDAO dao;
@@ -112,6 +116,21 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
         }
         return dataItem;
     }
+    
+    @Override
+    public DataItem getDataItemByCategoryAndDrillDowns(DataCategory parent, List<Choice> selections) {
+        DataItem dataItem = null;
+        Choices choices = drillDownService.getChoices(parent, selections);
+        if (choices.getName().equals("uid") && (choices.getChoices().size() > 0)) {
+            dataItem = getDataItemByUid(parent, choices.getChoices().get(0).getValue());
+        } else {
+
+        // The drill down selections didn't produce a data item UID.
+        log.debug("getDataItemByCategoryAndDrillDowns() did not find data item for category with UID: " +
+            parent.getUid() + " and drillDowns: " + selections);
+        }
+        return dataItem;
+    }
 
     @Override
     public DataItem getDataItemByUid(DataCategory parent, String uid) {
@@ -167,6 +186,15 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
         return label;
     }
 
+    /**
+     * Get a Choices object containing all the item values that may be set by the user (profile).
+     * If an item value has a default value in the item value definition this will be used.
+     * If an item value has a default value in the data item value this will override the item value definition default.
+     *
+     * @param dataItem the DataItem to get the List of choices for.
+     * @param apiVersion Item Value Definitions are valid for a particular APIVersion.
+     * @return A Choices object with the user settable item values.
+     */
     @Override
     public Choices getUserValueChoices(DataItem dataItem, APIVersion apiVersion) {
         List<Choice> userValueChoices = new ArrayList<Choice>();
@@ -261,6 +289,69 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
         return modified;
     }
 
+    /**
+     * Checks if a DataItem already exists with the same drill down values.
+     * NB: This method uses the transient values returned from com.amee.domain.item.data.DataItem#getValues()
+     *
+     * @param dataItem the DataItem to check for equivalents.
+     * @return false if a DataItem already exists with the same category and drill down values. Otherwise, true.
+     */
+    @Override
+    public boolean isUnique(DataItem dataItem) {
+        return !equivalentDataItemExists(dataItem);
+    }
+
+    private boolean equivalentDataItemExists(DataItem dataItem) {
+
+        // Get a list of this data item's values for the drill downs.
+        // The values for these values are null :-(
+        List<String> drillDownPaths = getDrillDownPaths(dataItem);
+
+        boolean isEqual = false;
+
+        // Check the drilldown values for all existing data items for the same category.
+        for (DataItem existingDataItem : getDataItems(dataItem.getDataCategory())) {
+
+            // Ignore the one we just added. This is the one we are checking!
+            if (existingDataItem.getUid().equals(dataItem.getUid())) {
+                continue;
+            }
+
+            // Must have the same item definition to be considered a dupe.
+            if (existingDataItem.getItemDefinition().equals(dataItem.getItemDefinition())) {
+
+                // check if it has the same values for the drillDowns we have
+                // Create maps of new and existing values
+                Map<String, String> newValues = new HashMap<String, String>();
+                Map<String, String> existingValues = new HashMap<String, String>();
+                for (String path : drillDownPaths) {
+                    String newValue = null;
+
+                    // Use reflection to get the values. See: com.amee.domain.item.data.DataItem#getValues().
+                    // This is only for v3
+                    try {
+                        String pathMethod = "get" + StringUtils.capitalize(path);
+                        Method getter = dataItem.getValues().getClass().getMethod(pathMethod);
+                        newValue = String.valueOf(getter.invoke(dataItem.getValues()));
+                    } catch (Exception e) {
+                        throw new RuntimeException("equivalentDataItemExists() caught Exception: " + e.getMessage(), e);
+                    }
+
+                    // Handle v2
+                    if (newValue.equals("null")) {
+                        newValue = getItemValuesMap(dataItem).get(path).getValueAsString();
+                    }
+
+                    newValues.put(path, newValue);
+
+                    String existingValue = getItemValue(existingDataItem, path).getValueAsString();
+                    existingValues.put(path, existingValue);
+                }
+                isEqual = newValues.equals(existingValues);
+            }
+        }
+        return isEqual;
+    }
 
     /**
      * Returns true if the path of the supplied DataItem is unique amongst peers with the same
@@ -272,6 +363,35 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     @Override
     public boolean isDataItemUniqueByPath(DataItem dataItem) {
         return dataItem.getPath().isEmpty() || dao.isDataItemUniqueByPath(dataItem);
+    }
+
+    /**
+     * Returns true if the {@link BaseDataItemValue} supplied has the same startDate as another
+     * peer within the same {@link DataItem}.
+     * <p/>
+     * TODO: This method is not designed for large amounts of DIVHs.
+     * TODO: See https://jira.amee.com/browse/PL-2685.
+     *
+     * @param itemValue {@link BaseDataItemValue} to check
+     * @return true if the {@link BaseDataItemValue} supplied has the same startDate as another {@link DataItem}
+     */
+    @Override
+    public boolean isDataItemValueUniqueByStartDate(BaseDataItemValue itemValue) {
+        if (HistoryValue.class.isAssignableFrom(itemValue.getClass())) {
+            HistoryValue historyValue = (HistoryValue) itemValue;
+            for (BaseItemValue existingItemValue : getActiveItemValues(itemValue.getDataItem())) {
+                if (existingItemValue.getItemValueDefinition().equals(itemValue.getItemValueDefinition()) &&
+                    HistoryValue.class.isAssignableFrom(existingItemValue.getClass())) {
+                    HistoryValue existingHistoryValue = (HistoryValue) existingItemValue;
+                    if (!historyValue.equals(existingHistoryValue) && historyValue.getStartDate().equals(existingHistoryValue.getStartDate())) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        } else {
+            throw new IllegalStateException("Should not be checking a non-historical DataItemValue.");
+        }
     }
 
     @Override
@@ -373,34 +493,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
         return new ResultsWrapper<BaseDataItemValue>(results, truncated);
     }
 
-    /**
-     * Returns true if the {@link BaseDataItemValue} supplied has the same startDate as another
-     * peer within the same {@link DataItem}.
-     * <p/>
-     * TODO: This method is not designed for large amounts of DIVHs.
-     * TODO: See https://jira.amee.com/browse/PL-2685.
-     *
-     * @param itemValue {@link BaseDataItemValue} to check
-     * @return true if the {@link BaseDataItemValue} supplied has the same startDate as another {@link DataItem}
-     */
-    @Override
-    public boolean isDataItemValueUniqueByStartDate(BaseDataItemValue itemValue) {
-        if (HistoryValue.class.isAssignableFrom(itemValue.getClass())) {
-            HistoryValue historyValue = (HistoryValue) itemValue;
-            for (BaseItemValue existingItemValue : getActiveItemValues(itemValue.getDataItem())) {
-                if (existingItemValue.getItemValueDefinition().equals(itemValue.getItemValueDefinition()) &&
-                        HistoryValue.class.isAssignableFrom(existingItemValue.getClass())) {
-                    HistoryValue existingHistoryValue = (HistoryValue) existingItemValue;
-                    if (!historyValue.equals(existingHistoryValue) && historyValue.getStartDate().equals(existingHistoryValue.getStartDate())) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        } else {
-            throw new IllegalStateException("Should not be checking a non-historical DataItemValue.");
-        }
-    }
+
 
     /**
      * Get an {@link BaseItemValue} belonging to this Item using some identifier and prevailing datetime context.
@@ -448,7 +541,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
                         throw new RuntimeException("Caught InvocationTargetException: " + e.getMessage());
                     }
                 } else {
-                    log.warn("updateDataItemValues() Write Method was null: " + key);
+                    log.warn("updateDataItemValues() Read Method was null: " + key);
                 }
             } else {
                 log.warn("updateDataItemValues() PropertyDescriptor was null: " + key);
@@ -483,66 +576,6 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     @Override
     protected DataItemServiceDAO getDao() {
         return dao;
-    }
-
-    /**
-     * Checks if a DataItem already exists with the same drill down values.
-     * NB: This method uses the transient values returned from com.amee.domain.item.data.DataItem#getValues()
-     *
-     * @param dataItem the DataItem to check for equivalents.
-     * @return true if a DataItem already exists with the same category and drill down values. Otherwise, false.
-     */
-    @Override
-    public boolean equivalentDataItemExists(DataItem dataItem) {
-
-        // Get a list of this data item's values for the drill downs.
-        // The values for these values are null :-(
-        List<String> drillDownPaths = getDrillDownPaths(dataItem);
-
-        boolean isEqual = false;
-
-        // Check the drilldown values for all existing data items for the same category.
-        for (DataItem existingDataItem : getDataItems(dataItem.getDataCategory())) {
-
-            // Ignore the one we just added. This is the one we are checking!
-            if (existingDataItem.getUid().equals(dataItem.getUid())) {
-                continue;
-            }
-
-            // Must have the same item definition to be considered a dupe.
-            if (existingDataItem.getItemDefinition().equals(dataItem.getItemDefinition())) {
-
-                // check if it has the same values for the drillDowns we have
-                // Create maps of new and existing values
-                Map<String, String> newValues = new HashMap<String, String>();
-                Map<String, String> existingValues = new HashMap<String, String>();
-                for (String path : drillDownPaths) {
-                    String newValue = null;
-
-                    // Use reflection to get the values. See: com.amee.domain.item.data.DataItem#getValues().
-                    // This is only for v3
-                    try {
-                        String pathMethod = "get" + StringUtils.capitalize(path);
-                        Method getter = dataItem.getValues().getClass().getMethod(pathMethod);
-                        newValue = String.valueOf(getter.invoke(dataItem.getValues()));
-                    } catch (Exception e) {
-                        throw new RuntimeException("equivalentDataItemExists() caught Exception: " + e.getMessage(), e);
-                    }
-
-                    // Handle v2
-                    if (newValue.equals("null")) {
-                        newValue = getItemValuesMap(dataItem).get(path).getValueAsString();
-                    }
-
-                    newValues.put(path, newValue);
-
-                    String existingValue = getItemValue(existingDataItem, path).getValueAsString();
-                    existingValues.put(path, existingValue);
-                }
-                isEqual = newValues.equals(existingValues);
-            }
-        }
-        return isEqual;
     }
 
     /**

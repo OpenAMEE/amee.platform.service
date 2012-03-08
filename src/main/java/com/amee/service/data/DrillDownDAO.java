@@ -53,9 +53,9 @@ class DrillDownDAO {
      * @return a {@link java.util.List} of {@link com.amee.domain.sheet.Choice}s containing values for a user to select
      */
     public List<Choice> getDataItemValueChoices(
-            IDataCategoryReference dc,
-            String path,
-            List<Choice> selections) {
+        IDataCategoryReference dc,
+        String path,
+        List<Choice> selections) {
 
         Collection<Long> dataItemIds;
 
@@ -238,6 +238,13 @@ class DrillDownDAO {
         return new HashSet<Long>(dataItemIds);
     }
 
+    /**
+     * Get a list of distinct values for a given item value definition ID and collection of data item IDs.
+     *
+     * @param itemValueDefinitionId
+     * @param dataItemIds
+     * @return a case-insensitive sorted List of values.
+     */
     @SuppressWarnings(value = "unchecked")
     private List<String> getDataItemValues(Long itemValueDefinitionId, Collection<Long> dataItemIds) {
 
@@ -248,8 +255,9 @@ class DrillDownDAO {
         dataItemIds.add(0L);
 
         // create SQL
+        // TODO: Could it be faster to perform two queries and combine the results?
         StringBuilder sql = new StringBuilder();
-        sql.append("(SELECT DISTINCT VALUE ");
+        sql.append("(SELECT DISTINCT CAST(VALUE AS CHAR) VALUE ");
         sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
         sql.append("WHERE ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
         sql.append("AND STATUS != :trash ");
@@ -260,7 +268,9 @@ class DrillDownDAO {
         sql.append("WHERE ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
         sql.append("AND STATUS != :trash ");
         sql.append("AND DATA_ITEM_ID IN (:dataItemIds)) ");
-        sql.append("ORDER BY LCASE(VALUE) ASC");
+
+        // hsqldb and h2 don't like using LCASE here. Of course MySQL doesn't care.
+        //sql.append("ORDER BY LCASE(VALUE) ASC");
 
         // create query
         Session session = (Session) entityManager.getDelegate();
@@ -276,6 +286,9 @@ class DrillDownDAO {
         try {
             List<String> results = query.list();
             log.debug("getDataItemValues() results: " + results.size());
+
+            // Sorting here instead of the query above as hsqldb and h2 don't like using LCASE in the ORDER BY.
+            Collections.sort(results, String.CASE_INSENSITIVE_ORDER);
             return results;
         } catch (HibernateException e) {
             log.error("getDataItemValues() Caught HibernateException: " + e.getMessage(), e);
@@ -283,6 +296,14 @@ class DrillDownDAO {
         }
     }
 
+    /**
+     * Gets the Data Item IDs for a category that are valid for the given drill down selections.
+     *
+     * @param dc the DataCategory.
+     * @param selections the drill down selections.
+     *
+     * @return all Data Item IDs that match the drill down selections.
+     */
     private Collection<Long> getDataItemIds(IDataCategoryReference dc, List<Choice> selections) {
 
         // Check arguments.
@@ -318,6 +339,15 @@ class DrillDownDAO {
         return refinedToSelectionDataItemIds;
     }
 
+    /**
+     * Gets a list of IDs of Data Items with a given Item Value Definition and Value for a given list of Data Item IDs.
+     *
+     * @param itemValueDefinitionId the ID of the Item Value Definition to find.
+     * @param categoryDataItemIds a Collection of Data Item IDs to restrict results to (all Data Items in a category).
+     * @param value the Data Item value to restrict results to.
+     *
+     * @return a list of Data Item IDs.
+     */
     @SuppressWarnings(value = "unchecked")
     private Collection<Long> getDataItemIds(Long itemValueDefinitionId, Collection<Long> categoryDataItemIds, String value) {
 
@@ -343,6 +373,7 @@ class DrillDownDAO {
         categoryDataItemIds.add(0L);
 
         // create SQL
+        // Note: HSQL and H2 don't like the fact that we submit a string value for DATA_ITEM_NUMBER_VALUE.VALUE.
         StringBuilder sql = new StringBuilder();
         sql.append("(SELECT DATA_ITEM_ID ID ");
         sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
@@ -384,6 +415,7 @@ class DrillDownDAO {
         categoryDataItemIds.add(0L);
 
         // Create SQL.
+        // Note: HSQL and H2 don't like the fact that we submit a string value for DATA_ITEM_NUMBER_VALUE.VALUE.
         StringBuilder sql = new StringBuilder();
         sql.append("(SELECT dinv.DATA_ITEM_ID ID ");
         sql.append("FROM DATA_ITEM_NUMBER_VALUE dinv, LOCALE_NAME ln ");

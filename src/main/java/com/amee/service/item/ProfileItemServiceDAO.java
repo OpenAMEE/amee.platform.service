@@ -1,6 +1,8 @@
 package com.amee.service.item;
 
+import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.IDataCategoryReference;
+import com.amee.domain.ProfileItemsFilter;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.ProfileItem;
@@ -17,23 +19,33 @@ import java.util.Set;
 public interface ProfileItemServiceDAO extends ItemServiceDAO {
 
     @Override
-    public ProfileItem getItemByUid(String uid);
+    ProfileItem getItemByUid(String uid);
 
-    public Set<BaseItemValue> getProfileItemValues(ProfileItem profileItem);
+    Set<BaseItemValue> getProfileItemValues(ProfileItem profileItem);
 
-    public List<ProfileItemNumberValue> getProfileItemNumberValues(ProfileItem profileItem);
+    List<ProfileItemNumberValue> getProfileItemNumberValues(ProfileItem profileItem);
 
-    public List<ProfileItemTextValue> getProfileItemTextValues(ProfileItem profileItem);
+    List<ProfileItemTextValue> getProfileItemTextValues(ProfileItem profileItem);
 
-    public int getProfileItemCount(Profile profile, DataCategory dataCategory);
+    int getProfileItemCount(Profile profile, DataCategory dataCategory);
 
-    public List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate);
+    /**
+     * Gets all active profile items for the given profile.
+     * An active profile item is one that has an endDate of null or in the future.
+     *
+     * @param profile the Profile to fetch the profile items for.
+     * @param filter a LimitFilter to limit how many profile items are returned.
+     * @return a ResultsWrapper containing the profile items.
+     */
+    ResultsWrapper<ProfileItem> getProfileItems(Profile profile, ProfileItemsFilter filter);
 
-    public List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, StartEndDate startDate, StartEndDate endDate);
+    List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, Date profileDate);
 
-    public boolean equivalentProfileItemExists(ProfileItem profileItem);
+    List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, StartEndDate startDate, StartEndDate endDate);
 
-    public Collection<Long> getProfileDataCategoryIds(Profile profile);
+    boolean equivalentProfileItemExists(ProfileItem profileItem);
 
-    public void persist(ProfileItem profileItem);
+    Collection<Long> getProfileDataCategoryIds(Profile profile);
+
+    void persist(ProfileItem profileItem);
 }
