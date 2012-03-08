@@ -24,7 +24,7 @@ import java.util.Set;
  * A search index backed sub-class of DrillDownService which overrides the getDataItemChoices method with an
  * implementation that uses the Lucene index instead of the original SQL based implementation.
  */
-public class SearchDrillDownService extends AbstractDrillDownService {
+public class LuceneDrillDownService extends AbstractDrillDownService {
 
     private final Log log = LogFactory.getLog(getClass());
 
