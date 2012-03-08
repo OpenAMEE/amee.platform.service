@@ -373,6 +373,7 @@ class DrillDownDAO {
         categoryDataItemIds.add(0L);
 
         // create SQL
+        // Note: HSQL and H2 don't like the fact that we submit a string value for DATA_ITEM_NUMBER_VALUE.VALUE.
         StringBuilder sql = new StringBuilder();
         sql.append("(SELECT DATA_ITEM_ID ID ");
         sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
@@ -414,6 +415,7 @@ class DrillDownDAO {
         categoryDataItemIds.add(0L);
 
         // Create SQL.
+        // Note: HSQL and H2 don't like the fact that we submit a string value for DATA_ITEM_NUMBER_VALUE.VALUE.
         StringBuilder sql = new StringBuilder();
         sql.append("(SELECT dinv.DATA_ITEM_ID ID ");
         sql.append("FROM DATA_ITEM_NUMBER_VALUE dinv, LOCALE_NAME ln ");
