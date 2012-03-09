@@ -14,6 +14,16 @@ import com.amee.domain.item.profile.BaseProfileItemValue;
 import com.amee.persist.BaseEntity;
 import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.logging.Log;
@@ -21,8 +31,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-
-import java.util.*;
 
 public abstract class AbstractItemService implements ItemService, ApplicationListener {
 
@@ -34,11 +42,13 @@ public abstract class AbstractItemService implements ItemService, ApplicationLis
     // A thread bound Map of BaseItemValues keyed by BaseItem entity identity.
     private final ThreadLocal<Map<String, Set<BaseItemValue>>> ITEM_VALUES =
             new ThreadLocal<Map<String, Set<BaseItemValue>>>() {
+                @Override
                 protected Map<String, Set<BaseItemValue>> initialValue() {
                     return new HashMap<String, Set<BaseItemValue>>();
                 }
             };
 
+    @Override
     public void onApplicationEvent(ApplicationEvent e) {
         if (e instanceof TransactionEvent) {
             TransactionEvent te = (TransactionEvent) e;
@@ -59,6 +69,7 @@ public abstract class AbstractItemService implements ItemService, ApplicationLis
         }
     }
 
+    @Override
     public abstract BaseItem getItemByUid(String uid);
 
     /**
@@ -109,6 +120,7 @@ public abstract class AbstractItemService implements ItemService, ApplicationLis
         return activeItemValues;
     }
 
+    @Override
     public Set<BaseItemValue> getAllItemValues(BaseItem item) {
         Set<BaseItemValue> itemValues = ITEM_VALUES.get().get(item.toString());
         if (itemValues == null) {
@@ -143,8 +155,10 @@ public abstract class AbstractItemService implements ItemService, ApplicationLis
      * @param uid  - the {@link com.amee.domain.item.BaseItemValue} UID
      * @return the {@link com.amee.domain.item.BaseItemValue} if found or NULL
      */
+    @Override
     public BaseItemValue getByUid(BaseItem item, final String uid) {
         return (BaseItemValue) CollectionUtils.find(getActiveItemValues(item), new Predicate() {
+            @Override
             public boolean evaluate(Object o) {
                 BaseEntity iv = (BaseEntity) o;
                 return iv.getUid().equals(uid);
@@ -183,7 +197,7 @@ public abstract class AbstractItemService implements ItemService, ApplicationLis
         for (BaseItemValue iv : getActiveItemValues(item)) {
             long time = ExternalHistoryValue.class.isAssignableFrom(iv.getClass()) ?
                     ((ExternalHistoryValue) iv).getStartDate().getTime() :
-                    DataItemService.EPOCH.getTime();
+                    DataItemService.MYSQL_MIN_DATETIME.getTime();
             String checkId = iv.getItemValueDefinition().getUid() + time;
             if (uniqueId.equals(checkId)) {
                 return false;
@@ -237,7 +251,7 @@ public abstract class AbstractItemService implements ItemService, ApplicationLis
             if (ExternalHistoryValue.class.isAssignableFrom(itemValue.getClass())) {
                 return ((ExternalHistoryValue) itemValue).getStartDate();
             } else {
-                return new StartEndDate(DataItemService.EPOCH);
+                return new StartEndDate(DataItemService.MYSQL_MIN_DATETIME);
             }
         } else {
             throw new IllegalStateException("A BaseProfileItemValue or BaseDataItemValue instance was expected.");
