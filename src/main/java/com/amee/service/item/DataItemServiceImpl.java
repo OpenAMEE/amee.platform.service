@@ -3,8 +3,17 @@ package com.amee.service.item;
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.base.utils.UidGen;
-import com.amee.domain.*;
-import com.amee.domain.data.*;
+import com.amee.domain.AMEEStatus;
+import com.amee.domain.APIVersion;
+import com.amee.domain.DataItemService;
+import com.amee.domain.DataItemValuesFilter;
+import com.amee.domain.IDataCategoryReference;
+import com.amee.domain.ValueType;
+import com.amee.domain.data.BaseItemValueStartDateComparator;
+import com.amee.domain.data.DataCategory;
+import com.amee.domain.data.ItemDefinition;
+import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.data.ItemValueMap;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.HistoryValue;
@@ -18,17 +27,25 @@ import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.platform.science.StartEndDate;
 import com.amee.service.data.DrillDownService;
 import com.amee.service.invalidation.InvalidationService;
+
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
 
 @Service
 public class DataItemServiceImpl extends AbstractItemService implements DataItemService {
@@ -226,6 +243,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
      *
      * @param dataItem - the DataItem to check
      */
+    @Override
     @SuppressWarnings(value = "unchecked")
     public void checkDataItem(DataItem dataItem) {
 
@@ -275,7 +293,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
 
     /**
      * Returns the most recent modified timestamp of DataItems for the supplied DataCategory. Will return the
-     * date of the epoch if there are no matching DataItems.
+     * minimum supported date if there are no matching DataItems.
      *
      * @param dataCategory to get modified timestamp for
      * @return most recent modified timestamp or the epoch value if not available.
@@ -284,7 +302,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     public Date getDataItemsModified(DataCategory dataCategory) {
         Date modified = dao.getDataItemsModified(dataCategory);
         if (modified == null) {
-            modified = DataItemService.EPOCH;
+            modified = DataItemService.MYSQL_MIN_DATETIME;
         }
         return modified;
     }
@@ -477,8 +495,8 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
                     // is in the wrong place in the list.
                     throw new IllegalStateException("Unexpected non-historical item value: " + biv);
                 }
-                // On or after the resultStart? Filter at the epoch?
-                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(DataItemService.EPOCH)) {
+                // On or after the resultStart? Filter at the min date?
+                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(DataItemService.MYSQL_MIN_DATETIME)) {
                     // This *must* be the first item value.
                     results.add(bdiv);
                 }
@@ -504,8 +522,9 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
      */
     @Override
     public BaseItemValue getItemValue(BaseItem item, String identifier) {
-        if (!DataItem.class.isAssignableFrom(item.getClass()))
+        if (!DataItem.class.isAssignableFrom(item.getClass())) {
             throw new IllegalStateException("A DataItem instance was expected.");
+        }
         return getItemValue(item, identifier, item.getEffectiveStartDate());
     }
 

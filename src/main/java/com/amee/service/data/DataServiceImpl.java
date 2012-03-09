@@ -3,12 +3,27 @@ package com.amee.service.data;
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.AMEETransaction;
 import com.amee.base.utils.UidGen;
-import com.amee.domain.*;
+import com.amee.domain.AMEEEntityReference;
+import com.amee.domain.AMEEStatus;
+import com.amee.domain.APIVersion;
+import com.amee.domain.DataItemService;
+import com.amee.domain.IDataCategoryReference;
+import com.amee.domain.IDataService;
+import com.amee.domain.LocaleService;
+import com.amee.domain.ObjectType;
 import com.amee.domain.cache.CacheHelper;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.service.invalidation.InvalidationMessage;
-import com.amee.service.invalidation.InvalidationService;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,8 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.*;
 
 /**
  * Primary service interface to Data Resources.
@@ -265,7 +278,7 @@ public class DataServiceImpl implements DataService, IDataService {
         Date dataCategoryModified = dataCategory.getModified();
         Date dataItemsModified = getDataItemsModifiedDeep(dataCategory);
         // Work out which date is the latest.
-        Date modified = DataItemService.EPOCH;
+        Date modified = DataItemService.MYSQL_MIN_DATETIME;
         modified = dataCategoryModified.after(modified) ? dataCategoryModified : modified;
         modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
         // Now we have the most recent modified timestamp of all entities related to this DataCategory.
@@ -284,9 +297,9 @@ public class DataServiceImpl implements DataService, IDataService {
         // Get the modified dates for all related entities.
         Date dataItemsModified = dataItemService.getDataItemsModified(dataCategory);
         Date definitionsModified =
-                dataCategory.isItemDefinitionPresent() ? dataCategory.getItemDefinition().getModifiedDeep() : DataItemService.EPOCH;
+                dataCategory.isItemDefinitionPresent() ? dataCategory.getItemDefinition().getModifiedDeep() : DataItemService.MYSQL_MIN_DATETIME;
         // Work out which date is the latest.
-        Date modified = DataItemService.EPOCH;
+        Date modified = DataItemService.MYSQL_MIN_DATETIME;
         modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
         modified = definitionsModified.after(modified) ? definitionsModified : modified;
         // Now we have the most recent modified timestamp of all entities related to this DataCategory.
