@@ -7,7 +7,6 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.sheet.Choice;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.HibernateException;
@@ -297,6 +296,14 @@ class DrillDownDAO {
         }
     }
 
+    /**
+     * Gets the Data Item IDs for a category that are valid for the given drill down selections.
+     *
+     * @param dc the DataCategory.
+     * @param selections the drill down selections.
+     *
+     * @return all Data Item IDs that match the drill down selections.
+     */
     private Collection<Long> getDataItemIds(IDataCategoryReference dc, List<Choice> selections) {
 
         // Check arguments.
@@ -332,6 +339,15 @@ class DrillDownDAO {
         return refinedToSelectionDataItemIds;
     }
 
+    /**
+     * Gets a list of IDs of Data Items with a given Item Value Definition and Value for a given list of Data Item IDs.
+     *
+     * @param itemValueDefinitionId the ID of the Item Value Definition to find.
+     * @param categoryDataItemIds a Collection of Data Item IDs to restrict results to (all Data Items in a category).
+     * @param value the Data Item value to restrict results to.
+     *
+     * @return a list of Data Item IDs.
+     */
     @SuppressWarnings(value = "unchecked")
     private Collection<Long> getDataItemIds(Long itemValueDefinitionId, Collection<Long> categoryDataItemIds, String value) {
 
@@ -357,17 +373,21 @@ class DrillDownDAO {
         categoryDataItemIds.add(0L);
 
         // create SQL
+        // Note: HSQL and H2 don't like the fact that we submit a string value for DATA_ITEM_NUMBER_VALUE.VALUE.
         StringBuilder sql = new StringBuilder();
         sql.append("(SELECT DATA_ITEM_ID ID ");
-        if (!value.isEmpty() && StringUtils.isNumeric(value)) {
-            sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
-        } else {
-            sql.append("FROM DATA_ITEM_TEXT_VALUE ");
-        }
+        sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
         sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
         sql.append("AND STATUS != :trash ");
         sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
         sql.append("AND VALUE = :value) ");
+        sql.append("UNION ");
+        sql.append("(SELECT DATA_ITEM_ID ID ");
+        sql.append("FROM DATA_ITEM_TEXT_VALUE ");
+        sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
+        sql.append("AND STATUS != :trash ");
+        sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
+        sql.append("AND VALUE = :value)");
 
         // create query
         Session session = (Session) entityManager.getDelegate();
@@ -395,25 +415,20 @@ class DrillDownDAO {
         categoryDataItemIds.add(0L);
 
         // Create SQL.
+        // Note: HSQL and H2 don't like the fact that we submit a string value for DATA_ITEM_NUMBER_VALUE.VALUE.
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT DATA_ITEM_ID ID ");
-        if (!value.isEmpty() && StringUtils.isNumeric(value)) {
-            sql.append("FROM DATA_ITEM_NUMBER_VALUE dinv, LOCALE_NAME ln ");
-        } else {
-            sql.append("FROM DATA_ITEM_TEXT_VALUE ditv, LOCALE_NAME ln ");
-        }
-        sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
-        if (!value.isEmpty() && StringUtils.isNumeric(value)) {
-            sql.append("AND dinv.STATUS != :trash ");
-        } else {
-            sql.append("AND ditv.STATUS != :trash ");
-        }
-        sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        if (!value.isEmpty() && StringUtils.isNumeric(value)) {
-            sql.append("AND ln.ENTITY_TYPE='DINV' AND ln.ENTITY_ID = dinv.ID AND LOCALE = :locale AND ln.NAME = :value");
-        } else {
-            sql.append("AND ln.ENTITY_TYPE='DITV' AND ln.ENTITY_ID = ditv.ID AND LOCALE = :locale AND ln.NAME = :value");
-        }
+        sql.append("(SELECT dinv.DATA_ITEM_ID ID ");
+        sql.append("FROM DATA_ITEM_NUMBER_VALUE dinv, LOCALE_NAME ln ");
+        sql.append("WHERE dinv.DATA_ITEM_ID IN (:dataItemIds) ");
+        sql.append("AND dinv.STATUS != :trash ");
+        sql.append("AND dinv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId) ");
+        sql.append("UNION ");
+        sql.append("(SELECT ditv.DATA_ITEM_ID ID ");
+        sql.append("FROM DATA_ITEM_TEXT_VALUE ditv, LOCALE_NAME ln ");
+        sql.append("WHERE ditv.DATA_ITEM_ID IN (:dataItemIds) ");
+        sql.append("AND ditv.STATUS != :trash ");
+        sql.append("AND ditv.ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
+        sql.append("AND ln.ENTITY_TYPE='DITV' AND ln.ENTITY_ID = ditv.ID AND LOCALE = :locale AND ln.NAME = :value)");
 
         // Create query.
         Session session = (Session) entityManager.getDelegate();
