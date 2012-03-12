@@ -3,7 +3,14 @@ package com.amee.service.item;
 import com.amee.base.domain.ResultsWrapper;
 import com.amee.base.transaction.TransactionController;
 import com.amee.calculation.service.CalculationService;
-import com.amee.domain.*;
+import com.amee.domain.AMEEStatistics;
+import com.amee.domain.AMEEStatus;
+import com.amee.domain.APIVersion;
+import com.amee.domain.DataItemService;
+import com.amee.domain.IDataCategoryReference;
+import com.amee.domain.ProfileItemService;
+import com.amee.domain.ProfileItemsFilter;
+import com.amee.domain.ValueType;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ItemValueMap;
@@ -19,6 +26,25 @@ import com.amee.platform.science.ExternalNumberValue;
 import com.amee.platform.science.ReturnValue;
 import com.amee.platform.science.StartEndDate;
 import com.amee.service.profile.OnlyActiveProfileService;
+
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.measure.Measure;
+import javax.measure.quantity.Duration;
+import javax.measure.unit.SI;
+import javax.measure.unit.Unit;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTime;
@@ -26,15 +52,6 @@ import org.joda.time.Interval;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.measure.Measure;
-import javax.measure.quantity.Duration;
-import javax.measure.unit.SI;
-import javax.measure.unit.Unit;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
 
 @Service
 public class ProfileItemServiceImpl extends AbstractItemService implements ProfileItemService {
@@ -125,8 +142,9 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
      */
     @Override
     public BaseItemValue getItemValue(BaseItem item, String identifier) {
-        if (!ProfileItem.class.isAssignableFrom(item.getClass()))
+        if (!ProfileItem.class.isAssignableFrom(item.getClass())) {
             throw new IllegalStateException("A ProfileItem instance was expected.");
+        }
         return getItemValue(item, identifier, item.getEffectiveStartDate());
     }
 
@@ -158,6 +176,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
      * @param profileDate  - the date context
      * @return the active {@link com.amee.domain.item.profile.ProfileItem} collection
      */
+    @Override
     public List<ProfileItem> getProfileItems(
             Profile profile,
             IDataCategoryReference dataCategory,
@@ -166,13 +185,20 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
         loadItemValuesForItems((List) profileItems);
         // Order the returned collection by pi.name, di.name and pi.startDate DESC
         Collections.sort(profileItems, new Comparator<ProfileItem>() {
+            @Override
             public int compare(ProfileItem p1, ProfileItem p2) {
                 int nd = p1.getName().compareTo(p2.getName());
                 int dnd = p1.getDataItem().getName().compareTo(p2.getDataItem().getName());
                 int sdd = p2.getStartDate().compareTo(p1.getStartDate());
-                if (nd != 0) return nd;
-                if (dnd != 0) return dnd;
-                if (sdd != 0) return sdd;
+                if (nd != 0) {
+                    return nd;
+                }
+                if (dnd != 0) {
+                    return dnd;
+                }
+                if (sdd != 0) {
+                    return sdd;
+                }
                 return 0;
             }
         });
@@ -189,6 +215,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
      * @param endDate      - the end of the date context
      * @return the active {@link com.amee.domain.item.profile.ProfileItem} collection
      */
+    @Override
     public List<ProfileItem> getProfileItems(
             Profile profile,
             IDataCategoryReference dataCategory,
@@ -198,6 +225,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
         loadItemValuesForItems((List) profileItems);
         // Order the returned collection by pi.startDate DESC
         Collections.sort(profileItems, new Comparator<ProfileItem>() {
+            @Override
             public int compare(ProfileItem p1, ProfileItem p2) {
                 return p2.getStartDate().compareTo(p1.getStartDate());
             }
@@ -303,11 +331,15 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
 
     @Override
     public boolean isUnique(ProfileItem pi) {
-        return !equivalentProfileItemExists(pi);
+        return !equivalentProfileItemExists(pi) && !overlappingProfileItemExists(pi);
     }
 
     private boolean equivalentProfileItemExists(ProfileItem profileItem) {
         return dao.equivalentProfileItemExists(profileItem);
+    }
+    
+    private boolean overlappingProfileItemExists(ProfileItem profileItem) {
+        return dao.overlappingProfileItemExists(profileItem);
     }
 
     @Override
