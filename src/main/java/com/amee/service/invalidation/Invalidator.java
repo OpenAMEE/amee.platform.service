@@ -2,10 +2,21 @@ package com.amee.service.invalidation;
 
 import com.amee.domain.AMEEEntityReference;
 import com.amee.domain.ObjectType;
-import com.rabbitmq.client.*;
-import org.apache.commons.cli.*;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
 
 import java.io.IOException;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 public class Invalidator {
 
@@ -172,11 +183,12 @@ public class Invalidator {
             String entityUids,
             String invOptions) throws IOException {
         System.out.println("    Configure RabbitMQ.");
-        ConnectionParameters connectionParameters = new ConnectionParameters();
-        connectionParameters.setUsername(username);
-        connectionParameters.setPassword(password);
-        ConnectionFactory connectionFactory = new ConnectionFactory(connectionParameters);
-        Connection connection = connectionFactory.newConnection(hostName, Integer.valueOf(portNumber));
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setUsername(username);
+        connectionFactory.setPassword(password);
+        connectionFactory.setHost(hostName);
+        connectionFactory.setPort(Integer.valueOf(portNumber));
+        Connection connection = connectionFactory.newConnection();
         Channel channel = connection.createChannel();
         System.out.println("    Send the messages.");
         for (String entityUid : entityUids.split(",")) {

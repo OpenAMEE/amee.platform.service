@@ -12,6 +12,14 @@ import com.amee.domain.item.profile.ProfileItemNumberValue;
 import com.amee.domain.item.profile.ProfileItemTextValue;
 import com.amee.domain.profile.Profile;
 import com.amee.platform.science.StartEndDate;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
@@ -21,8 +29,6 @@ import org.hibernate.criterion.Restrictions;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.springframework.stereotype.Repository;
-
-import java.util.*;
 
 @Repository
 public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements ProfileItemServiceDAO {
@@ -49,7 +55,9 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
 
     @Override
     public Set<BaseItemValue> getAllItemValues(BaseItem item) {
-        if (!ProfileItem.class.isAssignableFrom(item.getClass())) throw new IllegalStateException();
+        if (!ProfileItem.class.isAssignableFrom(item.getClass())) {
+            throw new IllegalStateException();
+        }
         return getProfileItemValues((ProfileItem) item);
     }
 
@@ -67,6 +75,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
      * @param profileItem
      * @return
      */
+    @Override
     public List<ProfileItemNumberValue> getProfileItemNumberValues(ProfileItem profileItem) {
         Session session = (Session) entityManager.getDelegate();
         Criteria criteria = session.createCriteria(ProfileItemNumberValue.class);
@@ -259,6 +268,54 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
             return true;
         } else {
             log.debug("equivalentProfileItemExists() - no ProfileItem(s) found");
+            return false;
+        }
+    }
+    
+    /**
+     * Checks for an overlapping profile item.  A profile item is considered overlapping if it has:
+     * 
+     * <ul>
+     * <li>the same profile ID</li>
+     * <li>the same data item UID</li>
+     * <li>the same name</li>
+     * <li>either:<br/> (an endDate after the startDate AND a startDate before the endDate) OR<br/>
+     * (a start date before the end date AND an endDate after the startDate)</li>
+     * </ul>
+     * 
+     * @param profileItem the ProfileItem to check for duplicate.
+     * @return true if an overlapping ProfileItem exists.
+     */
+    @Override
+    public boolean overlappingProfileItemExists(ProfileItem profileItem) {
+        Session session = (Session) entityManager.getDelegate();
+        
+        Criteria criteria = session.createCriteria(ProfileItem.class);
+        criteria.add(Restrictions.eq("profile.id", profileItem.getProfile().getId()));
+        criteria.add(Restrictions.eq("name", profileItem.getName()));
+        criteria.add(Restrictions.ne("uid", profileItem.getUid()));
+        criteria.add(Restrictions.eq("dataItem.id", profileItem.getDataItem().getId()));
+        criteria.add(
+            Restrictions.or(
+                Restrictions.and(
+                    Restrictions.gt("endDate", profileItem.getStartDate()),
+                    Restrictions.lt("startDate", profileItem.getEndDate())
+                ),
+                Restrictions.and(
+                    Restrictions.lt("startDate", profileItem.getEndDate()),
+                    Restrictions.gt("endDate", profileItem.getStartDate())
+                )
+            )
+        );
+        criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
+        
+        @SuppressWarnings("unchecked")
+        List<ProfileItem> profileItems = criteria.list();
+        if (profileItems.size() > 0) {
+            log.debug("overlappingProfileItemExists() - found ProfileItem(s)");
+            return true;
+        } else {
+            log.debug("overlappingProfileItemExists() - no ProfileItem(s) found");
             return false;
         }
     }

@@ -44,6 +44,8 @@ public interface ProfileItemServiceDAO extends ItemServiceDAO {
     List<ProfileItem> getProfileItems(Profile profile, IDataCategoryReference dataCategory, StartEndDate startDate, StartEndDate endDate);
 
     boolean equivalentProfileItemExists(ProfileItem profileItem);
+    
+    boolean overlappingProfileItemExists(ProfileItem profileItem);
 
     Collection<Long> getProfileDataCategoryIds(Profile profile);
 
