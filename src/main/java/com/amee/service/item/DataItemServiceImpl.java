@@ -24,6 +24,7 @@ import com.amee.domain.item.data.DataItemTextValue;
 import com.amee.domain.sheet.Choice;
 import com.amee.domain.sheet.Choices;
 import com.amee.platform.science.ExternalHistoryValue;
+import com.amee.platform.science.ExternalNumberValue;
 import com.amee.platform.science.StartEndDate;
 import com.amee.service.data.DrillDownService;
 import com.amee.service.invalidation.InvalidationService;
@@ -541,9 +542,13 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     public void updateDataItemValues(DataItem dataItem) {
         boolean modified = false;
         Object values = dataItem.getValues();
+        Object units = dataItem.getUnits();
+        Object perUnits = dataItem.getPerUnits();
         ItemValueMap itemValues = getItemValuesMap(dataItem);
         for (String key : itemValues.keySet()) {
             BaseItemValue value = itemValues.get(key);
+
+            // Values
             PropertyDescriptor pd = BeanUtils.getPropertyDescriptor(values.getClass(), key);
             if (pd != null) {
                 Method readMethod = pd.getReadMethod();
@@ -565,7 +570,58 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
             } else {
                 log.warn("updateDataItemValues() PropertyDescriptor was null: " + key);
             }
+
+            // Units (only number values have units and perUnits)
+            if (ExternalNumberValue.class.isAssignableFrom(value.getClass())) {
+
+                // Unit
+                pd = BeanUtils.getPropertyDescriptor(units.getClass(), key);
+                if (pd != null) {
+                    Method readMethod = pd.getReadMethod();
+                    if (readMethod != null) {
+                        try {
+                            Object v = readMethod.invoke(units);
+                            if (v != null) {
+                                ((DataItemNumberValue) value).setUnit(v.toString());
+                                modified = true;
+                            }
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException("Caught IllegalAccessException: " + e.getMessage(), e);
+                        } catch (InvocationTargetException e) {
+                            throw new RuntimeException("Caught InvocationTargetException: " + e.getMessage(), e);
+                        }
+                    } else {
+                        log.warn("updateDataItemValues() Read Method was null: " + key);
+                    }
+                } else {
+                    log.warn("updateDataItemValues() PropertyDescriptor was null: " + key);
+                }
+
+                // Per Unit
+                pd = BeanUtils.getPropertyDescriptor(perUnits.getClass(), key);
+                if (pd != null) {
+                    Method readMethod = pd.getReadMethod();
+                    if (readMethod != null) {
+                        try {
+                            Object v = readMethod.invoke(perUnits);
+                            if (v != null) {
+                                ((DataItemNumberValue) value).setPerUnit(v.toString());
+                                modified = true;
+                            }
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException("Caught IllegalAccessException: " + e.getMessage(), e);
+                        } catch (InvocationTargetException e) {
+                            throw new RuntimeException("Caught InvocationTargetException: " + e.getMessage(), e);
+                        }
+                    } else {
+                        log.warn("updateDataItemValues() Read Method was null: " + key);
+                    }
+                } else {
+                    log.warn("updateDataItemValues() PropertyDescriptor was null: " + key);
+                }
+            }
         }
+
         // Mark the DataItem as modified.
         if (modified) {
             dataItem.onModify();
