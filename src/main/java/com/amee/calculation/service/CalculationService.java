@@ -277,10 +277,10 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     /**
      * Collect all relevant algorithm input values for a DataItem + user Choices calculation.
      *
-     * @param dataItem
-     * @param userValueChoices
-     * @param version
-     * @return
+     * @param dataItem the DataItem to use for the calculation.
+     * @param userValueChoices the submitted user values.
+     * @param version the APIVersion in use.
+     * @return a Map of input values keyed by Item Value Definition path.
      */
     private Map<String, Object> getValues(DataItem dataItem, Choices userValueChoices, APIVersion version) {
         Map<ItemValueDefinition, InternalValue> collectedValues = new HashMap<ItemValueDefinition, InternalValue>();
