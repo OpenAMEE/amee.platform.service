@@ -44,6 +44,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.perf4j.log4j.Log4JStopWatch;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -321,15 +322,15 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     }
 
     private boolean equivalentDataItemExists(DataItem dataItem) {
+        Log4JStopWatch stopWatch = new Log4JStopWatch("equivalentDataItemExists");
 
         // Get a list of this data item's values for the drill downs.
         // The values for these values are null :-(
         List<String> drillDownPaths = getDrillDownPaths(dataItem);
 
-        boolean isEqual = false;
-
         // Check the drilldown values for all existing data items for the same category.
-        for (DataItem existingDataItem : getDataItems(dataItem.getDataCategory())) {
+        // TODO: Should we just try fetching a data item by drilldown values? com.amee.domain.DataItemService.getDataItemByCategoryAndDrillDowns()
+        for (DataItem existingDataItem : getDataItems(dataItem.getDataCategory(), false)) {
 
             // Ignore the one we just added. This is the one we are checking!
             if (existingDataItem.getUid().equals(dataItem.getUid())) {
@@ -366,10 +367,15 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
                     String existingValue = getItemValue(existingDataItem, path).getValueAsString();
                     existingValues.put(path, existingValue);
                 }
-                isEqual = newValues.equals(existingValues);
+                if (newValues.equals(existingValues)) {
+                    log.info("equivalentDataItemExists() found duplicate data item");
+                    stopWatch.stop();
+                    return true;
+                }
             }
         }
-        return isEqual;
+        stopWatch.stop();
+        return false;
     }
 
     /**
