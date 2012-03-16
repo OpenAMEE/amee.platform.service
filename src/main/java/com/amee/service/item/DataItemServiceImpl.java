@@ -323,56 +323,36 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
 
     private boolean equivalentDataItemExists(DataItem dataItem) {
         Log4JStopWatch stopWatch = new Log4JStopWatch("equivalentDataItemExists");
+        
+        // Get this data item's drill down values.
+        List<Choice> drillDownValues = new ArrayList<Choice>();
+        for (String path : getDrillDownPaths(dataItem)) {
+            String newValue = null;
 
-        // Get a list of this data item's values for the drill downs.
-        // The values for these values are null :-(
-        List<String> drillDownPaths = getDrillDownPaths(dataItem);
-
-        // Check the drilldown values for all existing data items for the same category.
-        // TODO: Should we just try fetching a data item by drilldown values? com.amee.domain.DataItemService.getDataItemByCategoryAndDrillDowns()
-        for (DataItem existingDataItem : getDataItems(dataItem.getDataCategory(), false)) {
-
-            // Ignore the one we just added. This is the one we are checking!
-            if (existingDataItem.getUid().equals(dataItem.getUid())) {
-                continue;
+            // Use reflection to get the values. See: com.amee.domain.item.data.DataItem#getValues().
+            // This is only for v3
+            try {
+                String pathMethod = "get" + StringUtils.capitalize(path);
+                Method getter = dataItem.getValues().getClass().getMethod(pathMethod);
+                newValue = String.valueOf(getter.invoke(dataItem.getValues()));
+            } catch (Exception e) {
+                throw new RuntimeException("equivalentDataItemExists() caught Exception: " + e.getMessage(), e);
             }
 
-            // Must have the same item definition to be considered a dupe.
-            if (existingDataItem.getItemDefinition().equals(dataItem.getItemDefinition())) {
-
-                // check if it has the same values for the drillDowns we have
-                // Create maps of new and existing values
-                Map<String, String> newValues = new HashMap<String, String>();
-                Map<String, String> existingValues = new HashMap<String, String>();
-                for (String path : drillDownPaths) {
-                    String newValue = null;
-
-                    // Use reflection to get the values. See: com.amee.domain.item.data.DataItem#getValues().
-                    // This is only for v3
-                    try {
-                        String pathMethod = "get" + StringUtils.capitalize(path);
-                        Method getter = dataItem.getValues().getClass().getMethod(pathMethod);
-                        newValue = String.valueOf(getter.invoke(dataItem.getValues()));
-                    } catch (Exception e) {
-                        throw new RuntimeException("equivalentDataItemExists() caught Exception: " + e.getMessage(), e);
-                    }
-
-                    // Handle v2
-                    if (newValue.equals("null")) {
-                        newValue = getItemValuesMap(dataItem).get(path).getValueAsString();
-                    }
-
-                    newValues.put(path, newValue);
-
-                    String existingValue = getItemValue(existingDataItem, path).getValueAsString();
-                    existingValues.put(path, existingValue);
-                }
-                if (newValues.equals(existingValues)) {
-                    log.info("equivalentDataItemExists() found duplicate data item");
-                    stopWatch.stop();
-                    return true;
-                }
+            // Handle v2
+            if (newValue.equals("null")) {
+                newValue = getItemValuesMap(dataItem).get(path).getValueAsString();
             }
+
+            drillDownValues.add(new Choice(path, newValue));
+        }
+
+        // Check we don't already have a data item in this category with the same drill down values.
+        DataItem existingDataItem = getDataItemByCategoryAndDrillDowns(dataItem.getDataCategory(), drillDownValues);
+        if (existingDataItem != null && !existingDataItem.getUid().equals(dataItem.getUid())) {
+            log.info("equivalentDataItemExists() found duplicate data item for values: " + drillDownValues);
+            stopWatch.stop();
+            return true;
         }
         stopWatch.stop();
         return false;
