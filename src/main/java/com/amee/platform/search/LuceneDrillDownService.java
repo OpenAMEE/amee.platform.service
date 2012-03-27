@@ -42,7 +42,9 @@ public class LuceneDrillDownService extends AbstractDrillDownService {
         query.add(typesQuery, BooleanClause.Occur.MUST);
         query.add(new TermQuery(new Term("categoryUid", dataCategory.getEntityUid())), BooleanClause.Occur.MUST);
         for (Choice choice : selections) {
-            query.add(new TermQuery(new Term(choice.getName(), choice.getValue().toLowerCase())), BooleanClause.Occur.MUST);
+            if (!choice.getValue().isEmpty()) {
+                query.add(new TermQuery(new Term(choice.getName(), choice.getValue().toLowerCase())), BooleanClause.Occur.MUST);
+            }
         }
         ResultsWrapper<Document> results = luceneService.doSearch(query);
 
