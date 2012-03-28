@@ -140,7 +140,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     public DataItem getDataItemByCategoryAndDrillDowns(DataCategory parent, List<Choice> selections) {
         DataItem dataItem = null;
         Choices choices = drillDownService.getChoices(parent, selections);
-        if (choices.getName().equals("uid") && (choices.getChoices().size() > 0)) {
+        if (choices.getName().equals("uid") && (choices.getChoices().size() == 1)) {
             dataItem = getDataItemByUid(parent, choices.getChoices().get(0).getValue());
         } else {
 
