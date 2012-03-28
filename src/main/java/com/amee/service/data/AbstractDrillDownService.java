@@ -38,7 +38,6 @@ public abstract class AbstractDrillDownService implements DrillDownService {
             matchSelectionOrderToDrillDownChoices(drillDownChoices, selections);
             removeSelectionsNotInDrillDownChoices(drillDownChoices, selections);
             removeDrillDownChoicesThatHaveBeenSelected(drillDownChoices, selections);
-            removeSelectionsWithNullValues(selections);
 
             // get drill down values
             values = getDataItemChoices(dataCategory, selections, drillDownChoices);
@@ -56,10 +55,9 @@ public abstract class AbstractDrillDownService implements DrillDownService {
             name = "uid";
         }
 
-        // If this drill down has no available values (and it wasn't the last drill down choice), set it to null.
-        // It will be removed from the selections in removeSelectionsWithNullValues().
+        // If this drill down has no available values (and it wasn't the last drill down choice), set it to empty string.
         if (values.isEmpty() & !name.equals("uid")) {
-            selections.add(new Choice(name, null));
+            selections.add(new Choice(name, ""));
             return getChoices(dataCategory, selections);
         } else if (!name.equals("uid") && (values.size() == 1)) {
 
@@ -120,15 +118,4 @@ public abstract class AbstractDrillDownService implements DrillDownService {
         }
     }
 
-    private void removeSelectionsWithNullValues(List<Choice> selections) {
-        Iterator<Choice> iterator;
-        Choice choice;
-        iterator = selections.iterator();
-        while (iterator.hasNext()) {
-            choice = iterator.next();
-            if (choice.getValue() == null) {
-                iterator.remove();
-            }
-        }
-    }
 }
