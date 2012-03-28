@@ -1,12 +1,18 @@
 package com.amee.service.data;
 
-import com.amee.domain.AMEEStatus;
-import com.amee.domain.IDataCategoryReference;
-import com.amee.domain.LocaleHolder;
-import com.amee.domain.data.DataCategory;
-import com.amee.domain.data.ItemDefinition;
-import com.amee.domain.data.ItemValueDefinition;
-import com.amee.domain.sheet.Choice;
+import static org.hibernate.type.StandardBasicTypes.LONG;
+import static org.hibernate.type.StandardBasicTypes.STRING;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.HibernateException;
@@ -15,12 +21,13 @@ import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import java.util.*;
-
-import static org.hibernate.type.StandardBasicTypes.LONG;
-import static org.hibernate.type.StandardBasicTypes.STRING;
+import com.amee.domain.AMEEStatus;
+import com.amee.domain.IDataCategoryReference;
+import com.amee.domain.LocaleHolder;
+import com.amee.domain.data.DataCategory;
+import com.amee.domain.data.ItemDefinition;
+import com.amee.domain.data.ItemValueDefinition;
+import com.amee.domain.sheet.Choice;
 
 /**
  * Uses native SQL to perform a 'drill down' into DataItem values.
@@ -348,7 +355,6 @@ class DrillDownDAO {
      *
      * @return a list of Data Item IDs.
      */
-    @SuppressWarnings(value = "unchecked")
     private Collection<Long> getDataItemIds(Long itemValueDefinitionId, Collection<Long> categoryDataItemIds, String value) {
 
         Set<Long> dataItemIds;
@@ -363,6 +369,13 @@ class DrillDownDAO {
         return dataItemIds;
     }
 
+    /**
+     * Queries the database for Data Item Values matching the specified <code>itemValueDefinitionId</code>,
+     * <code>categoryDataItemIds</code> and <code>value</code>.  Note that two queries are performed to the
+     * <code>DATA_ITEM_NUMBER_VALUE</code> and <code>DATA_ITEM_TEXT_VALUE</code> tables in order to support
+     * integration testing using HSQLDB, which is not tolerant of having a string submitted as a condition
+     * for a column of type <code>DOUBLE</code>.
+     */
     @SuppressWarnings("unchecked")
     private Set<Long> getDataItemIdsUsingValue(Long itemValueDefinitionId, Collection<Long> categoryDataItemIds, String value) {
 
@@ -372,37 +385,63 @@ class DrillDownDAO {
         }
         categoryDataItemIds.add(0L);
 
+        Session session = (Session) entityManager.getDelegate();
+        List<Long> result = new ArrayList<Long>();
+        SQLQuery query;
+        StringBuilder sql;
+        
+        // Get results from DATA_ITEM_NUMBER_VALUE
+        try {    
+            // create SQL
+            sql = new StringBuilder();
+            sql.append("(SELECT DATA_ITEM_ID ID ");
+            sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
+            sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
+            sql.append("AND STATUS != :trash ");
+            sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
+            sql.append("AND VALUE = :value) ");
+            
+            // create query
+            query = session.createSQLQuery(sql.toString());
+            query.addScalar("ID", LONG);
+    
+            // set parameters
+            query.setInteger("trash", AMEEStatus.TRASH.ordinal());
+            query.setParameterList("dataItemIds", categoryDataItemIds, LONG);
+            query.setLong("itemValueDefinitionId", itemValueDefinitionId);
+            query.setDouble("value", Double.valueOf(value));
+            
+            // execute query
+            result.addAll(query.list());
+            
+        } catch (NumberFormatException e) {
+            log.debug("Value was not a number: " + value);
+        }
+        
+        // Get results from DATA_ITEM_TEXT_VALUE     
         // create SQL
-        // Note: HSQL and H2 don't like the fact that we submit a string value for DATA_ITEM_NUMBER_VALUE.VALUE.
-        StringBuilder sql = new StringBuilder();
-        sql.append("(SELECT DATA_ITEM_ID ID ");
-        sql.append("FROM DATA_ITEM_NUMBER_VALUE ");
-        sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
-        sql.append("AND STATUS != :trash ");
-        sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("AND VALUE = :value) ");
-        sql.append("UNION ");
+        sql = new StringBuilder();
         sql.append("(SELECT DATA_ITEM_ID ID ");
         sql.append("FROM DATA_ITEM_TEXT_VALUE ");
         sql.append("WHERE DATA_ITEM_ID IN (:dataItemIds) ");
         sql.append("AND STATUS != :trash ");
         sql.append("AND ITEM_VALUE_DEFINITION_ID = :itemValueDefinitionId ");
-        sql.append("AND VALUE = :value)");
-
+        sql.append("AND VALUE = :value) ");
+        
         // create query
-        Session session = (Session) entityManager.getDelegate();
-        SQLQuery query = session.createSQLQuery(sql.toString());
+        query = session.createSQLQuery(sql.toString());
         query.addScalar("ID", LONG);
-
+        
         // set parameters
         query.setInteger("trash", AMEEStatus.TRASH.ordinal());
         query.setParameterList("dataItemIds", categoryDataItemIds, LONG);
         query.setLong("itemValueDefinitionId", itemValueDefinitionId);
         query.setString("value", value);
-
-        // execute SQL
-        List<Long> dataItemIds = query.list();
-        return new HashSet<Long>(dataItemIds);
+        
+        // execute query
+        result.addAll(query.list());  
+        
+        return new HashSet<Long>(result);
     }
 
     @SuppressWarnings("unchecked")
