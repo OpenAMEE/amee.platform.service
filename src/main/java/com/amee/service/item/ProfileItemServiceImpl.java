@@ -45,8 +45,8 @@ import javax.measure.quantity.Duration;
 import javax.measure.unit.SI;
 import javax.measure.unit.Unit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.springframework.beans.BeanUtils;
@@ -56,7 +56,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProfileItemServiceImpl extends AbstractItemService implements ProfileItemService {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private TransactionController transactionController;

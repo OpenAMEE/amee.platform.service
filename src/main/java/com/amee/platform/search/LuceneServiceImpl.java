@@ -2,8 +2,8 @@ package com.amee.platform.search;
 
 import com.amee.base.domain.ResultsWrapper;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class LuceneServiceImpl implements LuceneService {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     // We use the higher level search api that returns the top n hits for a query.
     // Some of our uses of lucene require returning all results, eg filtering categories by tag=ecoinvent would mean

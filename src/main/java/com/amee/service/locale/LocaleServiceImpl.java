@@ -7,8 +7,8 @@ import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.LocaleName;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.DataItem;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -19,7 +19,7 @@ import java.util.*;
 @Service
 public class LocaleServiceImpl implements LocaleService, ApplicationListener {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private LocaleServiceDAO dao;

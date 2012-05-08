@@ -2,8 +2,8 @@ package com.amee.service;
 
 import com.amee.base.transaction.TransactionEvent;
 import com.amee.domain.AMEEStatistics;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AMEEStatisticsEventListener implements ApplicationListener {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private AMEEStatistics ameeStatistics;

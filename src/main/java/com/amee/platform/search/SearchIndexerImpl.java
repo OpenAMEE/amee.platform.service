@@ -9,8 +9,8 @@ import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationService;
 import com.amee.service.tag.TagService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericField;
@@ -35,8 +35,8 @@ import java.util.*;
  */
 public class SearchIndexerImpl implements SearchIndexer {
 
-    private final Log log = LogFactory.getLog(getClass());
-    private final Log searchLog = LogFactory.getLog("search");
+    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger searchLog = LoggerFactory.getLogger("search");
 
     public final static DateTimeFormatter DATE_TO_SECOND = DateTimeFormat.forPattern("yyyyMMddHHmmss");
 

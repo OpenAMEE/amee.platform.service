@@ -2,8 +2,8 @@ package com.amee.service.auth;
 
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.auth.User;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.hibernate.Session;
 import org.springframework.stereotype.Repository;
 
@@ -14,7 +14,7 @@ import java.util.List;
 @Repository
 public class AuthenticationDAO {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String CACHE_REGION = "query.authenticationService";
 

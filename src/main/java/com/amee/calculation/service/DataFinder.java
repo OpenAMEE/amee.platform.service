@@ -12,8 +12,8 @@ import com.amee.platform.science.DataSeries;
 import com.amee.platform.science.ExternalHistoryValue;
 import com.amee.service.data.DataService;
 import com.amee.service.data.DrillDownService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -30,7 +30,7 @@ import java.util.List;
 @Scope("prototype")
 public class DataFinder {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private DataService dataService;

@@ -6,8 +6,8 @@ import com.amee.domain.data.DataCategory;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationMessage;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 public class SearchManagerImpl implements SearchManager, ApplicationContextAware {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private DataService dataService;
