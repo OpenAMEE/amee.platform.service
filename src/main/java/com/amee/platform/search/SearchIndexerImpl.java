@@ -9,8 +9,6 @@ import com.amee.platform.science.Amount;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationService;
 import com.amee.service.tag.TagService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericField;
@@ -21,7 +19,9 @@ import org.apache.lucene.search.TermQuery;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.perf4j.log4j.Log4JStopWatch;
+import org.perf4j.slf4j.Slf4JStopWatch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -119,7 +119,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @throws InterruptedException might be thrown if application is shutdown whilst indexing
      */
     private void updateDataCategory() throws InterruptedException {
-        Log4JStopWatch stopWatch = new Log4JStopWatch("updateDataCategory");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("updateDataCategory");
         if (!dataCategory.isTrash()) {
 
             // First check if we have the data category in the index.
@@ -152,7 +152,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param document of the current DataCategory
      */
     private void checkDataCategoryDocument(Document document) {
-        Log4JStopWatch stopWatch = new Log4JStopWatch("checkDataCategoryDocument");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("checkDataCategoryDocument");
         boolean doUpdate = false;
         // Has a re-index been requested?
         if (searchIndexerContext.handleDataCategories || searchIndexerContext.handleDataItems) {
@@ -248,7 +248,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * Add Documents for the supplied Data Category and any associated Data Items to the Lucene index.
      */
     private void handleDataCategory() {
-        Log4JStopWatch stopWatch = new Log4JStopWatch("handleDataCategory");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("handleDataCategory");
         log.debug("handleDataCategory() " + dataCategory.toString());
         // Handle Data Items (Create, store & update documents).
         if (searchIndexerContext.handleDataItems) {
@@ -278,7 +278,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * Create all DataItem documents for the supplied DataCategory.
      */
     private void handleDataItems() {
-        Log4JStopWatch stopWatch = new Log4JStopWatch("handleDataItems");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("handleDataItems");
         searchIndexerContext.dataItemDoc = null;
         searchIndexerContext.dataItemDocs = null;
         // There are only Data Items for a Data Category if there is an Item Definition.
@@ -291,7 +291,7 @@ public class SearchIndexerImpl implements SearchIndexer {
             metadataService.loadMetadatasForDataItems(dataItems);
             // Iterate over all Data Items and create Documents.
             searchIndexerContext.dataItemDocs = new ArrayList<Document>();
-            Log4JStopWatch stopWatch2 = new Log4JStopWatch("handleDataItems:dataItemsLoop");
+            Slf4JStopWatch stopWatch2 = new Slf4JStopWatch("handleDataItems:dataItemsLoop");
             for (DataItem dataItem : dataItems) {
                 searchIndexerContext.dataItem = dataItem;
                 // Create new Data Item Document.
@@ -329,7 +329,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @return the Document
      */
     private Document getDocumentForDataCategory(DataCategory dataCategory) {
-        Log4JStopWatch stopWatch = new Log4JStopWatch("getDocumentForDataCategory");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("getDocumentForDataCategory");
         Document doc = getDocumentForAMEEEntity(dataCategory);
         doc.add(new Field("name", dataCategory.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataCategory.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
@@ -359,7 +359,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @return the Document
      */
     private Document getDocumentForDataItem(DataItem dataItem) {
-        Log4JStopWatch stopWatch = new Log4JStopWatch("getDocumentForDataItem");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("getDocumentForDataItem");
         Document doc = getDocumentForAMEEEntity(dataItem);
         doc.add(new Field("name", dataItem.getName().toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
         doc.add(new Field("path", dataItem.getPath().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
@@ -403,7 +403,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @return the Document
      */
     private Document getDocumentForAMEEEntity(IAMEEEntity entity) {
-        Log4JStopWatch stopWatch = new Log4JStopWatch("getDocumentForAMEEEntity");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("getDocumentForAMEEEntity");
         Document doc = new Document();
         doc.add(new Field("entityType", entity.getObjectType().getName(), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("entityId", entity.getId().toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
@@ -424,7 +424,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      * @param context the current SearchIndexerContext
      */
     private void handleDataItemValues(SearchIndexerContext context) {
-        Log4JStopWatch stopWatch = new Log4JStopWatch("handleDataItemValues");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("handleDataItemValues");
         for (BaseItemValue itemValue : dataItemService.getItemValues(context.dataItem)) {
             if (itemValue.isUsableValue()) {
                 if (itemValue.getItemValueDefinition().isDrillDown()) {
@@ -455,7 +455,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      */
     private boolean areDataCategoryDataItemsInconsistent() {
 
-        Log4JStopWatch stopWatch = new Log4JStopWatch("areDataCategoryDataItemsInconsistent");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("areDataCategoryDataItemsInconsistent");
 
         try {
 
