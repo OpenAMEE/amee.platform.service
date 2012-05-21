@@ -121,17 +121,6 @@
             </plugin>
 
         </plugins>
-
-        <testResources>
-            <testResource>
-                <directory>src/test/resources</directory>
-                <includes>
-                    <!--<include>test-log4j.xml</include> -->
-                    <!--<include>applicationContext.xml</include> -->
-                </includes>
-            </testResource>
-        </testResources>
-
     </build>
 
     <!-- Dependencies. -->
