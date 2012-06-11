@@ -1,8 +1,8 @@
 package com.amee.calculation.service;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
@@ -26,7 +26,7 @@ import java.util.Map;
  */
 class TrainRouteFinderService implements Service {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     // Retry and timeout parameters. Calls to the train service API exceeding these tolerances will
     // result in exceptions being thrown out to the calling code.
@@ -44,7 +44,7 @@ class TrainRouteFinderService implements Service {
 
     // Custom retry handler configured with the defined tolerances.
     private static HttpRequestRetryHandler retryHandler = new HttpRequestRetryHandler() {
-        private final Log log = LogFactory.getLog(getClass());
+        private final Logger log = LoggerFactory.getLogger(getClass());
 
         public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
             log.warn("retryRequest - " + exception.getMessage() + ", executionCount: " + executionCount);

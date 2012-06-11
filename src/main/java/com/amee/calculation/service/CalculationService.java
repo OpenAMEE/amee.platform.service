@@ -20,8 +20,8 @@ import com.amee.platform.science.ExternalGenericValue;
 import com.amee.platform.science.InternalValue;
 import com.amee.platform.science.ReturnValues;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -37,8 +37,8 @@ import java.util.Map;
 @Service
 public class CalculationService implements CO2CalculationService, BeanFactoryAware {
 
-    private final Log log = LogFactory.getLog(getClass());
-    private final Log scienceLog = LogFactory.getLog("science");
+    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger scienceLog = LoggerFactory.getLogger("science");
 
     @Autowired
     private AMEEStatistics ameeStatistics;

@@ -6,8 +6,8 @@ import com.amee.domain.ProfileItemService;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.profile.ProfileItem;
 import com.amee.service.profile.ProfileService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,7 @@ import java.util.List;
 @Scope("prototype")
 public class ProfileFinder {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private ProfileItemService profileItemService;

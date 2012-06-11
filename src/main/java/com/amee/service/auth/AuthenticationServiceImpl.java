@@ -8,8 +8,8 @@ import com.amee.domain.auth.User;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.site.ISite;
 import com.amee.service.invalidation.InvalidationMessage;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-    private final static Log log = LogFactory.getLog(AuthenticationServiceImpl.class);
+    private final static Logger log = LoggerFactory.getLogger(AuthenticationServiceImpl.class);
 
     @Autowired
     private AuthenticationDAO authenticationDao;

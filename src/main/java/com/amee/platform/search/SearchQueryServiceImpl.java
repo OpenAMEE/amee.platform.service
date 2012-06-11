@@ -4,8 +4,8 @@ import com.amee.base.domain.ResultsWrapper;
 import com.amee.domain.AMEEEntity;
 import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
@@ -20,7 +20,7 @@ import java.util.List;
 
 public class SearchQueryServiceImpl implements SearchQueryService {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private LuceneService luceneService;

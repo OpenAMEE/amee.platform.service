@@ -9,8 +9,8 @@ import com.amee.domain.item.profile.ProfileItem;
 import com.amee.domain.profile.Profile;
 import com.amee.platform.search.ProfilesFilter;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
@@ -32,7 +32,7 @@ import java.util.Set;
 @Service
 public class ProfileServiceDAO {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String CACHE_REGION = "query.profileService";
 

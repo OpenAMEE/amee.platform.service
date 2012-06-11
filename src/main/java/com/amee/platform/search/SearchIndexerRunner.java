@@ -1,7 +1,7 @@
 package com.amee.platform.search;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class SearchIndexerRunner implements Runnable {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     // A Set of Data Category UIDs that are currently being executed. This is used by the execute method
     // to ensure the same category is not indexed concurrently whilst allowing later indexing attempts
