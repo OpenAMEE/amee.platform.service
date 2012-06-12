@@ -4,7 +4,7 @@ import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.LocaleHolder;
 import com.amee.domain.cache.CacheableFactory;
 import com.amee.domain.sheet.Choice;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

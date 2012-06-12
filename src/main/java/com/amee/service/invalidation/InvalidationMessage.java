@@ -6,7 +6,7 @@ import com.amee.domain.ObjectType;
 import com.amee.domain.auth.AccessSpecification;
 import com.amee.messaging.Message;
 import com.amee.messaging.MessagingException;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
