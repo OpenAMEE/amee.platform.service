@@ -28,7 +28,7 @@
         <spring.version>3.1.1.RELEASE</spring.version>
         <org-mockito.version>1.9.0</org-mockito.version>
         <org-perf4j.version>0.9.16</org-perf4j.version>
-        <commons-jexl.version>2.1.1</commons-jexl.version>
+        <commons-jexl.version>1.1</commons-jexl.version>
 
         <!-- Plugin versions -->
         <maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
@@ -191,7 +191,7 @@
         <!-- Runtime Dependencies. -->
         <dependency>
             <!-- For perf4j. -->
-            <groupId>org.apache.commons</groupId>
+            <groupId>commons-jexl</groupId>
             <artifactId>commons-jexl</artifactId>
             <version>${commons-jexl.version}</version>
             <scope>runtime</scope>
