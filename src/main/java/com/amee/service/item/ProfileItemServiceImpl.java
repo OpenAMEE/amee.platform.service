@@ -600,7 +600,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
         if (endDate != null) {
             end = new DateTime(endDate.getTime());
         } else {
-            end = new DateTime();
+            end = DateTime.now();
         }
         return new Interval(start, end);
     }

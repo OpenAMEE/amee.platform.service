@@ -112,7 +112,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      */
     private void updateCategories() {
         log.debug("updateCategories()");
-        DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
+        DateTime anHourAgoRoundedUp = DateTime.now().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesModifiedWithin(
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());
@@ -130,7 +130,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      */
     private void updateDataItems() {
         log.debug("updateDataItems()");
-        DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
+        DateTime anHourAgoRoundedUp = DateTime.now().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesForDataItemsModifiedWithin(
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());

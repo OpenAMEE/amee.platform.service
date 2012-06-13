@@ -413,7 +413,7 @@ public class SearchIndexerImpl implements SearchIndexer {
         doc.add(new Field("entityModified",
                 new DateTime(entity.getModified()).toString(DATE_TO_SECOND), Field.Store.YES, Field.Index.NOT_ANALYZED));
         doc.add(new Field("documentModified",
-                new DateTime().toString(DATE_TO_SECOND), Field.Store.YES, Field.Index.NOT_ANALYZED));
+                DateTime.now().toString(DATE_TO_SECOND), Field.Store.YES, Field.Index.NOT_ANALYZED));
         stopWatch.stop();
         return doc;
     }
