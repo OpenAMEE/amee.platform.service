@@ -249,7 +249,7 @@ public class SearchIndexerImpl implements SearchIndexer {
      */
     private void handleDataCategory() {
         Slf4JStopWatch stopWatch = new Slf4JStopWatch("handleDataCategory");
-        log.debug("handleDataCategory() " + dataCategory.toString());
+        log.debug("handleDataCategory() {}", dataCategory.toString());
         // Handle Data Items (Create, store & update documents).
         if (searchIndexerContext.handleDataItems) {
             handleDataItems();
@@ -313,7 +313,7 @@ public class SearchIndexerImpl implements SearchIndexer {
             luceneService.addDocuments(searchIndexerContext.dataItemDocs);
             log.info("handleDataItems() ...done (" + dataCategory.toString() + ").");
         } else {
-            log.debug("handleDataItems() DataCategory does not have items: " + dataCategory.toString());
+            log.debug("handleDataItems() DataCategory does not have items: {}", dataCategory.toString());
             // Ensure we clear any Data Item Documents for this Data Category.
             searchQueryService.removeDataItems(dataCategory);
         }

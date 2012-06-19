@@ -38,7 +38,7 @@ public class DrillDownFactory implements CacheableFactory {
 
     // TODO: give choices from itemValueDefinition priority?
     public Object create() {
-        log.debug("create() cache: " + getCacheName() + " key: " + getKey());
+        log.debug("create() cache: {} key: {}", getCacheName(), getKey());
         // have we reached the end of the choices list?
         if (drillDownChoices.size() > 0) {
             // get DataItem value choice list

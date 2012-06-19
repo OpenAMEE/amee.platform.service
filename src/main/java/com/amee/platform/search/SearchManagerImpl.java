@@ -268,14 +268,14 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
         if (context != null) {
             // Never allow equivalent SearchIndexerContexts to exist in the queue.
             if (!queue.contains(context)) {
-                log.debug("addSearchIndexerContext() Adding: " + context.dataCategoryUid);
+                log.debug("addSearchIndexerContext() Adding: {}", context.dataCategoryUid);
                 queue.add(context);
                 // Signal the queue loop thread to process the queue?
                 if (signal) {
                     signalViaQueueLatch();
                 }
             } else {
-                log.debug("addSearchIndexerContext() Skipping: " + context.dataCategoryUid);
+                log.debug("addSearchIndexerContext() Skipping: {}", context.dataCategoryUid);
             }
         }
     }
@@ -292,7 +292,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
                 SearchIndexerContext next = iterator.next();
                 if (next != null) {
                     iterator.remove();
-                    log.debug("consumeQueue() Removed: " + next.dataCategoryUid);
+                    log.debug("consumeQueue() Removed: {}", next.dataCategoryUid);
                     if (!submitForExecution(next)) {
                         // Failed to submit task so break.
                         break;
@@ -322,7 +322,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
             // Managed to submit task.
             return true;
         } catch (SearchIndexerRunnerException e) {
-            log.debug("submitForExecution() Task was rejected: " + context.dataCategoryUid);
+            log.debug("submitForExecution() Task was rejected: {}", context.dataCategoryUid);
             // Failed to execute the SearchIndexerRunner as thread pool was full or this is a duplicate
             // category. Now we add the SearchIndexerContext back into the queue so it gets another
             // chance to be executed.

@@ -173,7 +173,7 @@ class DrillDownDAO {
         // execute SQL
         try {
             List<String> results = query.list();
-            log.debug("getDataItemUIDs() results: " + results.size());
+            log.debug("getDataItemUIDs() results: {}", results.size());
             return results;
         } catch (HibernateException e) {
             log.error("getDataItemUIDs() Caught HibernateException: " + e.getMessage(), e);
@@ -209,7 +209,7 @@ class DrillDownDAO {
 
         // execute SQL
         List<String> dataItemUids = query.list();
-        log.debug("getDataItemUIDs() results: " + dataItemUids.size());
+        log.debug("getDataItemUIDs() results: {}", dataItemUids.size());
         return new HashSet<String>(dataItemUids);
     }
 
@@ -241,7 +241,7 @@ class DrillDownDAO {
 
         // execute SQL
         List<Long> dataItemIds = query.list();
-        log.debug("getDataItemIds() results: " + dataItemIds.size());
+        log.debug("getDataItemIds() results: {}", dataItemIds.size());
         return new HashSet<Long>(dataItemIds);
     }
 
@@ -292,7 +292,7 @@ class DrillDownDAO {
         // execute SQL
         try {
             List<String> results = query.list();
-            log.debug("getDataItemValues() results: " + results.size());
+            log.debug("getDataItemValues() results: {}", results.size());
 
             // Sorting here instead of the query above as hsqldb and h2 don't like using LCASE in the ORDER BY.
             Collections.sort(results, String.CASE_INSENSITIVE_ORDER);
@@ -364,7 +364,7 @@ class DrillDownDAO {
             dataItemIds = getDataItemIdsUsingLocaleNames(itemValueDefinitionId, categoryDataItemIds, value);
         }
 
-        log.debug("getDataItemIds() results: " + dataItemIds.size());
+        log.debug("getDataItemIds() results: {}", dataItemIds.size());
 
         return dataItemIds;
     }
@@ -415,7 +415,7 @@ class DrillDownDAO {
             result.addAll(query.list());
             
         } catch (NumberFormatException e) {
-            log.debug("Value was not a number: " + value);
+            log.debug("Value was not a number: {}", value);
         }
         
         // Get results from DATA_ITEM_TEXT_VALUE     

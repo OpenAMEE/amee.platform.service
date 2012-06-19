@@ -66,9 +66,7 @@ public class ResourceAuthorizationService {
         setUserByUid(userUid);
         setResource(resource);
         if (!isAuthorizedForBuild()) {
-            if (log.isDebugEnabled()) {
-                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
-            }
+            log.debug("handle() Deny reasons: {}", getAuthorizationContext().getDenyReasonsString());
             throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
         }
     }
@@ -90,9 +88,7 @@ public class ResourceAuthorizationService {
         setUserByUid(userUid);
         setResource(dataService.getRootDataCategory());
         if (!isAuthorizedForAcceptProfile()) {
-            if (log.isDebugEnabled()) {
-                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
-            }
+            log.debug("handle() Deny reasons: {}", getAuthorizationContext().getDenyReasonsString());
             throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
         }
     }
@@ -119,9 +115,7 @@ public class ResourceAuthorizationService {
         setUserByUid(userUid);
         setResource(resource);
         if (!isAuthorizedForAccept()) {
-            if (log.isDebugEnabled()) {
-                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
-            }
+            log.debug("handle() Deny reasons: {}", getAuthorizationContext().getDenyReasonsString());
             throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
         }
     }
@@ -146,9 +140,7 @@ public class ResourceAuthorizationService {
         setUserByUid(userUid);
         setResource(resource);
         if (!isAuthorizedForModify()) {
-            if (log.isDebugEnabled()) {
-                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
-            }
+            log.debug("handle() Deny reasons: {}", getAuthorizationContext().getDenyReasonsString());
             throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
         }
     }
@@ -173,9 +165,7 @@ public class ResourceAuthorizationService {
         setUserByUid(userUid);
         setResource(resource);
         if (!isAuthorizedForRemove()) {
-            if (log.isDebugEnabled()) {
-                log.debug("handle() Deny reasons: " + getAuthorizationContext().getDenyReasonsString());
-            }
+            log.debug("handle() Deny reasons: {}", getAuthorizationContext().getDenyReasonsString());
             throw new NotAuthorizedException(getAuthorizationContext().getDenyReasonsString());
         }
     }

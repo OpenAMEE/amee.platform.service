@@ -73,14 +73,14 @@ public class SearchIndexerRunner implements Runnable {
             // OK to proceed, Data Category is not currently being indexed.
             CURRENT_CATEGORY_UIDS.add(searchIndexerContext.dataCategoryUid);
         }
-        log.debug("add() " + searchIndexerContext.dataCategoryUid);
+        log.debug("add() {}", searchIndexerContext.dataCategoryUid);
     }
 
     private void remove() {
         synchronized (CURRENT_CATEGORY_UIDS) {
             CURRENT_CATEGORY_UIDS.remove(searchIndexerContext.dataCategoryUid);
         }
-        log.debug("remove() " + searchIndexerContext.dataCategoryUid);
+        log.debug("remove() {}", searchIndexerContext.dataCategoryUid);
         searchIndexer.clear();
         searchIndexer = null;
     }

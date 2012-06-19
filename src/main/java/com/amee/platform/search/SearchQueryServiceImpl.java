@@ -208,7 +208,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
      */
     @Override
     public void remove(ObjectType entityType, String uid) {
-        log.debug("remove() " + uid);
+        log.debug("remove() {}", uid);
         luceneService.deleteDocuments(
                 new Term("entityType", entityType.getName()),
                 new Term("entityUid", uid));
@@ -221,7 +221,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
      */
     @Override
     public void remove(ObjectType entityType) {
-        log.debug("remove() " + entityType.getName());
+        log.debug("remove() {}", entityType.getName());
         luceneService.deleteDocuments(new Term("entityType", entityType.getName()));
     }
 
@@ -232,7 +232,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
      */
     @Override
     public void removeDataCategory(DataCategory dataCategory) {
-        log.debug("removeDataCatgory() " + dataCategory.toString());
+        log.debug("removeDataCatgory() {}", dataCategory.toString());
         remove(ObjectType.DC, dataCategory.getUid());
     }
 
@@ -244,7 +244,7 @@ public class SearchQueryServiceImpl implements SearchQueryService {
      */
     @Override
     public void removeDataItems(DataCategory dataCategory) {
-        log.debug("removeDataItems() " + dataCategory.toString());
+        log.debug("removeDataItems() {}", dataCategory.toString());
         // Prepare Query to search for all DataItems matching the specified category.
         BooleanQuery typesQuery = new BooleanQuery();
         typesQuery.add(new TermQuery(new Term("entityType", ObjectType.DI.getName())), BooleanClause.Occur.SHOULD);

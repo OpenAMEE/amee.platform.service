@@ -80,7 +80,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
             if (items.size() == 1) {
                 dataItem = items.get(0);
             } else {
-                log.debug("getDataItemByPath() NOT found: " + path);
+                log.debug("getDataItemByPath() NOT found: {}", path);
             }
         }
         return dataItem;

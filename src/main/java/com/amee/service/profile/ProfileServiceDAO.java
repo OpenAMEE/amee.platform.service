@@ -51,10 +51,10 @@ public class ProfileServiceDAO {
             criteria.setCacheRegion(CACHE_REGION);
             List<Profile> profiles = criteria.list();
             if (profiles.size() == 1) {
-                log.debug("getProfileByUid() found: " + uid);
+                log.debug("getProfileByUid() found: {}", uid);
                 profile = profiles.get(0);
             } else {
-                log.debug("getProfileByUid() NOT found: " + uid);
+                log.debug("getProfileByUid() NOT found: {}", uid);
             }
         }
         return profile;

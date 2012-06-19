@@ -115,7 +115,7 @@ class TrainRouteFinderService implements Service {
             int end = jsonString.lastIndexOf("}");
             jsonString = jsonString.substring(start, end + 1);
             String totalDistance = parseResponse(jsonString);
-            log.debug("invoke() - calculated distance(m) " + totalDistance + " from " + station1 + " to " + station2);
+            log.debug("invoke() - calculated distance(m) {} from {} to {}", new Object[] {totalDistance, station1, station2});
             return totalDistance;
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(

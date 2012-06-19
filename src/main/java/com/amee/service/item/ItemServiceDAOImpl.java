@@ -59,7 +59,7 @@ public abstract class ItemServiceDAOImpl implements ItemServiceDAO {
             if (items.size() == 1) {
                 item = items.get(0);
             } else {
-                log.debug("getItemByUid() NOT found: " + uid);
+                log.debug("getItemByUid() NOT found: {}", uid);
             }
         }
         return item;

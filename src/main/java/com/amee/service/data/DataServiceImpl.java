@@ -214,9 +214,7 @@ public class DataServiceImpl implements DataService, IDataService {
     @Override
     @SuppressWarnings(value = "unchecked")
     public Map<String, IDataCategoryReference> getDataCategories(IDataCategoryReference dataCategoryReference) {
-        if (log.isDebugEnabled()) {
-            log.debug("getDataCategories() " + dataCategoryReference.getFullPath());
-        }
+        log.debug("getDataCategories() {}", dataCategoryReference.getFullPath());
         Map<String, IDataCategoryReference> dataCategories =
                 (Map<String, IDataCategoryReference>) cacheHelper.getCacheable(new DataCategoryChildrenFactory(dataCategoryReference, dao));
         localeService.loadLocaleNamesForDataCategoryReferences(dataCategories.values());

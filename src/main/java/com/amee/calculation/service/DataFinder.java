@@ -72,7 +72,8 @@ public class DataFinder {
                 }
             }
         }
-        log.debug("getDataSeries() - path: " + path + ", drillDown: " + drillDown + ", name: " + name + ", values: " + series);
+        log.debug("getDataSeries() - path: {}, drillDown: {}, name: {}, values: {}",
+            new Object[] {path, drillDown, name, series});
         return series;
     }
 
@@ -93,9 +94,8 @@ public class DataFinder {
                 value = itemValue.getValueAsString();
             }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("getDataItemValue() - path: " + path + ", drillDown: " + drillDown + ", name: " + name + ", value: " + value);
-        }
+        log.debug("getDataItemValue() - path: {}, drillDown: {}, name: {}, value: {}",
+            new Object[] {path, drillDown, name, value});
         return value;
     }
 

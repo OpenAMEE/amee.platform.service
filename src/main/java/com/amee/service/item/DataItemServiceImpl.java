@@ -145,8 +145,8 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
         } else {
 
         // The drill down selections didn't produce a data item UID.
-        log.debug("getDataItemByCategoryAndDrillDowns() did not find data item for category with UID: " +
-            parent.getUid() + " and drillDowns: " + selections);
+        log.debug("getDataItemByCategoryAndDrillDowns() did not find data item for category with UID: {} and drillDowns: {}",
+            parent.getUid(), selections);
         }
         return dataItem;
     }
