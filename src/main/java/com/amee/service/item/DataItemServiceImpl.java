@@ -304,7 +304,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     public Date getDataItemsModified(DataCategory dataCategory) {
         Date modified = dao.getDataItemsModified(dataCategory);
         if (modified == null) {
-            modified = DataItemService.MYSQL_MIN_DATETIME;
+            modified = DataItemService.EPOCH;
         }
         return modified;
     }
@@ -483,7 +483,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
                     throw new IllegalStateException("Unexpected non-historical item value: " + biv);
                 }
                 // On or after the resultStart? Filter at the min date?
-                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(DataItemService.MYSQL_MIN_DATETIME)) {
+                if ((count >= filter.getResultStart()) && filter.getStartDate().equals(DataItemService.EPOCH)) {
                     // This *must* be the first item value.
                     results.add(bdiv);
                 }

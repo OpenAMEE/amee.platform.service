@@ -197,7 +197,7 @@ public abstract class AbstractItemService implements ItemService, ApplicationLis
         for (BaseItemValue iv : getActiveItemValues(item)) {
             long time = ExternalHistoryValue.class.isAssignableFrom(iv.getClass()) ?
                     ((ExternalHistoryValue) iv).getStartDate().getTime() :
-                    DataItemService.MYSQL_MIN_DATETIME.getTime();
+                    DataItemService.EPOCH.getTime();
             String checkId = iv.getItemValueDefinition().getUid() + time;
             if (uniqueId.equals(checkId)) {
                 return false;
@@ -251,7 +251,7 @@ public abstract class AbstractItemService implements ItemService, ApplicationLis
             if (ExternalHistoryValue.class.isAssignableFrom(itemValue.getClass())) {
                 return ((ExternalHistoryValue) itemValue).getStartDate();
             } else {
-                return new StartEndDate(DataItemService.MYSQL_MIN_DATETIME);
+                return new StartEndDate(DataItemService.EPOCH);
             }
         } else {
             throw new IllegalStateException("A BaseProfileItemValue or BaseDataItemValue instance was expected.");

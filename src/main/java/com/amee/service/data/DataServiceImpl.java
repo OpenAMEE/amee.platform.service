@@ -278,7 +278,7 @@ public class DataServiceImpl implements DataService, IDataService {
         Date dataCategoryModified = dataCategory.getModified();
         Date dataItemsModified = getDataItemsModifiedDeep(dataCategory);
         // Work out which date is the latest.
-        Date modified = DataItemService.MYSQL_MIN_DATETIME;
+        Date modified = DataItemService.EPOCH;
         modified = dataCategoryModified.after(modified) ? dataCategoryModified : modified;
         modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
         // Now we have the most recent modified timestamp of all entities related to this DataCategory.
@@ -297,9 +297,9 @@ public class DataServiceImpl implements DataService, IDataService {
         // Get the modified dates for all related entities.
         Date dataItemsModified = dataItemService.getDataItemsModified(dataCategory);
         Date definitionsModified =
-                dataCategory.isItemDefinitionPresent() ? dataCategory.getItemDefinition().getModifiedDeep() : DataItemService.MYSQL_MIN_DATETIME;
+                dataCategory.isItemDefinitionPresent() ? dataCategory.getItemDefinition().getModifiedDeep() : DataItemService.EPOCH;
         // Work out which date is the latest.
-        Date modified = DataItemService.MYSQL_MIN_DATETIME;
+        Date modified = DataItemService.EPOCH;
         modified = dataItemsModified.after(modified) ? dataItemsModified : modified;
         modified = definitionsModified.after(modified) ? definitionsModified : modified;
         // Now we have the most recent modified timestamp of all entities related to this DataCategory.
