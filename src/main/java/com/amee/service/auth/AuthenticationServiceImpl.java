@@ -8,8 +8,8 @@ import com.amee.domain.auth.User;
 import com.amee.domain.environment.Environment;
 import com.amee.domain.site.ISite;
 import com.amee.service.invalidation.InvalidationMessage;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-    private final static Log log = LogFactory.getLog(AuthenticationServiceImpl.class);
+    private final static Logger log = LoggerFactory.getLogger(AuthenticationServiceImpl.class);
 
     @Autowired
     private AuthenticationDAO authenticationDao;
@@ -65,7 +65,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 if (remoteAddressHash != null) {
                     try {
                         if (remoteAddress.hashCode() == Integer.valueOf(remoteAddressHash)) {
-                            log.debug("remote address check passed: " + remoteAddress);
+                            log.debug("remote address check passed: {}", remoteAddress);
                             remoteAddressCheckPassed = true;
                         }
                     } catch (NumberFormatException e) {
@@ -77,7 +77,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 remoteAddressCheckPassed = true;
             }
             if (!remoteAddressCheckPassed) {
-                log.debug("auth NOT authenticated, remote address check failed: " + remoteAddress);
+                log.debug("auth NOT authenticated, remote address check failed: {}", remoteAddress);
                 return null;
             }
 
@@ -120,7 +120,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (userUid != null) {
                 activeUser = getUserByUid(userUid);
                 if (activeUser != null) {
-                    log.debug("auth authenticated and signed in: " + activeUser.getUsername());
+                    log.debug("auth authenticated and signed in: {}", activeUser.getUsername());
                     Long touched = new Long(values.get(AuthToken.MODIFIED));
                     // only touch token if older than 60 seconds (60*1000ms)
                     if (now > (touched + 60 * 1000)) {
@@ -167,14 +167,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User activeUser = getUserByUsername(sampleUser.getUsername());
         if (activeUser != null) {
             if (activeUser.getPassword().equals(sampleUser.getPassword())) {
-                log.debug("authenticate() - User authenticated and signed in: " + sampleUser.getUsername());
+                log.debug("authenticate() - User authenticated and signed in: {}", sampleUser.getUsername());
                 return activeUser;
             } else {
-                log.debug("authenticate() - User NOT authenticated, bad password: " + sampleUser.getUsername());
+                log.debug("authenticate() - User NOT authenticated, bad password: {}", sampleUser.getUsername());
                 return null;
             }
         } else {
-            log.debug("authenticate() - User NOT authenticated, not found: " + sampleUser.getUsername());
+            log.debug("authenticate() - User NOT authenticated, not found: {}", sampleUser.getUsername());
             return null;
         }
     }

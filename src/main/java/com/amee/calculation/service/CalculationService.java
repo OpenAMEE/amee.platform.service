@@ -20,8 +20,8 @@ import com.amee.platform.science.ExternalGenericValue;
 import com.amee.platform.science.InternalValue;
 import com.amee.platform.science.ReturnValues;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -37,8 +37,8 @@ import java.util.Map;
 @Service
 public class CalculationService implements CO2CalculationService, BeanFactoryAware {
 
-    private final Log log = LogFactory.getLog(getClass());
-    private final Log scienceLog = LogFactory.getLog("science");
+    private final Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger scienceLog = LoggerFactory.getLogger("science");
 
     @Autowired
     private AMEEStatistics ameeStatistics;
@@ -103,12 +103,10 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
      */
     public ReturnValues calculate(Algorithm algorithm, Map<String, Object> values) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("calculate()");
-            log.debug("calculate() - algorithm uid: " + algorithm.getUid());
-            log.debug("calculate() - input values: " + values);
-            log.debug("calculate() - starting calculation");
-        }
+        log.debug("calculate()");
+        log.debug("calculate() - algorithm uid: {}", algorithm.getUid());
+        log.debug("calculate() - input values: {}", values);
+        log.debug("calculate() - starting calculation");
 
         ReturnValues returnValues;
         final long startTime = System.nanoTime();
@@ -158,10 +156,8 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
             ameeStatistics.addToThreadCalculationDuration(System.nanoTime() - startTime);
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("calculate() - finished calculation");
-            log.debug("calculate() - Amounts: " + returnValues);
-        }
+        log.debug("calculate() - finished calculation");
+        log.debug("calculate() - Amounts: {}", returnValues);
 
         return returnValues;
     }
@@ -234,7 +230,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
 
         if (!usableSet.isEmpty()) {
             values.put(ivd, new InternalValue(usableSet, item.getEffectiveStartDate(), item.getEffectiveEndDate()));
-            log.debug("appendTimeSeriesItemValue() - added timeseries value " + ivd.getPath());
+            log.debug("appendTimeSeriesItemValue() - added timeseries value {}", ivd.getPath());
         }
     }
 
@@ -243,7 +239,7 @@ public class CalculationService implements CO2CalculationService, BeanFactoryAwa
     private void appendSingleValuedItemValue(Map<ItemValueDefinition, InternalValue> values, BaseItemValue itemValue) {
         if (itemValue.isUsableValue()) {
             values.put(itemValue.getItemValueDefinition(), new InternalValue(itemValue));
-            log.debug("appendSingleValuedItemValue() - added single value " + itemValue.getPath());
+            log.debug("appendSingleValuedItemValue() - added single value {}", itemValue.getPath());
         }
     }
 

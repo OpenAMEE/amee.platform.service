@@ -14,14 +14,14 @@ import com.amee.domain.sheet.Column;
 import com.amee.domain.sheet.Row;
 import com.amee.domain.sheet.Sheet;
 import com.amee.platform.science.StartEndDate;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class DataSheetFactory implements CacheableFactory {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private DataItemService dataItemService;
     private DataBrowser dataBrowser;

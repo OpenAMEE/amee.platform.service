@@ -6,9 +6,9 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.BaseItem;
 import com.amee.domain.item.BaseItemValue;
 import com.amee.domain.item.data.*;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.hibernate.CacheMode;
 import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
@@ -22,7 +22,7 @@ import java.util.*;
 @Repository
 public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataItemServiceDAO {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Override
     public Class getEntityClass() {
@@ -80,7 +80,7 @@ public class DataItemServiceDAOImpl extends ItemServiceDAOImpl implements DataIt
             if (items.size() == 1) {
                 dataItem = items.get(0);
             } else {
-                log.debug("getDataItemByPath() NOT found: " + path);
+                log.debug("getDataItemByPath() NOT found: {}", path);
             }
         }
         return dataItem;

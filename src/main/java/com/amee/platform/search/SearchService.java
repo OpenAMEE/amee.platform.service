@@ -6,8 +6,8 @@ import com.amee.domain.data.DataCategory;
 import com.amee.domain.item.data.DataItem;
 import com.amee.service.data.DataService;
 import com.amee.service.tag.TagService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.analysis.*;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -25,7 +25,7 @@ import java.util.*;
 
 public class SearchService {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     public final static Analyzer STANDARD_ANALYZER = new StandardAnalyzer(Version.LUCENE_30);
     public final static Analyzer KEYWORD_ANALYZER = new KeywordAnalyzer();

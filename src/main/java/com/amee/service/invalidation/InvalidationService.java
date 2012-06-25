@@ -5,8 +5,8 @@ import com.amee.domain.IAMEEEntityReference;
 import com.amee.messaging.MessageService;
 import com.amee.messaging.config.ExchangeConfig;
 import com.amee.messaging.config.PublishConfig;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,7 +22,7 @@ import java.util.Set;
 @Service
 public class InvalidationService implements ApplicationContextAware, ApplicationListener<TransactionEvent> {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     @Qualifier("invalidationTaskExecutor")

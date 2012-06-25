@@ -41,10 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.perf4j.log4j.Log4JStopWatch;
+import org.apache.commons.lang3.StringUtils;
+import org.perf4j.slf4j.Slf4JStopWatch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -52,7 +52,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DataItemServiceImpl extends AbstractItemService implements DataItemService {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private TransactionController transactionController;
@@ -145,8 +145,8 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
         } else {
 
         // The drill down selections didn't produce a data item UID.
-        log.debug("getDataItemByCategoryAndDrillDowns() did not find data item for category with UID: " +
-            parent.getUid() + " and drillDowns: " + selections);
+        log.debug("getDataItemByCategoryAndDrillDowns() did not find data item for category with UID: {} and drillDowns: {}",
+            parent.getUid(), selections);
         }
         return dataItem;
     }
@@ -322,7 +322,7 @@ public class DataItemServiceImpl extends AbstractItemService implements DataItem
     }
 
     private boolean equivalentDataItemExists(DataItem dataItem) {
-        Log4JStopWatch stopWatch = new Log4JStopWatch("equivalentDataItemExists");
+        Slf4JStopWatch stopWatch = new Slf4JStopWatch("equivalentDataItemExists");
         
         // Get this data item's drill down values.
         List<Choice> drillDownValues = new ArrayList<Choice>();

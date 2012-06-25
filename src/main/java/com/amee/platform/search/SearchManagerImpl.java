@@ -5,9 +5,9 @@ import com.amee.domain.ObjectType;
 import com.amee.domain.data.DataCategory;
 import com.amee.service.data.DataService;
 import com.amee.service.invalidation.InvalidationMessage;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 public class SearchManagerImpl implements SearchManager, ApplicationContextAware {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private DataService dataService;
@@ -112,7 +112,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      */
     private void updateCategories() {
         log.debug("updateCategories()");
-        DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
+        DateTime anHourAgoRoundedUp = DateTime.now().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesModifiedWithin(
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());
@@ -130,7 +130,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
      */
     private void updateDataItems() {
         log.debug("updateDataItems()");
-        DateTime anHourAgoRoundedUp = new DateTime().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
+        DateTime anHourAgoRoundedUp = DateTime.now().minusHours(1).withMinuteOfHour(0).withSecondOfMinute(0).withMillisOfSecond(0);
         List<DataCategory> dataCategories = dataService.getDataCategoriesForDataItemsModifiedWithin(
                 anHourAgoRoundedUp.toDate(),
                 anHourAgoRoundedUp.plusHours(1).toDate());
@@ -268,14 +268,14 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
         if (context != null) {
             // Never allow equivalent SearchIndexerContexts to exist in the queue.
             if (!queue.contains(context)) {
-                log.debug("addSearchIndexerContext() Adding: " + context.dataCategoryUid);
+                log.debug("addSearchIndexerContext() Adding: {}", context.dataCategoryUid);
                 queue.add(context);
                 // Signal the queue loop thread to process the queue?
                 if (signal) {
                     signalViaQueueLatch();
                 }
             } else {
-                log.debug("addSearchIndexerContext() Skipping: " + context.dataCategoryUid);
+                log.debug("addSearchIndexerContext() Skipping: {}", context.dataCategoryUid);
             }
         }
     }
@@ -292,7 +292,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
                 SearchIndexerContext next = iterator.next();
                 if (next != null) {
                     iterator.remove();
-                    log.debug("consumeQueue() Removed: " + next.dataCategoryUid);
+                    log.debug("consumeQueue() Removed: {}", next.dataCategoryUid);
                     if (!submitForExecution(next)) {
                         // Failed to submit task so break.
                         break;
@@ -322,7 +322,7 @@ public class SearchManagerImpl implements SearchManager, ApplicationContextAware
             // Managed to submit task.
             return true;
         } catch (SearchIndexerRunnerException e) {
-            log.debug("submitForExecution() Task was rejected: " + context.dataCategoryUid);
+            log.debug("submitForExecution() Task was rejected: {}", context.dataCategoryUid);
             // Failed to execute the SearchIndexerRunner as thread pool was full or this is a duplicate
             // category. Now we add the SearchIndexerContext back into the queue so it gets another
             // chance to be executed.

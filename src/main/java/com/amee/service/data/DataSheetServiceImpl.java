@@ -10,8 +10,8 @@ import com.amee.domain.item.data.DataItem;
 import com.amee.domain.sheet.Choices;
 import com.amee.domain.sheet.Sheet;
 import com.amee.service.invalidation.InvalidationMessage;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +25,7 @@ import java.util.Set;
  */
 public class DataSheetServiceImpl implements DataSheetService {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private DataService dataService;

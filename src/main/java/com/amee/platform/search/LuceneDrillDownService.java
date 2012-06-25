@@ -5,8 +5,8 @@ import com.amee.domain.IDataCategoryReference;
 import com.amee.domain.ObjectType;
 import com.amee.domain.sheet.Choice;
 import com.amee.service.data.AbstractDrillDownService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.Term;
@@ -26,7 +26,7 @@ import java.util.Set;
  */
 public class LuceneDrillDownService extends AbstractDrillDownService {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private LuceneService luceneService;

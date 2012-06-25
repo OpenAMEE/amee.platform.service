@@ -11,9 +11,9 @@ import com.amee.domain.data.ItemDefinition;
 import com.amee.domain.data.ItemValueDefinition;
 import com.amee.domain.data.ReturnValueDefinition;
 import com.amee.platform.search.ItemDefinitionsFilter;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.hibernate.Criteria;
 import org.hibernate.FetchMode;
 import org.hibernate.FlushMode;
@@ -30,7 +30,7 @@ import java.util.List;
 @Service
 public class DefinitionServiceDAO {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String CACHE_REGION = "query.definitionService";
 
@@ -51,10 +51,10 @@ public class DefinitionServiceDAO {
             criteria.setCacheRegion(CACHE_REGION);
             List<Algorithm> algorithms = criteria.list();
             if (algorithms.size() == 1) {
-                log.debug("getAlgorithmByUid() found: " + uid);
+                log.debug("getAlgorithmByUid() found: {}", uid);
                 algorithm = algorithms.get(0);
             } else {
-                log.debug("getAlgorithmByUid() NOT found: " + uid);
+                log.debug("getAlgorithmByUid() NOT found: {}", uid);
             }
         }
         return algorithm;
@@ -90,10 +90,10 @@ public class DefinitionServiceDAO {
             criteria.setCacheRegion(CACHE_REGION);
             List<AlgorithmContext> algorithmContexts = criteria.list();
             if (algorithmContexts.size() == 1) {
-                log.debug("getAlgorithmContextByUid() found: " + uid);
+                log.debug("getAlgorithmContextByUid() found: {}", uid);
                 algorithmContext = algorithmContexts.get(0);
             } else {
-                log.debug("getAlgorithmContextByUid() NOT found: " + uid);
+                log.debug("getAlgorithmContextByUid() NOT found: {}", uid);
             }
         }
         return algorithmContext;
@@ -130,10 +130,10 @@ public class DefinitionServiceDAO {
             criteria.setCacheRegion(CACHE_REGION);
             List<ItemDefinition> itemDefinitions = criteria.list();
             if (itemDefinitions.size() == 1) {
-                log.debug("getItemDefinitionByUid() found: " + uid);
+                log.debug("getItemDefinitionByUid() found: {}", uid);
                 itemDefinition = itemDefinitions.get(0);
             } else {
-                log.debug("getItemDefinitionByUid() NOT found: " + uid);
+                log.debug("getItemDefinitionByUid() NOT found: {}", uid);
             }
         }
         return itemDefinition;
@@ -215,7 +215,7 @@ public class DefinitionServiceDAO {
     }
 
     protected void invalidate(ItemDefinition itemDefinition) {
-        log.debug("invalidate() " + itemDefinition.toString());
+        log.debug("invalidate() {}", itemDefinition.toString());
         ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(ItemDefinition.class, itemDefinition.getId());
     }
 
@@ -235,10 +235,10 @@ public class DefinitionServiceDAO {
             criteria.setCacheRegion(CACHE_REGION);
             List<ItemValueDefinition> itemValueDefinitions = criteria.list();
             if (itemValueDefinitions.size() == 1) {
-                log.debug("getItemValueDefinitionByUid() found: " + uid);
+                log.debug("getItemValueDefinitionByUid() found: {}", uid);
                 itemValueDefinition = itemValueDefinitions.get(0);
             } else {
-                log.debug("getItemValueDefinitionByUid() NOT found: " + uid);
+                log.debug("getItemValueDefinitionByUid() NOT found: {}", uid);
             }
         }
         return itemValueDefinition;
@@ -253,7 +253,7 @@ public class DefinitionServiceDAO {
     }
 
     public void invalidate(ItemValueDefinition itemValueDefinition) {
-        log.debug("invalidate() " + itemValueDefinition.toString());
+        log.debug("invalidate() {}", itemValueDefinition.toString());
         ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(ItemValueDefinition.class, itemValueDefinition.getId());
     }
 
@@ -273,10 +273,10 @@ public class DefinitionServiceDAO {
             criteria.setCacheRegion(CACHE_REGION);
             List<ReturnValueDefinition> returnValueDefinitions = criteria.list();
             if (returnValueDefinitions.size() == 1) {
-                log.debug("getReturnValueDefinitionByUid() found: " + uid);
+                log.debug("getReturnValueDefinitionByUid() found: {}", uid);
                 returnValueDefinition = returnValueDefinitions.get(0);
             } else {
-                log.debug("getReturnValueDefinitionByUid() NOT found: " + uid);
+                log.debug("getReturnValueDefinitionByUid() NOT found: {}", uid);
             }
         }
         return returnValueDefinition;
@@ -291,7 +291,7 @@ public class DefinitionServiceDAO {
     }
 
     public void invalidate(ReturnValueDefinition returnValueDefinition) {
-        log.debug("invalidate() " + returnValueDefinition.toString());
+        log.debug("invalidate() {}", returnValueDefinition.toString());
         ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(ReturnValueDefinition.class, returnValueDefinition.getId());
     }
 
@@ -353,10 +353,10 @@ public class DefinitionServiceDAO {
             criteria.setFlushMode(FlushMode.MANUAL);
             List<ValueDefinition> valueDefinitions = criteria.list();
             if (valueDefinitions.size() == 1) {
-                log.debug("getValueDefinitionByUid() found: " + uid);
+                log.debug("getValueDefinitionByUid() found: {}", uid);
                 valueDefinition = valueDefinitions.get(0);
             } else {
-                log.debug("getValueDefinitionByUid() NOT found: " + uid);
+                log.debug("getValueDefinitionByUid() NOT found: {}", uid);
             }
         }
         return valueDefinition;

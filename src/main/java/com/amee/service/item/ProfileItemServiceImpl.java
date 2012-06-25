@@ -45,8 +45,8 @@ import javax.measure.quantity.Duration;
 import javax.measure.unit.SI;
 import javax.measure.unit.Unit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 import org.springframework.beans.BeanUtils;
@@ -56,7 +56,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProfileItemServiceImpl extends AbstractItemService implements ProfileItemService {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     private TransactionController transactionController;
@@ -234,9 +234,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
     }
 
     private List<ProfileItem> checkProfileItems(List<ProfileItem> profileItems) {
-        if (log.isDebugEnabled()) {
-            log.debug("checkProfileItems() start");
-        }
+        log.debug("checkProfileItems() start");
         if (profileItems == null) {
             return null;
         }
@@ -249,9 +247,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
                 activeProfileItems.add(profileItem);
             }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("checkProfileItems() done (" + activeProfileItems.size() + ")");
-        }
+        log.debug("checkProfileItems() done ({})", activeProfileItems.size());
         return activeProfileItems;
     }
 
@@ -489,9 +485,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
             pi.setEffectiveStartDate(startDate);
             pi.setEffectiveEndDate(endDate);
 
-            if (log.isDebugEnabled()) {
-                log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() + " has un-prorated Amounts: " + pi.getAmounts());
-            }
+            log.debug("prorataProfileItems() - ProfileItem: {} has un-prorated Amounts: {}", pi.getName(), pi.getAmounts());
 
             // Find the intersection of the profile item with the requested window.
             Interval intersect = requestInterval;
@@ -502,18 +496,14 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
                 intersect = intersect.withEndMillis(pi.getEndDate().getTime());
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("prorataProfileItems() - request interval: " + requestInterval + ", intersect:" + intersect);
-            }
+            log.debug("prorataProfileItems() - request interval: {}, intersect: {}", intersect);
 
             if (hasNonZeroPerTimeValues(pi)) {
 
                 // The ProfileItem has perTime ItemValues. In this case, the ItemValues are multiplied by
                 // the (intersect/PerTime) ratio and the CO2 value recalculated.
 
-                if (log.isDebugEnabled()) {
-                    log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() + " has PerTime ItemValues.");
-                }
+                log.debug("prorataProfileItems() - ProfileItem: {} has PerTime ItemValues.", pi.getName());
 
                 for (BaseItemValue iv : getItemValues(pi)) {
 
@@ -522,29 +512,20 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
                         isNonZeroPerTimeValue((ProfileItemNumberValue) iv) &&
                         iv.getItemValueDefinition().isFromProfile()) {
                         double proratedItemValue = getProRatedItemValue(intersect, (ProfileItemNumberValue)iv);
-                        if (log.isDebugEnabled()) {
-                            log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() +
-                                ". ItemValue: " + iv.getName() + " = " + iv.getValueAsString() +
-                                " has PerUnit: " + ((ProfileItemNumberValue)iv).getPerUnit() +
-                                ". Pro-rated ItemValue = " + proratedItemValue);
-                        }
+                        log.debug("prorataProfileItems() - ProfileItem: {}. ItemValue: {} = {} has PerUnit: {}. Pro-rated ItemValue = {}",
+                            new Object[] {pi.getName(), iv.getName(), iv.getValueAsString(), ((ProfileItemNumberValue) iv).getPerUnit(), proratedItemValue});
 
                         // Set the override value (which will not be persisted)
                         ((ProfileItemNumberValue)iv).setValueOverride(proratedItemValue);
                     } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() +
-                                ". Unchanged ItemValue: " + iv.getName());
-                        }
+                        log.debug("prorataProfileItems() - ProfileItem: {}. Unchanged ItemValue: {}", pi.getName(), iv.getName());
                     }
                 }
 
                 // Perform the calculation using the prorated values.
                 calculationService.calculate(pi);
 
-                if (log.isDebugEnabled()) {
-                    log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() + ". Adding prorated Amounts: " + pi.getAmounts());
-                }
+                log.debug("prorataProfileItems() - ProfileItem: {}. Adding prorated Amounts: {}", pi.getName(), pi.getAmounts());
 
                 requestedItems.add(pi);
             } else if (pi.getEndDate() != null) {
@@ -566,29 +547,21 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
                     pi.getAmounts().putValue(type, value.getUnit(), value.getPerUnit(), proRatedValue);
                 }
 
-                if (log.isDebugEnabled()) {
-                    log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() +
-                        " is bounded (" + getInterval(pi.getStartDate(), pi.getEndDate()) +
-                        ") and has no PerTime ItemValues.");
-                    log.debug("prorataProfileItems() - Adding pro-rated Amounts: " + pi.getAmounts());
-                }
+                log.debug("prorataProfileItems() - ProfileItem: {} is bounded ({}) and has no PerTime ItemValues.",
+                    pi.getName(), getInterval(pi.getStartDate(), pi.getEndDate()));
+                log.debug("prorataProfileItems() - Adding pro-rated Amounts: {}", pi.getAmounts());
                 requestedItems.add(pi);
             } else {
 
                 // The ProfileItem has no perTime ItemValues and is unbounded.
                 // In this case, the ReturnValues are not prorated.
-
-                if (log.isDebugEnabled()) {
-                    log.debug("prorataProfileItems() - ProfileItem: " + pi.getName() +
-                        " is unbounded and has no PerTime ItemValues. Adding un-prorated Amounts: " + pi.getAmounts());
-                }
+                log.debug("prorataProfileItems() - ProfileItem: {} is unbounded and has no PerTime ItemValues. Adding un-prorated Amounts: {}",
+                    pi.getName(), pi.getAmounts());
                 requestedItems.add(pi);
             }
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("prorataProfileItems() done (" + requestedItems.size() + ")");
-        }
+        log.debug("prorataProfileItems() done ({})", requestedItems.size());
 
         return requestedItems;
     }
@@ -600,7 +573,7 @@ public class ProfileItemServiceImpl extends AbstractItemService implements Profi
         if (endDate != null) {
             end = new DateTime(endDate.getTime());
         } else {
-            end = new DateTime();
+            end = DateTime.now();
         }
         return new Interval(start, end);
     }

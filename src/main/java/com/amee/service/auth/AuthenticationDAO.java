@@ -2,8 +2,8 @@ package com.amee.service.auth;
 
 import com.amee.domain.AMEEStatus;
 import com.amee.domain.auth.User;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.hibernate.Session;
 import org.springframework.stereotype.Repository;
 
@@ -14,7 +14,7 @@ import java.util.List;
 @Repository
 public class AuthenticationDAO {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String CACHE_REGION = "query.authenticationService";
 
@@ -34,10 +34,10 @@ public class AuthenticationDAO {
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
         if (users.size() == 1) {
-            log.debug("auth found: " + uid);
+            log.debug("auth found: {}",  uid);
             return users.get(0);
         }
-        log.debug("auth NOT found: " + uid);
+        log.debug("auth NOT found: {}", uid);
         return null;
     }
 
@@ -54,10 +54,10 @@ public class AuthenticationDAO {
                 .setHint("org.hibernate.cacheRegion", CACHE_REGION)
                 .getResultList();
         if (users.size() == 1) {
-            log.debug("auth found: " + username);
+            log.debug("auth found: {}", username);
             return users.get(0);
         }
-        log.debug("auth NOT found: " + username);
+        log.debug("auth NOT found: {}", username);
         return null;
     }
 
@@ -67,7 +67,7 @@ public class AuthenticationDAO {
      * @param user the User to clear from the cache.
      */
     public void invalidate(User user) {
-        log.debug("invalidate() " + user);
+        log.debug("invalidate() {}", user);
         ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(User.class, user.getId());
     }
 }

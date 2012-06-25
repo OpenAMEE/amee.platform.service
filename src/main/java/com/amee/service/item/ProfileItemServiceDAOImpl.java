@@ -20,8 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.criterion.Order;
@@ -33,7 +33,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements ProfileItemServiceDAO {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Override
     public Class getEntityClass() {
@@ -125,7 +125,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         int count = criteria.list().size();
 
-        log.debug("getProfileItemCount() count: " + count);
+        log.debug("getProfileItemCount() count: {}", count);
 
         return count;
     }
@@ -163,9 +163,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         }
         List<ProfileItem> profileItems = criteria.list();
 
-        if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() done (" + profileItems.size() + ")");
-        }
+        log.debug("getProfileItems() done ({})", profileItems.size());
 
         // Did we limit the results?
         if (filter.getResultLimit() > 0) {
@@ -189,9 +187,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
             return null;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() start");
-        }
+        log.debug("getProfileItems() start");
 
         // Need to roll the date forward.
         DateTime nextMonth = new DateTime(profileDate).plus(Period.months(1));
@@ -206,9 +202,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         List<ProfileItem> profileItems = criteria.list();
 
-        if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() done (" + profileItems.size() + ")");
-        }
+        log.debug("getProfileItems() done ({})", profileItems.size());
 
         return profileItems;
     }
@@ -220,9 +214,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
             return null;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() start");
-        }
+        log.debug("getProfileItems() start");
 
         // Get the ProfileItems.
         Session session = (Session) entityManager.getDelegate();
@@ -236,9 +228,7 @@ public class ProfileItemServiceDAOImpl extends ItemServiceDAOImpl implements Pro
         criteria.add(Restrictions.ne("status", AMEEStatus.TRASH));
         List<ProfileItem> profileItems = criteria.list();
 
-        if (log.isDebugEnabled()) {
-            log.debug("getProfileItems() done (" + profileItems.size() + ")");
-        }
+        log.debug("getProfileItems() done ({})", profileItems.size());
 
         return profileItems;
     }

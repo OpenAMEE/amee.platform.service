@@ -5,9 +5,9 @@ import com.amee.domain.*;
 import com.amee.domain.data.DataCategory;
 import com.amee.domain.data.DataCategoryReference;
 import com.amee.domain.data.ItemDefinition;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
 import org.hibernate.Session;
@@ -22,7 +22,7 @@ import java.util.*;
 @Repository
 public class DataServiceDAOImpl implements DataServiceDAO {
 
-    private final Log log = LogFactory.getLog(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final String CACHE_REGION = "query.dataService";
 
@@ -63,7 +63,7 @@ public class DataServiceDAOImpl implements DataServiceDAO {
             criteria.setCacheRegion(CACHE_REGION);
             List<DataCategory> dataCategories = criteria.list();
             if (dataCategories.size() == 0) {
-                log.debug("getDataCategoryByPath() DataCategory not found ('" + parent.getFullPath() + "/" + path + "').");
+                log.debug("getDataCategoryByPath() DataCategory not found ('{}').", parent.getFullPath() + "/" + path);
             } else if (dataCategories.size() == 1) {
                 dataCategory = dataCategories.get(0);
             } else {
@@ -85,7 +85,7 @@ public class DataServiceDAOImpl implements DataServiceDAO {
             criteria.setCacheRegion(CACHE_REGION);
             List<DataCategory> dataCategories = criteria.list();
             if (dataCategories.size() == 0) {
-                log.debug("getDataCategoryByUid() NOT found: " + uid);
+                log.debug("getDataCategoryByUid() NOT found: {}", uid);
             } else {
                 dataCategory = dataCategories.get(0);
             }
@@ -133,11 +133,11 @@ public class DataServiceDAOImpl implements DataServiceDAO {
             }
             // Do we have any Data Categories?
             if (dataCategories.size() == 0) {
-                log.debug("getDataCategoryByWikiName() NOT found: " + wikiName);
+                log.debug("getDataCategoryByWikiName() NOT found: {}", wikiName);
             } else {
                 // Special handling required when more than one DataCategory is found.
                 if (dataCategories.size() > 1) {
-                    log.debug("getDataCategoryByWikiName() More than one DataCategory found: " + wikiName);
+                    log.debug("getDataCategoryByWikiName() More than one DataCategory found: {}", wikiName);
                     // Sort the DataCategories by modification date (descending).
                     Collections.sort(dataCategories,
                             Collections.reverseOrder(
@@ -416,14 +416,14 @@ public class DataServiceDAOImpl implements DataServiceDAO {
     @Override
     @SuppressWarnings(value = "unchecked")
     public void remove(DataCategory dataCategory) {
-        log.debug("remove() " + dataCategory.toString());
+        log.debug("remove() {}", dataCategory.toString());
         // trash this DataCategory
         dataCategory.setStatus(AMEEStatus.TRASH);
     }
 
     @Override
     public void invalidate(DataCategory dataCategory) {
-        log.debug("invalidate() " + dataCategory.toString());
+        log.debug("invalidate() {}", dataCategory.toString());
         ((Session) entityManager.getDelegate()).getSessionFactory().getCache().evictEntity(DataCategory.class, dataCategory.getId());
     }
 

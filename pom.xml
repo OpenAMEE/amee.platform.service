@@ -17,22 +17,24 @@
         <amee-platform-domain.version>2.6.0-SNAPSHOT</amee-platform-domain.version>
 
         <!-- External Versions. -->
-        <!-- Note: These versions were last checked & upgraded on 14/04/2011. -->
-        <apache-httpcomponents-httpclient>4.1.1</apache-httpcomponents-httpclient>
-        <apache-httpcomponents-httpcore>4.1</apache-httpcomponents-httpcore>
-        <org-aspectj.version>1.6.10</org-aspectj.version>
-        <junit.version>4.8.2</junit.version>
-        <lucene-core.version>3.0.3</lucene-core.version>
+        <!-- Note: These versions were last checked & upgraded on 12/06/2012. -->
+        <httpclient.version>4.2</httpclient.version>
+        <org-aspectj.version>1.6.12</org-aspectj.version>
+        <junit.version>4.10</junit.version>
+        <logback-classic.version>1.0.6</logback-classic.version>
+        <lucene-core.version>3.6.0</lucene-core.version>
+        <lucene-lucli.version>3.1.0</lucene-lucli.version>
+        <slf4j.version>1.6.6</slf4j.version>
         <spring.version>3.1.1.RELEASE</spring.version>
-        <org-mockito.version>1.8.5</org-mockito.version>
-        <org-perf4j.version>0.9.13</org-perf4j.version>
+        <org-mockito.version>1.9.0</org-mockito.version>
+        <org-perf4j.version>0.9.16</org-perf4j.version>
         <commons-jexl.version>1.1</commons-jexl.version>
 
         <!-- Plugin versions -->
-        <maven-compiler-plugin.version>2.3.2</maven-compiler-plugin.version>
-        <maven-dependency-plugin.version>2.1</maven-dependency-plugin.version>
-        <maven-release-plugin.version>2.2</maven-release-plugin.version>
-        <maven-surefire-plugin.version>2.8</maven-surefire-plugin.version>
+        <maven-compiler-plugin.version>2.5.1</maven-compiler-plugin.version>
+        <maven-dependency-plugin.version>2.4</maven-dependency-plugin.version>
+        <maven-release-plugin.version>2.3.1</maven-release-plugin.version>
+        <maven-surefire-plugin.version>2.12</maven-surefire-plugin.version>
 
         <!-- Other. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -120,17 +122,6 @@
             </plugin>
 
         </plugins>
-
-        <testResources>
-            <testResource>
-                <directory>src/test/resources</directory>
-                <includes>
-                    <!--<include>test-log4j.xml</include> -->
-                    <!--<include>applicationContext.xml</include> -->
-                </includes>
-            </testResource>
-        </testResources>
-
     </build>
 
     <!-- Dependencies. -->
@@ -158,6 +149,18 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>${spring.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
@@ -167,17 +170,17 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-lucli</artifactId>
-            <version>${lucene-core.version}</version>
+            <version>${lucene-lucli.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${apache-httpcomponents-httpclient}</version>
+            <version>${httpclient.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>${apache-httpcomponents-httpcore}</version>
+            <version>${httpclient.version}</version>
         </dependency>
         <dependency>
             <groupId>org.perf4j</groupId>
@@ -237,7 +240,13 @@
             <version>${org-mockito.version}</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback-classic.version}</version>
+            <scope>test</scope>
+            <!-- http://stackoverflow.com/a/9093936 -->
+        </dependency>
     </dependencies>
 
     <!-- Distribution Management. -->
